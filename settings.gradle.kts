@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ecologique"
 
-include("deployables:ecologique")
+include("deployables:backend")
