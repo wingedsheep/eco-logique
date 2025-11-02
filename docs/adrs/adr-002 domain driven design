@@ -1,0 +1,374 @@
+# ADR-002: Apply Domain-Driven Design
+
+**Status**: Accepted
+
+**Date**: 2024-11-02
+
+---
+
+## Decision
+
+We apply **Domain-Driven Design** principles to organize code around business domains and maintain a shared understanding between developers and domain experts.
+
+---
+
+## Bounded Contexts
+
+Each module represents one bounded context with its own domain model and language:
+
+- **Payment**: Transactions, settlements, PSP integration
+- **Products**: SKUs, categories, pricing, sustainability
+- **Shipping**: Carriers, tracking, routes, fulfillment
+- **Inventory**: Stock levels, warehouses, reservations
+- **Users**: Identity, profiles, addresses
+
+**Context boundaries = module boundaries**. The Product in the Products context is different from how Shipping sees a product.
+
+```kotlin
+// Products context - full product model
+data class Product(
+    val id: ProductId,
+    val name: String,
+    val price: Money,
+    val weight: Weight,
+    val sustainabilityRating: SustainabilityRating
+)
+
+// Shipping context - only cares about weight
+class ShippingService(private val productService: ProductService) {
+    fun createShipment(productId: ProductId) {
+        val product = productService.getProduct(productId)
+        // Only uses product.weight and product.id
+    }
+}
+```
+
+---
+
+## Tactical Design Patterns
+
+### Entities
+Objects with identity that persist over time.
+
+```kotlin
+data class Product(
+    val id: ProductId,  // Identity
+    val name: String,
+    val price: Money
+) {
+    // Same product even if name or price changes
+}
+
+data class User(
+    val id: UserId,  // Identity
+    val email: String,
+    val name: String
+)
+```
+
+### Value Objects
+Objects defined by their attributes, not identity. Immutable.
+
+```kotlin
+data class Money(
+    val amount: BigDecimal,
+    val currency: Currency
+) {
+    operator fun plus(other: Money): Money {
+        require(currency == other.currency)
+        return Money(amount + other.amount, currency)
+    }
+}
+
+data class Address(
+    val street: String,
+    val city: String,
+    val country: Country
+)
+
+@JvmInline
+value class ProductId(val value: String)
+```
+
+### Aggregates
+Cluster of entities and value objects with one root entity.
+
+```kotlin
+// Order aggregate - Order is the root
+data class Order(
+    val id: OrderId,              // Aggregate root
+    val items: List<OrderItem>,   // Part of aggregate
+    val totalPrice: Money,
+    val shippingAddress: Address
+) {
+    // All changes go through Order
+    fun addItem(item: OrderItem): Order {
+        return copy(items = items + item)
+    }
+}
+
+// External objects only reference Order, never OrderItem directly
+```
+
+---
+
+## Ubiquitous Language
+
+Use domain terms consistently in code, conversations, and documentation.
+
+### Products Domain
+```kotlin
+enum class SustainabilityRating { A_PLUS, A, B, C, D }
+data class CarbonFootprint(val kgCo2: BigDecimal)
+enum class ProductCategory { CLOTHING, HOUSEHOLD, ELECTRONICS, FOOD }
+```
+
+### Shipping Domain
+```kotlin
+enum class ShipmentStatus { PENDING, IN_TRANSIT, DELIVERED }
+data class TrackingNumber(val value: String)
+data class Carrier(val name: String, val code: String)
+```
+
+### Payment Domain
+```kotlin
+enum class PaymentStatus { PENDING, COMPLETED, FAILED }
+data class Settlement(val amount: Money, val settledAt: Instant)
+```
+
+**No translation layers** - domain terms appear in API, service, persistence.
+
+---
+
+## Domain Model Location
+
+Domain models live in `-api` modules:
+
+```
+products-api/
+├── model/
+│   ├── Product.kt
+│   ├── ProductId.kt
+│   ├── ProductCategory.kt
+│   ├── Money.kt
+│   └── Weight.kt
+├── service/
+│   └── ProductService.kt
+└── event/
+    └── ProductCreated.kt
+```
+
+**Rules**:
+- Technology-agnostic (no Spring, no JPA annotations)
+- Validation in `init` blocks
+- Business logic in domain models
+- Pure Kotlin data classes
+
+```kotlin
+data class Product(
+    val id: ProductId,
+    val name: String,
+    val price: Money,
+    val weight: Weight
+) {
+    init {
+        require(name.isNotBlank()) { "Product name cannot be blank" }
+        require(price.amount > BigDecimal.ZERO) { "Price must be positive" }
+    }
+
+    fun withUpdatedPrice(newPrice: Money): Product {
+        require(newPrice.amount > BigDecimal.ZERO)
+        return copy(price = newPrice)
+    }
+}
+```
+
+---
+
+## Services
+
+### Domain Services
+Business logic that doesn't naturally fit in an entity.
+
+```kotlin
+// products-api
+interface ProductService {
+    fun createProduct(name: String, category: ProductCategory, price: Money): Result<Product>
+    fun updatePrice(id: ProductId, newPrice: Money): Result<Product>
+}
+
+// products-impl
+@Service
+class ProductServiceImpl(
+    private val productRepository: ProductRepository
+) : ProductService {
+    override fun createProduct(
+        name: String,
+        category: ProductCategory,
+        price: Money
+    ): Result<Product> = runCatching {
+        val product = Product(
+            id = ProductId.generate(),
+            name = name,
+            category = category,
+            price = price,
+            weight = estimateWeight(category),
+            sustainabilityRating = calculateRating(category)
+        )
+        productRepository.save(product)
+    }
+}
+```
+
+---
+
+## Domain Events
+
+Events capture important business occurrences.
+
+```kotlin
+// payment-api
+data class PaymentCompleted(
+    val paymentId: PaymentId,
+    val orderId: OrderId,
+    val amount: Money,
+    val timestamp: Instant
+)
+
+data class PaymentFailed(
+    val paymentId: PaymentId,
+    val reason: String,
+    val timestamp: Instant
+)
+
+// products-api
+data class ProductCreated(
+    val productId: ProductId,
+    val timestamp: Instant
+)
+
+data class ProductPriceChanged(
+    val productId: ProductId,
+    val oldPrice: Money,
+    val newPrice: Money,
+    val timestamp: Instant
+)
+```
+
+Events are defined in the `-api` module of the context that owns them.
+
+---
+
+## Anti-Corruption Layer
+
+When integrating with external systems, use adapters to translate to our domain model.
+
+```kotlin
+// payment-impl
+@Service
+internal class PspAdapter(
+    private val pspClient: PspClient  // External library
+) {
+    fun processPayment(payment: Payment): Result<Payment> {
+        // Translate domain model to PSP request
+        val pspRequest = PspPaymentRequest(
+            externalId = payment.id.value,
+            amount = payment.amount.amount.toDouble(),
+            currency = payment.amount.currency.name
+        )
+
+        // Call external system
+        val pspResponse = pspClient.createPayment(pspRequest)
+
+        // Translate PSP response back to domain model
+        return Result.success(
+            payment.copy(
+                status = when (pspResponse.status) {
+                    "SUCCESS" -> PaymentStatus.COMPLETED
+                    "FAILED" -> PaymentStatus.FAILED
+                    else -> PaymentStatus.PENDING
+                }
+            )
+        )
+    }
+}
+```
+
+---
+
+## Repository Interface
+
+Repositories use domain language and return domain types.
+
+```kotlin
+// products-impl (not in -api)
+interface ProductRepository {
+    fun save(product: Product): Product
+    fun findById(id: ProductId): Product?
+    fun findByCategory(category: ProductCategory): List<Product>
+    fun findAll(): List<Product>
+}
+```
+
+Note: Repository interface stays in `-impl`, not `-api`, since it's an infrastructure concern.
+
+---
+
+## Consequences
+
+### Positive
+- Code reflects business language
+- Domain experts can read and validate code
+- Clear boundaries between contexts
+- Business logic isolated from technical concerns
+- Easier onboarding (ubiquitous language)
+
+### Negative
+- More upfront modeling effort
+- Requires continuous collaboration with domain experts
+- Can be overkill for simple CRUD operations
+
+---
+
+## Examples
+
+**Rich domain model**:
+```kotlin
+data class Shipment(
+    val id: ShipmentId,
+    val productId: ProductId,
+    val status: ShipmentStatus,
+    val trackingNumber: String?
+) {
+    fun markAsInTransit(trackingNumber: String): Shipment {
+        require(status == ShipmentStatus.PENDING) {
+            "Can only mark pending shipments as in transit"
+        }
+        return copy(
+            status = ShipmentStatus.IN_TRANSIT,
+            trackingNumber = trackingNumber
+        )
+    }
+
+    fun isDelivered(): Boolean = status == ShipmentStatus.DELIVERED
+}
+```
+
+**Anemic model (avoid)**:
+```kotlin
+// ✗ Bad - business logic in service, not domain
+data class Shipment(
+    val id: ShipmentId,
+    var status: ShipmentStatus,
+    var trackingNumber: String?
+)
+
+class ShipmentService {
+    fun markAsInTransit(shipment: Shipment, tracking: String) {
+        if (shipment.status == ShipmentStatus.PENDING) {
+            shipment.status = ShipmentStatus.IN_TRANSIT
+            shipment.trackingNumber = tracking
+        }
+    }
+}
+```

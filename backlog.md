@@ -79,7 +79,7 @@
 
 ---
 
-### - [ ] 6. Architecture Decision Records
+### - [x] 6. Architecture Decision Records
 **Description**: Document all architectural decisions made for the project foundation.
 
 **Acceptance Criteria**:
@@ -107,10 +107,6 @@
 - **ADR-006**: Worldview Pattern for Domain Knowledge
     - Context: Need realistic test data and domain documentation
     - Decision: Implement worldview modules with realistic data
-    - Consequences documented
-- **ADR-007**: Use Kotlin Result for Error Handling
-    - Context: Need consistent error handling without custom exceptions
-    - Decision: Use Kotlin's built-in Result<T> type
     - Consequences documented
 - All ADRs follow consistent format
 - ADRs are referenced in module documentation
