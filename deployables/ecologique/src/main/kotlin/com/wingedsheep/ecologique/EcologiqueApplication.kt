@@ -1,4 +1,4 @@
-package com.entrnce.ecologique
+package com.wingedsheep.ecologique
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
