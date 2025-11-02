@@ -1,25 +1,29 @@
-import org.gradle.api.JavaVersion
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.kotlin
-import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+plugins {
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.plugin.spring")
+}
 
-class KotlinConventions : Plugin<Project> {
-    override fun apply(target: Project) {
-        target.pluginManager.apply("org.jetbrains.kotlin.jvm")
-        target.pluginManager.apply("org.jetbrains.kotlin.plugin.spring")
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 
-        target.tasks.withType<KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = JavaVersion.VERSION_21.toString()
-            }
-        }
+kotlin {
+    jvmToolchain(21)
+}
 
-        target.dependencies {
-            "testImplementation"(kotlin("test"))
-            "testImplementation"("org.springframework.boot:spring-boot-starter-test")
-        }
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs = listOf("-Xjsr305=strict")
+        jvmTarget = "21"
     }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
+dependencies {
+    testImplementation(kotlin("test"))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
