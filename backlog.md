@@ -70,12 +70,12 @@
 **Description**: Create the main Spring Boot application that wires all modules together.
 
 **Acceptance Criteria**:
-- [x] Spring Boot application starts successfully
-- [x] Health check endpoint responds
-- [x] Application connects to PostgreSQL
-- [x] Flyway migrations run on startup
-- [x] Create a just file for common commands
-- [x] Cucumber test infrastructure configured with Testcontainers
+- [ ] Spring Boot application starts successfully
+- [ ] Health check endpoint responds
+- [ ] Application connects to PostgreSQL
+- [ ] Flyway migrations run on startup
+- [ ] Create a just file for common commands
+- [ ] Cucumber test infrastructure configured with Testcontainers
 
 ---
 
