@@ -22,6 +22,7 @@
 **Description**: Create the complete Gradle project structure with build-logic, common modules, and domain module placeholders.
 
 **Acceptance Criteria**:
+- Create gradle project in `deployables/ecologique`
 - Root `settings.gradle.kts` includes all modules
 - `build-logic/` contains reusable Gradle plugins
 - Empty module folders exist for all domains
@@ -38,7 +39,6 @@
 - Workflow runs all tests (unit, integration, cucumber)
 - Workflow fails on test failure or compilation error
 - Build status badge in README
-- Pipeline completes in under 10 minutes
 
 ---
 
@@ -74,7 +74,7 @@
 - Health check endpoint responds
 - Application connects to PostgreSQL
 - Flyway migrations run on startup
-- Can run with `./gradlew bootRun`
+- Create a just file for common commands
 - Cucumber test infrastructure configured with Testcontainers
 
 ---
