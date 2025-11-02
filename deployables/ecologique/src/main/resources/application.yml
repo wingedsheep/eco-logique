@@ -10,3 +10,12 @@ management:
     web:
       exposure:
         include: health,info
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/economique
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: products,users,payment,inventory,shipping

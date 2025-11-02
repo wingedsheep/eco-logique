@@ -72,10 +72,10 @@
 **Acceptance Criteria**:
 - [x] Spring Boot application starts successfully
 - [x] Health check endpoint responds
-- [ ] Application connects to PostgreSQL
-- [ ] Flyway migrations run on startup
+- [x] Application connects to PostgreSQL
+- [x] Flyway migrations run on startup
 - [x] Create a just file for common commands
-- [ ] Cucumber test infrastructure configured with Testcontainers
+- [x] Cucumber test infrastructure configured with Testcontainers
 
 ---
 
