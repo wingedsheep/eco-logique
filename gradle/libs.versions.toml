@@ -1,14 +1,53 @@
 [versions]
-kotlin = "1.9.22"
-spring-boot = "3.2.0"
-dependency-management = "1.1.4"
-jib = "3.4.0"
-sonarqube = "4.4.1.3373"
+kotlin = "2.1.20"
+spring-boot = "3.4.11"
+spring-dependency-management = "1.1.7"
+postgresql = "42.7.4"
+flyway = "11.15.0"
+mockito-kotlin = "5.4.0"
+junit = "5.11.4"
+assertj = "3.27.3"
+testcontainers = "1.21.3"
+awaitility = "4.3.0"
+jackson = "2.18.3"
+
+[libraries]
+# Spring Boot
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc", version.ref = "spring-boot" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+
+# Database
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+# Jackson
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+
+# Testing
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+
+# Gradle plugins (for build-logic)
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
+spring-boot-gradle-plugin = { module = "org.springframework.boot:spring-boot-gradle-plugin", version.ref = "spring-boot" }
+
+[bundles]
+spring-boot = ["spring-boot-starter-web", "spring-boot-starter-data-jdbc", "spring-boot-starter-validation"]
+jackson = ["jackson-module-kotlin"]
+flyway = ["flyway-core", "flyway-database-postgresql"]
+testing = ["junit-jupiter", "mockito-kotlin", "assertj-core", "spring-boot-starter-test"]
+testcontainers = ["testcontainers-postgresql", "testcontainers-junit-jupiter"]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
-spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "dependency-management" }
-jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }
-sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }

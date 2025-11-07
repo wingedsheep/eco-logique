@@ -1,3 +1,4 @@
 plugins {
-    id("economique.kotlin-common")
+    id("economique.kotlin-library")
+    id("economique.test-fixtures")
 }

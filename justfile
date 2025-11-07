@@ -8,7 +8,7 @@ build:
 
 # Run the application
 run:
-    ./gradlew :deployables:ecologique:bootRun
+    ./gradlew :deployables:economique:application:bootRun
 
 # Run tests
 test:

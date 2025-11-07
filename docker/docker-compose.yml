@@ -1,18 +1,24 @@
 version: '3.8'
+
 services:
   postgres:
-    image: postgres:13
+    image: postgres:15-alpine
+    container_name: economique-postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: economique
+      POSTGRES_USER: economique_app
+      POSTGRES_PASSWORD: economique_pass
     ports:
       - "5432:5432"
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres-data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - economique-network
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+volumes:
+  postgres-data:
+
+networks:
+  economique-network:
+    driver: bridge

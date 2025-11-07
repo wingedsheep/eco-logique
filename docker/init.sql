@@ -1,5 +1,0 @@
-CREATE SCHEMA payment;
-CREATE SCHEMA products;
-CREATE SCHEMA shipping;
-CREATE SCHEMA inventory;
-CREATE SCHEMA users;

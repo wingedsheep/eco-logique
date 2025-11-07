@@ -749,7 +749,8 @@ include(
     ":deployables:economique:domain:products:products-impl",
     ":deployables:economique:domain:products:products-worldview",
     
-    ":deployables:economique:domain:shipping:shipping-api",
+    ":deployables:economique:domain:" +
+            "hipping:shipping-api",
     ":deployables:economique:domain:shipping:shipping-impl",
     ":deployables:economique:domain:shipping:shipping-worldview",
     

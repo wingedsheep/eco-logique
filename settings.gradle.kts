@@ -1,46 +1,24 @@
 pluginManagement {
     includeBuild("build-logic")
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
 }
 
-dependencyResolutionManagement {
-    @Suppress("UnstableApiUsage")
-    repositories {
-        mavenCentral()
-    }
-}
+rootProject.name = "economique-root"
 
-rootProject.name = "ecologique"
-
+// Common modules (shared across all deployables)
 include(
     ":common:common-time",
     ":common:common-country",
-    ":common:common-money",
+    ":common:common-money"
+)
 
-    ":deployables:backend:application",
-
-    ":deployables:backend:payment:payment-api",
-    ":deployables:backend:payment:payment-impl",
-    ":deployables:backend:payment:payment-worldview",
-
-    ":deployables:backend:products:products-api",
-    ":deployables:backend:products:products-impl",
-    ":deployables:backend:products:products-worldview",
-
-    ":deployables:backend:shipping:shipping-api",
-    ":deployables:backend:shipping:shipping-impl",
-    ":deployables:backend:shipping:shipping-worldview",
-
-    ":deployables:backend:inventory:inventory-api",
-    ":deployables:backend:inventory:inventory-impl",
-    ":deployables:backend:inventory:inventory-worldview",
-
-    ":deployables:backend:users:users-api",
-    ":deployables:backend:users:users-impl",
-    ":deployables:backend:users:users-worldview",
-
-    ":deployables:backend:test"
+// Economique deployable modules
+include(
+    ":deployables:economique:application",
+    ":deployables:economique:payment",
+    ":deployables:economique:products",
+    ":deployables:economique:shipping",
+    ":deployables:economique:inventory",
+    ":deployables:economique:users",
+    ":deployables:economique:worldview-loader",
+    ":deployables:economique:test"
 )

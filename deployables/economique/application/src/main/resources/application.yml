@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: economique
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/economique
+    username: economique_app
+    password: economique_pass
+    driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    locations:
+      - classpath:db/migration/payment
+      - classpath:db/migration/products
+      - classpath:db/migration/shipping
+      - classpath:db/migration/inventory
+      - classpath:db/migration/users
+
+  jpa:
+    open-in-view: false
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.economique: DEBUG
+    org.springframework.web: INFO
