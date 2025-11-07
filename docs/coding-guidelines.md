@@ -142,6 +142,9 @@ interface ProductRepository {
 }
 
 class ProductService(private val repo: ProductRepository) {
+    fun findProduct(id: ProductId): Product? =
+        repo.findById(id)
+    
     fun getProduct(id: ProductId): Product =
         repo.findById(id) ?: throw ProductNotFound(id)
 }
