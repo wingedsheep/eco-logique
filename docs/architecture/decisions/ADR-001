@@ -14,165 +14,118 @@ We implement a **modular monolith** with strict module boundaries and clear comm
 
 ## Module Structure
 
-Each domain is a Gradle module with three submodules:
+Each module splits its codebase into public contract and internal implementation:
 
 ```
-domain-name/
-├── domain-name-api/        # Interfaces, domain models, events
-├── domain-name-impl/       # Service, REST, persistence
-└── domain-name-worldview/  # Test data
+payment/
+├── api/                    # Public contract (exposed to other modules)
+│   ├── PaymentService.kt
+│   ├── PaymentCompleted.kt
+│   └── PaymentRequest.kt
+├── service/                # Internal implementation
+├── rest/
+└── persistence/
 ```
+
+---
+
+## Public API Pattern
+
+The public API package encapsulates interfaces, DTOs, and events that other modules can access, while keeping implementation details private.
+
+**Public (in `api/` package)**:
+```kotlin
+// payment/api/PaymentService.kt
+interface PaymentService {
+    fun processPayment(request: PaymentRequest): Result<Payment>
+}
+
+// payment/api/PaymentCompleted.kt
+data class PaymentCompleted(
+    val paymentId: PaymentId,
+    val timestamp: Instant
+)
+```
+
+**Internal (outside `api/` package)**:
+```kotlin
+// payment/service/PaymentServiceImpl.kt
+@Service
+internal class PaymentServiceImpl(...) : PaymentService {
+    // Hidden from other modules
+}
+
+// payment/persistence/PaymentEntity.kt
+@Table("payments")
+internal data class PaymentEntity(...)
+```
+
+Other modules depend on interfaces at compile-time, and dependency injection provides implementations at runtime.
 
 ---
 
 ## Dependency Rules
 
-1. **Modules depend only on other modules' `-api`, never `-impl`**
-2. **No circular dependencies** - enforced by Gradle build
-3. **Explicit dependencies in `build.gradle.kts`**
+1. **Modules depend only on other modules' `api/` packages**
+2. **No circular dependencies** - enforced by Gradle
+3. **Implementation stays internal**
 
 ```kotlin
-// shipping-impl/build.gradle.kts
+// shipping/build.gradle.kts
 dependencies {
-    api(project(":domain:shipping:shipping-api"))
-    implementation(project(":domain:products:products-api"))
-    implementation(project(":domain:inventory:inventory-api"))
+    // Only depend on public API
+    implementation(project(":deployables:economique:products"))
+    implementation(project(":deployables:economique:inventory"))
 }
-```
 
-**Module dependency matrix**:
-```
-                 Payment  Products  Shipping  Inventory  Users
-Payment            -        ✗         ✗         ✗         ✗
-Products           ✗        -         ✗         ✗         ✗
-Shipping           ✗        ✓         -         ✓         ✗
-Inventory          ✗        ✓         ✗         -         ✗
-Users              ✗        ✗         ✗         ✗         -
+// shipping can only access products/api/, not products/service/
 ```
 
 ---
 
 ## Data Isolation
 
-1. **Separate PostgreSQL schemas** per module: `payment`, `products`, `shipping`, `inventory`, `users`
-2. **No shared tables** between modules
-3. **No foreign keys** across schemas
-4. **Cross-module data access** only through service APIs
-
-```sql
-CREATE SCHEMA payment;
-CREATE SCHEMA products;
--- etc.
-```
+1. **Separate PostgreSQL schemas** per module
+2. **No shared tables** or foreign keys across schemas
+3. **Cross-module data access** only through public APIs
 
 ---
 
 ## Communication
 
-### Synchronous (Direct Calls)
-Use for immediate consistency.
+### Synchronous
+Direct calls to service interfaces from `api/` package.
 
-```kotlin
-@Service
-class ShippingServiceImpl(
-    private val productService: ProductService  // From products-api
-) : ShippingService {
-    override fun createShipment(productId: ProductId): Result<Shipment> {
-        val product = productService.getProduct(productId).getOrElse {
-            return Result.failure(it)
-        }
-        // Use product details
-    }
-}
-```
-
-### Asynchronous (Events)
-Use for eventual consistency and loose coupling.
-
-```kotlin
-// Publish (payment-impl)
-eventPublisher.publishEvent(PaymentCompleted(paymentId, orderId))
-
-// Listen (shipping-impl)
-@EventListener
-fun onPaymentCompleted(event: PaymentCompleted) {
-    shipmentService.startFulfillment(event.orderId)
-}
-```
-
----
-
-## Implementation Patterns
-
-### API Module
-- Interfaces only, no implementations
-- Domain models with validation
-- Events
-- No Spring annotations
-
-### Implementation Module
-- Service implementations
-- REST controllers in `rest/v1/` or `rest/internal/`
-- Persistence layer with entities marked `internal`
-- Entity mappers in persistence package
-
-### Repository Pattern
-```kotlin
-// Interface returns domain types
-interface ProductRepository {
-    fun findById(id: ProductId): Product?
-    fun save(product: Product): Product
-}
-
-// Implementation uses internal entities
-@Component
-internal class ProductRepositoryImpl(
-    private val jdbc: ProductRepositoryJdbc
-) : ProductRepository {
-    override fun findById(id: ProductId): Product? {
-        return jdbc.findById(id.value).map { it.toProduct() }.orElse(null)
-    }
-}
-
-// Spring Data JDBC is internal
-@Repository
-internal interface ProductRepositoryJdbc : CrudRepository<ProductEntity, String>
-```
+### Asynchronous
+Message contracts (domain events) are the public API in asynchronous scenarios.
 
 ---
 
 ## Deployment
 
-Single Spring Boot application:
+Single Spring Boot application with all module implementations:
 
 ```kotlin
 // application/build.gradle.kts
 dependencies {
-    implementation(project(":domain:payment:payment-impl"))
-    implementation(project(":domain:products:products-impl"))
-    implementation(project(":domain:shipping:shipping-impl"))
-    implementation(project(":domain:inventory:inventory-impl"))
-    implementation(project(":domain:users:users-impl"))
+    implementation(project(":deployables:economique:payment"))
+    implementation(project(":deployables:economique:products"))
 }
 ```
-
-- One deployable artifact
-- Single database with multiple schemas
-- All modules scale together
 
 ---
 
 ## Consequences
 
 ### Positive
+- Clean contracts without implementation details exposed
+- Implementation changes don't affect other modules
+- Explicit, controlled coupling through public APIs
 - Simple deployment and operations
-- Clear module boundaries enforced by build
-- In-process communication (fast)
-- Team autonomy within modules
-- Can extract to microservices later if needed
+- Easy to extract to microservices later
 
 ### Negative
 - All modules scale together
 - Shared database
 - All modules deployed together
-- Requires discipline to respect boundaries
+- Requires discipline to maintain contract stability
