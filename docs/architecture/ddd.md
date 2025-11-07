@@ -4,19 +4,25 @@ A practical guide to strategic and tactical DDD patterns applied to the Economiq
 
 ## Introduction to Domain-Driven Design (DDD)
 
-Domain-Driven Design (DDD) is a software development approach that emphasizes a deep understanding of the business domain. It aims to create a rich, expressive model of the domain that is closely aligned with the business's processes and rules. DDD is divided into two main parts: Strategic Design, which deals with the large-scale structure of the system, and Tactical Design, which focuses on the implementation details of individual components.
+Domain-Driven Design (DDD) is a software development approach that emphasizes a deep understanding of the business
+domain. It aims to create a rich, expressive model of the domain that is closely aligned with the business's processes
+and rules. DDD is divided into two main parts: Strategic Design, which deals with the large-scale structure of the
+system, and Tactical Design, which focuses on the implementation details of individual components.
 
 ## Strategic Design: The Big Picture
 
-Strategic Design is used to define the overall architecture of a system by breaking it down into manageable parts called Bounded Contexts and defining their relationships.
+Strategic Design is used to define the overall architecture of a system by breaking it down into manageable parts called
+Bounded Contexts and defining their relationships.
 
 ### Bounded Context
 
-A Bounded Context is a clear boundary within which a specific domain model applies. Within this boundary, every term has a single, unambiguous meaning.
+A Bounded Context is a clear boundary within which a specific domain model applies. Within this boundary, every term has
+a single, unambiguous meaning.
 
 **Economique Examples:**
 
-* **Products Context**: Models a `Product` with sustainability ratings, carbon footprint, pricing, and categories (clothing, household, electronics, food).
+* **Products Context**: Models a `Product` with sustainability ratings, carbon footprint, pricing, and categories (
+  clothing, household, electronics, food).
   ```kotlin
   data class Product(
       val id: ProductId,
@@ -28,7 +34,8 @@ A Bounded Context is a clear boundary within which a specific domain model appli
   )
   ```
 
-* **Shipping Context**: Models a `Product` only by its weight and dimensions needed for shipping calculations, not its price or sustainability.
+* **Shipping Context**: Models a `Product` only by its weight and dimensions needed for shipping calculations, not its
+  price or sustainability.
   ```kotlin
   // Shipping's view of Product - only cares about physical attributes
   data class ShippableItem(
@@ -48,11 +55,13 @@ A Bounded Context is a clear boundary within which a specific domain model appli
   )
   ```
 
-**Key Insight**: The same real-world concept (`Product`) has different representations in different contexts because each context cares about different aspects.
+**Key Insight**: The same real-world concept (`Product`) has different representations in different contexts because
+each context cares about different aspects.
 
 ### Ubiquitous Language
 
-This is a shared, common language developed by developers and domain experts for a specific Bounded Context. It is used in all project communications and code to eliminate ambiguity.
+This is a shared, common language developed by developers and domain experts for a specific Bounded Context. It is used
+in all project communications and code to eliminate ambiguity.
 
 **Economique Examples:**
 
@@ -83,27 +92,33 @@ This is a shared, common language developed by developers and domain experts for
   data class TrackingNumber(val value: String)
   ```
 
-**Key Insight**: Team members say "The product has an A+ sustainability rating" both in meetings and in code. No translation needed.
+**Key Insight**: Team members say "The product has an A+ sustainability rating" both in meetings and in code. No
+translation needed.
 
 ### Context Map
 
-This is a diagram that shows the relationships and points of integration between different Bounded Contexts. It helps clarify how different parts of the system interact.
+This is a diagram that shows the relationships and points of integration between different Bounded Contexts. It helps
+clarify how different parts of the system interact.
 
 **Economique Context Relationships:**
 
 #### Partnership
+
 Two contexts are interdependent and must collaborate closely.
 
 **Example**: `Products` ⟷ `Inventory`
+
 - Products context defines what can be sold
 - Inventory context tracks what's in stock
 - They must collaborate: can't sell products without inventory, can't stock items that aren't products
 - Both contexts need to be updated when new products are introduced
 
 #### Shared Kernel
+
 Two or more contexts share a common part of the model.
 
 **Example**: All contexts share common value objects:
+
 ```kotlin
 // common-money module
 data class Money(val amount: BigDecimal, val currency: Currency)
@@ -122,14 +137,17 @@ data class DayNL(val date: LocalDate)  // Business day in Netherlands timezone
 These are shared because they represent fundamental business concepts that must be consistent across all contexts.
 
 #### Customer-Supplier
+
 One context (the supplier) provides data or services to another (the customer).
 
 **Example 1**: `Payment` (supplier) → `Shipping` (customer)
+
 - Shipping context consumes `PaymentCompleted` events
 - Shipping only starts fulfillment after payment is confirmed
 - Shipping depends on Payment, but Payment doesn't know about Shipping
 
 **Example 2**: `Products` (supplier) → `Shipping` (customer)
+
 ```kotlin
 // Shipping context depends on Products for weight information
 class ShipmentServiceImpl(
@@ -143,6 +161,7 @@ class ShipmentServiceImpl(
 ```
 
 #### Anti-Corruption Layer (ACL)
+
 A translation layer prevents a downstream context's model from being polluted by an upstream one.
 
 **Example**: Integrating with external PSP (Payment Service Provider)
@@ -160,10 +179,10 @@ internal class PspAdapter(
             amountInCents = (payment.amount.amount * BigDecimal(100)).toInt(),
             currencyCode = payment.amount.currency.name
         )
-        
+
         // Call external system
         val pspResponse = pspClient.createPayment(pspRequest)
-        
+
         // Translate PSP response back to our domain model
         return Result.success(
             payment.copy(
@@ -212,11 +231,13 @@ Shared Kernel (all contexts):
 
 ## Tactical Design: The Building Blocks
 
-Tactical Design provides a set of patterns for building a rich and expressive domain model within a single Bounded Context.
+Tactical Design provides a set of patterns for building a rich and expressive domain model within a single Bounded
+Context.
 
 ### Entity
 
-An object defined by its unique identity, which remains constant throughout its lifecycle, rather than by its attributes.
+An object defined by its unique identity, which remains constant throughout its lifecycle, rather than by its
+attributes.
 
 **Economique Examples:**
 
@@ -263,13 +284,15 @@ data class Shipment(
 ```
 
 **Key Characteristics**:
+
 - Has a unique identifier (ProductId, UserId, ShipmentId)
 - Identity remains constant even when attributes change
 - Tracked throughout its lifecycle
 
 ### Value Object
 
-An immutable object defined by its attributes rather than a unique identity. To change a value object, you create a new one with the desired attributes.
+An immutable object defined by its attributes rather than a unique identity. To change a value object, you create a new
+one with the desired attributes.
 
 **Economique Examples:**
 
@@ -282,7 +305,7 @@ data class Money(
     init {
         require(amount >= BigDecimal.ZERO) { "Amount cannot be negative" }
     }
-    
+
     operator fun plus(other: Money): Money {
         require(currency == other.currency) { "Cannot add different currencies" }
         return Money(amount + other.amount, currency)
@@ -313,7 +336,7 @@ data class Weight(
     init {
         require(grams > 0) { "Weight must be positive" }
     }
-    
+
     fun toKilograms(): BigDecimal =
         BigDecimal(grams).divide(BigDecimal(1000), 3, RoundingMode.HALF_UP)
 }
@@ -338,6 +361,7 @@ value class ProductId(val value: String) {
 ```
 
 **Key Characteristics**:
+
 - No unique identifier
 - Immutable
 - Defined by its attributes
@@ -346,7 +370,8 @@ value class ProductId(val value: String) {
 
 ### Aggregate
 
-A cluster of related entities and value objects that are treated as a single unit for data changes. It has a single entry point, the Aggregate Root, which enforces the consistency of the objects within the aggregate.
+A cluster of related entities and value objects that are treated as a single unit for data changes. It has a single
+entry point, the Aggregate Root, which enforces the consistency of the objects within the aggregate.
 
 **Economique Examples:**
 
@@ -367,23 +392,23 @@ data class Order(
     fun addItem(productId: ProductId, quantity: Int, price: Money): Order {
         require(status == OrderStatus.DRAFT) { "Cannot modify confirmed order" }
         require(quantity > 0) { "Quantity must be positive" }
-        
+
         val newItem = OrderItem(productId, quantity, price)
         return copy(
             items = items + newItem,
             totalPrice = calculateTotal(items + newItem)
         )
     }
-    
+
     fun confirm(): Order {
         require(status == OrderStatus.DRAFT) { "Order already confirmed" }
         require(items.isNotEmpty()) { "Cannot confirm empty order" }
         return copy(status = OrderStatus.CONFIRMED)
     }
-    
+
     private fun calculateTotal(items: List<OrderItem>): Money =
-        items.fold(Money(BigDecimal.ZERO, EUR)) { acc, item -> 
-            acc + (item.unitPrice * item.quantity) 
+        items.fold(Money(BigDecimal.ZERO, EUR)) { acc, item ->
+            acc + (item.unitPrice * item.quantity)
         }
 }
 
@@ -396,6 +421,7 @@ data class OrderItem(
 ```
 
 **Consistency Rules Enforced**:
+
 - Can't add items to confirmed orders
 - Can't confirm empty orders
 - Total price always matches sum of items
@@ -418,7 +444,7 @@ data class Product(
         require(name.isNotBlank()) { "Product name cannot be blank" }
         require(price.amount > BigDecimal.ZERO) { "Price must be positive" }
     }
-    
+
     fun updateSustainabilityData(
         rating: SustainabilityRating,
         footprint: CarbonFootprint
@@ -432,13 +458,15 @@ data class Product(
 ```
 
 **Key Rules**:
+
 - External references point to aggregate root only (Order, not OrderItem)
 - Consistency boundaries match transaction boundaries
 - One aggregate per transaction (don't modify Order and Product in same transaction)
 
 ### Repository
 
-Provides an interface for storing and retrieving aggregate roots, abstracting the details of data persistence. It gives the illusion of an in-memory collection of domain objects.
+Provides an interface for storing and retrieving aggregate roots, abstracting the details of data persistence. It gives
+the illusion of an in-memory collection of domain objects.
 
 **Economique Examples:**
 
@@ -460,13 +488,13 @@ internal class ProductRepositoryImpl(
         val entity = product.toProductEntity()
         return jdbc.save(entity).toProduct()
     }
-    
+
     override fun findById(id: ProductId): Product? {
         return jdbc.findById(id.value)
             .map { it.toProduct() }
             .orElse(null)
     }
-    
+
     override fun findByCategory(category: ProductCategory): List<Product> {
         return jdbc.findByCategoryCode(category.name)
             .map { it.toProduct() }
@@ -489,6 +517,7 @@ interface InventoryRepository {
 ```
 
 **Key Points**:
+
 - Repository interface returns domain objects, not database entities
 - Named after aggregates (ProductRepository, not ProductEntityRepository)
 - Abstracts persistence technology (could be SQL, NoSQL, in-memory)
@@ -496,7 +525,8 @@ interface InventoryRepository {
 
 ### Domain Service
 
-Encapsulates domain logic that doesn't naturally fit within an entity or value object. These are typically stateless operations.
+Encapsulates domain logic that doesn't naturally fit within an entity or value object. These are typically stateless
+operations.
 
 **Economique Examples:**
 
@@ -512,25 +542,26 @@ class ShippingCostCalculator(
         destination: Country
     ): Result<Money> = runCatching {
         val product = productService.getProduct(productId).getOrThrow()
-        
+
         val baseRate = when (product.weight.toKilograms()) {
             in BigDecimal.ZERO..BigDecimal.ONE -> Money(BigDecimal("3.50"), EUR)
             in BigDecimal.ONE..BigDecimal("5.0") -> Money(BigDecimal("6.50"), EUR)
             else -> Money(BigDecimal("12.00"), EUR)
         }
-        
+
         val destinationMultiplier = if (destination == Country.NETHERLANDS) {
             BigDecimal.ONE
         } else {
             BigDecimal("1.5")
         }
-        
+
         Money(baseRate.amount * destinationMultiplier, EUR)
     }
 }
 ```
 
-**Why Domain Service**: Shipping cost depends on both Product (weight) and Country (destination). It doesn't belong in Product (Product shouldn't know about shipping) or Country (Country is just an enum).
+**Why Domain Service**: Shipping cost depends on both Product (weight) and Country (destination). It doesn't belong in
+Product (Product shouldn't know about shipping) or Country (Country is just an enum).
 
 #### Example 2: Sustainability Rating Calculation
 
@@ -547,7 +578,7 @@ class SustainabilityRatingService {
             ProductCategory.ELECTRONICS -> BigDecimal("5.0")
             ProductCategory.FOOD -> BigDecimal("0.5")
         }
-        
+
         return when {
             carbonFootprint.kgCo2 <= threshold * BigDecimal("0.4") -> SustainabilityRating.A_PLUS
             carbonFootprint.kgCo2 <= threshold * BigDecimal("0.7") -> SustainabilityRating.A
@@ -571,17 +602,17 @@ class PaymentProcessingService(
     fun processPayment(paymentId: PaymentId): Result<Payment> = runCatching {
         val payment = paymentRepository.findById(paymentId)
             ?: throw IllegalArgumentException("Payment not found")
-        
+
         check(payment.status == PaymentStatus.PENDING) {
             "Payment already processed"
         }
-        
+
         // Interact with external PSP
         val processedPayment = pspAdapter.processPayment(payment).getOrThrow()
-        
+
         // Save updated payment
         val savedPayment = paymentRepository.save(processedPayment)
-        
+
         // Publish domain event if successful
         if (savedPayment.status == PaymentStatus.COMPLETED) {
             eventPublisher.publish(
@@ -593,17 +624,19 @@ class PaymentProcessingService(
                 )
             )
         }
-        
+
         savedPayment
     }
 }
 ```
 
-**Why Domain Service**: Payment processing orchestrates multiple operations (validation, external call, persistence, event publishing) and coordinates between payment and PSP domains.
+**Why Domain Service**: Payment processing orchestrates multiple operations (validation, external call, persistence,
+event publishing) and coordinates between payment and PSP domains.
 
 ### Domain Event
 
-Represents something significant that has happened in the domain. Aggregates can publish events when their state changes, allowing other parts of the system to react in a loosely coupled way.
+Represents something significant that has happened in the domain. Aggregates can publish events when their state
+changes, allowing other parts of the system to react in a loosely coupled way.
 
 **Economique Examples:**
 
@@ -672,9 +705,9 @@ class ProductServiceImpl(
             price = price,
             // ... other fields
         )
-        
+
         val savedProduct = productRepository.save(product)
-        
+
         // Publish event
         eventPublisher.publish(
             ProductCreated(
@@ -684,7 +717,7 @@ class ProductServiceImpl(
                 timestamp = Instant.now()
             )
         )
-        
+
         savedProduct
     }
 }
@@ -699,14 +732,14 @@ class PaymentCompletedListener(
     private val shipmentService: ShipmentService
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-    
+
     @EventListener
     fun onPaymentCompleted(event: PaymentCompleted) {
         logger.info(
             "Payment completed for order ${event.orderId.value}, " +
-            "starting fulfillment"
+                    "starting fulfillment"
         )
-        
+
         shipmentService.startFulfillment(event.orderId)
             .onFailure { error ->
                 logger.error(
@@ -754,6 +787,7 @@ class ProductCreatedListener(
 ```
 
 **Benefits**:
+
 - **Decoupling**: Payment doesn't know about Shipping or Inventory
 - **Scalability**: Can move event processing to queues (RabbitMQ, Kafka)
 - **Auditability**: Events provide history of what happened
@@ -797,6 +831,7 @@ products-impl/
 ```
 
 **Key Principles**:
+
 - Domain models (`products-api`) have no infrastructure dependencies
 - Mappers prevent infrastructure concerns from leaking into domain
 - Entities (database) ≠ Entities (domain)
