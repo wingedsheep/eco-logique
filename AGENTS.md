@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Eco-nomique** is a modular monolith e-commerce application for eco-friendly products, built with Kotlin, Spring Boot, and Domain-Driven Design principles.
+**Eco-logique** is a modular monolith e-commerce application for eco-friendly products, built with Kotlin, Spring Boot, and Domain-Driven Design principles.
 
 ---
 
@@ -36,12 +36,12 @@ All ADRs in `docs/architecture/decisions/`:
 ## Project Structure
 
 ```
-economique/
+ecologique/
 ├── common/                      # Shared domain primitives
 │   ├── common-money/
 │   ├── common-country/
 │   └── common-time/
-├── deployables/economique/
+├── deployables/ecologique/
 │   ├── application/             # Spring Boot app (wires everything)
 │   ├── domain/
 │   │   ├── payment/

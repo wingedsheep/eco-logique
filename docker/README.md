@@ -31,6 +31,6 @@ You can connect to the PostgreSQL database from your host machine using the foll
 - **Port**: `5432`
 - **Username**: `user`
 - **Password**: `password`
-- **Database**: `economique`
+- **Database**: `ecologique`
 
 The RabbitMQ management interface is available at `http://localhost:15672`.
