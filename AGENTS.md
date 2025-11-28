@@ -28,6 +28,7 @@ All ADRs in `docs/architecture/decisions/`:
 - [ADR-004: Mappers in Persistence Layer](docs/architecture/decisions/ADR-004.md)
 - [ADR-005: Event-Driven Communication](docs/architecture/decisions/ADR-005.md)
 - [ADR-006: Worldview Pattern](docs/architecture/decisions/ADR-006.md)
+- [ADR-007: Feature File Tests Strategy](docs/architecture/decisions/ADR-007.md)
 
 ---
 
