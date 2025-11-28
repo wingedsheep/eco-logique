@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 rootProject.name = "ecologique"
 
 include("deployables:backend")
+include("common:common-money")
+include("common:common-country")
