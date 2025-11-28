@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "ecologique"
 
 include("deployables:backend")
+include("common:common-time")
