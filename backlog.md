@@ -58,8 +58,8 @@
 **Description**: Implement shared domain primitives used across all modules.
 
 **Acceptance Criteria**:
-- [ ] `common-money`: Money value object with currency
-- [ ] `common-country`: Country enum with ISO codes
+- [x] `common-money`: Money value object with currency
+- [x] `common-country`: Country enum with ISO codes
 - [ ] `common-time`: DayNL with timezone handling
 - [ ] Unit tests for all common types
 - [ ] All common modules compile independently
