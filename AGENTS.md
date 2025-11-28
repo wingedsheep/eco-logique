@@ -11,7 +11,7 @@
 ### Architecture
 - **Style**: Modular Monolith with DDD
 - **Modules**: Payment, Products, Shipping, Inventory, Users
-- **Structure**: Each module has `-api`, `-impl`, `-worldview` submodules
+- **Structure**: Each module has `-api` and `-impl` submodules
 - **Communication**: Synchronous (direct calls) + Asynchronous (events)
 - **Database**: PostgreSQL with separate schemas per module
 
@@ -41,13 +41,12 @@ economique/
 │   ├── common-money/
 │   ├── common-country/
 │   └── common-time/
-├── deployables/economique/
+├── deployables/backend/
 │   ├── application/             # Spring Boot app (wires everything)
 │   ├── domain/
 │   │   ├── payment/
 │   │   │   ├── payment-api/
-│   │   │   ├── payment-impl/
-│   │   │   └── payment-worldview/
+│   │   │   └── payment-impl/
 │   │   ├── products/
 │   │   ├── shipping/
 │   │   ├── inventory/
@@ -106,16 +105,16 @@ See backlog item template - each module needs:
 6. Entities in `-impl/persistence/` (marked `internal`)
 7. Entity mappers in `-impl/persistence/` (marked `internal`)
 8. Flyway migration in `application/src/main/resources/db/migration/{module}/`
-9. Worldview data in `-worldview`
+9. Test fixtures (Worldview data) in `testFixtures` source set
 10. Tests (unit, integration, Cucumber)
 
 ### Testing Strategy
 - **Unit tests**: Service logic with mocked dependencies
 - **Integration tests**: Repository with real database (Testcontainers)
-- **Cucumber tests**: E2E workflows using worldview data by name
+- **Cucumber tests**: E2E workflows using worldview data (from fixtures) by name
 
 ### Worldview Pattern
-- Realistic domain data as code (e.g., `WorldviewProduct.organicCottonTShirt`)
+- Realistic domain data as code (e.g., `WorldviewProduct.organicCottonTShirt`) in test fixtures.
 - Used for testing, documentation, and local dev
 - Reference by name in Cucumber: `Given the product "Organic Cotton T-Shirt" exists`
 
