@@ -1,4 +1,4 @@
-package com.economique.common.time
+package com.ecologique.common.time
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

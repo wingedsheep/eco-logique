@@ -1,4 +1,4 @@
-package com.economique.common.country
+package com.ecologique.common.country
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

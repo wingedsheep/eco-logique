@@ -46,7 +46,7 @@ cd docker && docker-compose up -d
 PostgreSQL is available at:
 - Host: localhost
 - Port: 5432
-- Database: economique
+- Database: ecologique
 - Username: user
 - Password: password
 

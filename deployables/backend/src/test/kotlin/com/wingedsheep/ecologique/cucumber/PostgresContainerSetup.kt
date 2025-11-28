@@ -11,7 +11,7 @@ abstract class PostgresContainerSetup {
     companion object {
         @Container
         private val postgresContainer = PostgreSQLContainer("postgres:14-alpine").apply {
-            withDatabaseName("economique")
+            withDatabaseName("ecologique")
             withUsername("user")
             withPassword("password")
         }

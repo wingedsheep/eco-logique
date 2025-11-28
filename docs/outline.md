@@ -57,7 +57,7 @@ Infrastructure → Application → Domain
 ## Project Structure
 
 ```
-economique/
+ecologique/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml
@@ -73,9 +73,9 @@ economique/
 ├── build-logic/
 │   ├── settings.gradle.kts
 │   └── src/main/kotlin/
-│       ├── economique.kotlin-common.gradle.kts
-│       ├── economique.spring-boot.gradle.kts
-│       └── economique.testing.gradle.kts
+│       ├── ecologique.kotlin-common.gradle.kts
+│       ├── ecologique.spring-boot.gradle.kts
+│       └── ecologique.testing.gradle.kts
 ├── docker/
 │   ├── docker-compose.yml      # postgres, rabbitmq, etc.
 │   └── init/
@@ -85,7 +85,7 @@ economique/
 │   ├── common-country/
 │   └── common-money/
 └── deployables/
-    └── economique/
+    └── ecologique/
         ├── application/
         ├── domain/
         │   ├── payment/
@@ -181,7 +181,7 @@ products-impl/
 
 **Package structure**:
 ```kotlin
-com.economique.products
+com.ecologique.products
 ├── service        // Business logic implementation
 ├── rest.v1        // Customer-facing REST APIs
 ├── rest.internal  // Operator-facing REST APIs
@@ -292,7 +292,7 @@ Users              ✗        ✗         ✗         ✗         -
 
 **Example**:
 ```kotlin
-// products-impl/src/main/kotlin/com/economique/products/rest/v1/ProductRequestMappers.kt
+// products-impl/src/main/kotlin/com/ecologique/products/rest/v1/ProductRequestMappers.kt
 
 fun ProductCreateRequest.toProduct(): Product {
     return Product(
@@ -323,7 +323,7 @@ fun Product.toProductResponseV1(): ProductResponseV1 {
 
 **Example**:
 ```kotlin
-// products-impl/src/main/kotlin/com/economique/products/persistence/ProductEntityMappers.kt
+// products-impl/src/main/kotlin/com/ecologique/products/persistence/ProductEntityMappers.kt
 
 internal fun ProductEntity.toProduct(): Product {
     return Product(
@@ -359,7 +359,7 @@ internal fun Product.toProductEntity(): ProductEntity {
 ### Repository Implementation Example
 
 ```kotlin
-// products-impl/src/main/kotlin/com/economique/products/persistence/ProductRepository.kt
+// products-impl/src/main/kotlin/com/ecologique/products/persistence/ProductRepository.kt
 interface ProductRepository {
     fun save(product: Product): Product
     fun findById(id: ProductId): Product?
@@ -367,13 +367,13 @@ interface ProductRepository {
     fun findByCategory(category: ProductCategory): List<Product>
 }
 
-// products-impl/src/main/kotlin/com/economique/products/persistence/ProductRepositoryJdbc.kt
+// products-impl/src/main/kotlin/com/ecologique/products/persistence/ProductRepositoryJdbc.kt
 @Repository
 internal interface ProductRepositoryJdbc : CrudRepository<ProductEntity, String> {
     fun findByCategoryCode(categoryCode: String): List<ProductEntity>
 }
 
-// products-impl/src/main/kotlin/com/economique/products/persistence/ProductRepositoryImpl.kt
+// products-impl/src/main/kotlin/com/ecologique/products/persistence/ProductRepositoryImpl.kt
 @Component
 internal class ProductRepositoryImpl(
     private val jdbc: ProductRepositoryJdbc
@@ -493,8 +493,8 @@ The `application` module wires everything together.
 ```
 application/
 ├── src/main/kotlin/
-│   └── com/economique/
-│       ├── EconomiqueApplication.kt     # Main Spring Boot app
+│   └── com/ecologique/
+│       ├── EcologiqueApplication.kt     # Main Spring Boot app
 │       ├── config/
 │       │   ├── DataSourceConfig.kt      # Separate schemas per module
 │       │   ├── EventBusConfig.kt        # RabbitMQ/internal events
@@ -706,8 +706,8 @@ CREATE SCHEMA shipping;
 CREATE SCHEMA inventory;
 CREATE SCHEMA users;
 
-GRANT ALL ON SCHEMA payment TO economique_app;
-GRANT ALL ON SCHEMA products TO economique_app;
+GRANT ALL ON SCHEMA payment TO ecologique_app;
+GRANT ALL ON SCHEMA products TO ecologique_app;
 -- ...
 ```
 
@@ -732,36 +732,36 @@ spring:
 ### Root `settings.gradle.kts`
 
 ```kotlin
-rootProject.name = "economique"
+rootProject.name = "ecologique"
 
 include(
     ":common:common-time",
     ":common:common-country",
     ":common:common-money",
     
-    ":deployables:economique:application",
+    ":deployables:ecologique:application",
     
-    ":deployables:economique:domain:payment:payment-api",
-    ":deployables:economique:domain:payment:payment-impl",
-    ":deployables:economique:domain:payment:payment-worldview",
+    ":deployables:ecologique:domain:payment:payment-api",
+    ":deployables:ecologique:domain:payment:payment-impl",
+    ":deployables:ecologique:domain:payment:payment-worldview",
     
-    ":deployables:economique:domain:products:products-api",
-    ":deployables:economique:domain:products:products-impl",
-    ":deployables:economique:domain:products:products-worldview",
+    ":deployables:ecologique:domain:products:products-api",
+    ":deployables:ecologique:domain:products:products-impl",
+    ":deployables:ecologique:domain:products:products-worldview",
     
-    ":deployables:economique:domain:shipping:shipping-api",
-    ":deployables:economique:domain:shipping:shipping-impl",
-    ":deployables:economique:domain:shipping:shipping-worldview",
+    ":deployables:ecologique:domain:shipping:shipping-api",
+    ":deployables:ecologique:domain:shipping:shipping-impl",
+    ":deployables:ecologique:domain:shipping:shipping-worldview",
     
-    ":deployables:economique:domain:inventory:inventory-api",
-    ":deployables:economique:domain:inventory:inventory-impl",
-    ":deployables:economique:domain:inventory:inventory-worldview",
+    ":deployables:ecologique:domain:inventory:inventory-api",
+    ":deployables:ecologique:domain:inventory:inventory-impl",
+    ":deployables:ecologique:domain:inventory:inventory-worldview",
     
-    ":deployables:economique:domain:users:users-api",
-    ":deployables:economique:domain:users:users-impl",
-    ":deployables:economique:domain:users:users-worldview",
+    ":deployables:ecologique:domain:users:users-api",
+    ":deployables:ecologique:domain:users:users-impl",
+    ":deployables:ecologique:domain:users:users-worldview",
     
-    ":deployables:economique:test"
+    ":deployables:ecologique:test"
 )
 ```
 
@@ -771,7 +771,7 @@ include(
 ```kotlin
 // products-api/build.gradle.kts
 plugins {
-    id("economique.kotlin-common")
+    id("ecologique.kotlin-common")
 }
 
 dependencies {
@@ -784,12 +784,12 @@ dependencies {
 ```kotlin
 // products-impl/build.gradle.kts
 plugins {
-    id("economique.kotlin-common")
-    id("economique.spring-boot")
+    id("ecologique.kotlin-common")
+    id("ecologique.spring-boot")
 }
 
 dependencies {
-    api(project(":deployables:economique:domain:products:products-api"))
+    api(project(":deployables:ecologique:domain:products:products-api"))
     
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
@@ -801,11 +801,11 @@ dependencies {
 ```kotlin
 // products-worldview/build.gradle.kts
 plugins {
-    id("economique.kotlin-common")
+    id("ecologique.kotlin-common")
 }
 
 dependencies {
-    api(project(":deployables:economique:domain:products:products-api"))
+    api(project(":deployables:ecologique:domain:products:products-api"))
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
 }
 ```

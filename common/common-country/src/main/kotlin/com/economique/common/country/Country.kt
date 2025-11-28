@@ -1,4 +1,4 @@
-package com.economique.common.country
+package com.ecologique.common.country
 
 enum class Country(val iso2: String) {
     NETHERLANDS("NL"),

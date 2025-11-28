@@ -1,4 +1,4 @@
-package com.economique.common.money
+package com.ecologique.common.money
 
 import java.math.BigDecimal
 

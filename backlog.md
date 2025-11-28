@@ -1,4 +1,4 @@
-# Eco-nomique Backlog
+# Eco-logique Backlog
 
 ## Progress Overview
 

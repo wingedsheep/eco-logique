@@ -2,7 +2,7 @@ spring:
   application:
     name: ecologique
   datasource:
-    url: jdbc:postgresql://localhost:5432/economique
+    url: jdbc:postgresql://localhost:5432/ecologique
     username: user
     password: password
     driver-class-name: org.postgresql.Driver

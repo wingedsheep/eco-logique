@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Eco-nomique** is a modular monolith e-commerce application for eco-friendly products, built with Kotlin, Spring Boot, and Domain-Driven Design principles.
+**Eco-logique** is a modular monolith e-commerce application for eco-friendly products, built with Kotlin, Spring Boot, and Domain-Driven Design principles.
 
 ---
 
@@ -11,7 +11,7 @@
 ### Architecture
 - **Style**: Modular Monolith with DDD
 - **Modules**: Payment, Products, Shipping, Inventory, Users
-- **Structure**: Each module has `-api`, `-impl`, `-worldview` submodules
+- **Structure**: Each module has `-api`, `-impl` submodules
 - **Communication**: Synchronous (direct calls) + Asynchronous (events)
 - **Database**: PostgreSQL with separate schemas per module
 
@@ -31,40 +31,10 @@ All ADRs in `docs/architecture/decisions/`:
 - [ADR-007: Feature File Tests Strategy](docs/architecture/decisions/ADR-007.md)
 - [ADR-009: Hexagonal Module Architecture](docs/architecture/decisions/ADR-009.md)
 
----
-
-## Project Structure
-
-```
-economique/
-├── common/                      # Shared domain primitives
-│   ├── common-money/
-│   ├── common-country/
-│   └── common-time/
-├── deployables/economique/
-│   ├── application/             # Spring Boot app (wires everything)
-│   ├── domain/
-│   │   ├── payment/
-│   │   │   ├── payment-api/
-│   │   │   ├── payment-impl/
-│   │   │   └── payment-worldview/
-│   │   ├── products/
-│   │   ├── shipping/
-│   │   ├── inventory/
-│   │   └── users/
-│   └── test/                    # Cucumber E2E tests
-├── docker/                      # Local dev environment
-└── docs/                        # All documentation
-```
-
----
-
 ## Critical Rules
 
 ### Module Dependencies
 - Modules depend **only on other modules' `-api`**, never `-impl`
-- No circular dependencies (enforced by Gradle)
-- Dependency matrix documented in ADR-001
 
 ### Data Isolation
 - Each module owns its PostgreSQL schema exclusively
@@ -72,14 +42,12 @@ economique/
 - Cross-module data access **only through service APIs**
 
 ### Mappers
-- **Entity mappers**: In `persistence/` package, marked `internal`
-- **Request/Response mappers**: In `rest/` package
+- Mappers are in outer layers following Clean Architecture
 - Entities **never leak** outside persistence layer
 
 ### Error Handling
-- Use Kotlin's `Result<T>` for recoverable errors
+- Use `Result<T, E>` for recoverable errors
 - Use `require`/`check` for preconditions/invariants
-- Avoid custom exception types
 
 ### Naming
 - **Taxonomic**: Generic to specific (`ProductInventoryRepository`, not `InventoryProductRepository`)

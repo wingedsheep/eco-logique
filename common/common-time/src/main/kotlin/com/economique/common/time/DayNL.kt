@@ -1,4 +1,4 @@
-package com.economique.common.time
+package com.ecologique.common.time
 
 import java.time.LocalDate
 import java.time.ZoneId
