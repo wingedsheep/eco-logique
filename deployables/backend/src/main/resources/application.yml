@@ -9,6 +9,8 @@ spring:
   flyway:
     enabled: true
     schemas: products,users,payment,inventory,shipping
+    locations:
+      - classpath:db/migration/products
 
 server:
   port: 8080
@@ -18,3 +20,10 @@ management:
     web:
       exposure:
         include: health,info
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
