@@ -7,21 +7,22 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 
 @Testcontainers
-abstract class PostgresContainerSetup {
+open class PostgresContainerSetup {
+
     companion object {
         @Container
-        private val postgresContainer = PostgreSQLContainer("postgres:14-alpine").apply {
-            withDatabaseName("ecologique")
-            withUsername("user")
-            withPassword("password")
-        }
+        val postgres = PostgreSQLContainer("postgres:14-alpine")
+            .withDatabaseName("ecologique")
+            .withUsername("user")
+            .withPassword("password")
+            .withInitScript("init-schemas.sql")
 
         @JvmStatic
         @DynamicPropertySource
         fun setDatasourceProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url", postgresContainer::getJdbcUrl)
-            registry.add("spring.datasource.username", postgresContainer::getUsername)
-            registry.add("spring.datasource.password", postgresContainer::getPassword)
+            registry.add("spring.datasource.url", postgres::getJdbcUrl)
+            registry.add("spring.datasource.username", postgres::getUsername)
+            registry.add("spring.datasource.password", postgres::getPassword)
         }
     }
 }

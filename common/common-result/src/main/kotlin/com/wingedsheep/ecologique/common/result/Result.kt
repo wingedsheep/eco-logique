@@ -1,4 +1,4 @@
-package com.economique.common.result
+package com.wingedsheep.ecologique.common.result
 
 sealed class Result<out T, out E> {
     data class Ok<out T>(val value: T) : Result<T, Nothing>()
