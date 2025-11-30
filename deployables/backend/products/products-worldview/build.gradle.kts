@@ -10,7 +10,7 @@ dependencyManagement {
 }
 
 dependencies {
-    api(project(":products:products-api"))
+    api(project(":deployables:backend:products:products-api"))
     implementation(project(":common:common-money"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
