@@ -16,8 +16,8 @@ class WorldviewProductDataLoader(
 
     @PostConstruct
     fun loadWorldviewData() {
-        if (activeProfile.contains("prod")) {
-            logger.info("Production profile active, skipping worldview product data")
+        if (activeProfile.contains("prod") || activeProfile.contains("test")) {
+            logger.info("Skipping worldview product data for profile: $activeProfile")
             return
         }
 

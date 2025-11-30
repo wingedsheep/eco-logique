@@ -20,7 +20,7 @@ internal fun ProductEntity.toProduct(): Product = Product(
     carbonFootprint = CarbonFootprint(carbonFootprintKg)
 )
 
-internal fun Product.toProductEntity(): ProductEntity = ProductEntity(
+internal fun Product.toEntity(): ProductEntity = ProductEntity(
     id = id.value,
     name = name,
     description = description,

@@ -1,8 +1,13 @@
 package com.wingedsheep.ecologique.cucumber
 
-import io.cucumber.junit.platform.engine.Cucumber
-import org.springframework.boot.test.context.SpringBootTest
+import org.junit.platform.suite.api.ConfigurationParameter
+import org.junit.platform.suite.api.IncludeEngines
+import org.junit.platform.suite.api.SelectClasspathResource
+import org.junit.platform.suite.api.Suite
 
-@Cucumber
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class CucumberTest : PostgresContainerSetup()
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features")
+@ConfigurationParameter(key = "cucumber.glue", value = "com.wingedsheep.ecologique.cucumber")
+@ConfigurationParameter(key = "cucumber.plugin", value = "pretty, html:build/reports/cucumber/cucumber.html")
+class CucumberTest

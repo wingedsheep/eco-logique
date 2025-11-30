@@ -174,7 +174,9 @@ class ProductSteps {
 
     @When("I list products in category {string}")
     fun listProductsInCategory(category: String) {
-        response = RestAssured.get("?category=$category")
+        response = RestAssured.given()
+            .queryParam("category", category)
+            .get()
     }
 
     @Then("I should receive {int} product")

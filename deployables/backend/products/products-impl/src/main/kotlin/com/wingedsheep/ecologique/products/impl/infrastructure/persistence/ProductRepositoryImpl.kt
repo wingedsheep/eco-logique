@@ -12,7 +12,10 @@ internal class ProductRepositoryImpl(
 ) : ProductRepository {
 
     override fun save(product: Product): Product {
-        val entity = product.toProductEntity()
+        val entity = product.toEntity()
+        if (jdbc.existsById(product.id.value)) {
+            entity.markAsExisting()
+        }
         return jdbc.save(entity).toProduct()
     }
 
@@ -27,8 +30,7 @@ internal class ProductRepositoryImpl(
     }
 
     override fun findByCategory(category: ProductCategory): List<Product> {
-        return jdbc.findByCategoryCode(category.name)
-            .map { it.toProduct() }
+        return jdbc.findByCategoryCode(category.name).map { it.toProduct() }
     }
 
     override fun findAll(): List<Product> {

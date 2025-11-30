@@ -8,9 +8,10 @@ spring:
     driver-class-name: org.postgresql.Driver
   flyway:
     enabled: true
-    schemas: products,users,payment,inventory,shipping
+    schemas: products
     locations:
       - classpath:db/migration/products
+    create-schemas: true
 
 server:
   port: 8080
