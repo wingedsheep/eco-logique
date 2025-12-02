@@ -2,7 +2,7 @@
 
 **Status**: Accepted
 **Date**: 2024-05-23
-**Related ADRs**: [ADR-008: Error Handling in REST Endpoints](https://www.google.com/search?q=%23)
+**Related ADRs**: [ADR-008: Error Handling in REST Endpoints](ADR-008-error-handling-in-rest-endpoints.md)
 
 -----
 

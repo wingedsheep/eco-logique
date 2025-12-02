@@ -22,14 +22,15 @@
 
 ### Architecture Decisions
 All ADRs in `docs/architecture/decisions/`:
-- [ADR-001: Modular Monolith](docs/architecture/decisions/ADR-001.md)
-- [ADR-002: Domain-Driven Design](docs/architecture/decisions/ADR-002.md)
-- [ADR-003: Separate Database Schemas](docs/architecture/decisions/ADR-003.md)
-- [ADR-004: Mappers in Persistence Layer](docs/architecture/decisions/ADR-004.md)
-- [ADR-005: Event-Driven Communication](docs/architecture/decisions/ADR-005.md)
-- [ADR-006: Worldview Pattern](docs/architecture/decisions/ADR-006.md)
-- [ADR-007: Feature File Tests Strategy](docs/architecture/decisions/ADR-007.md)
-- [ADR-009: Hexagonal Module Architecture](docs/architecture/decisions/ADR-009.md)
+- [ADR-001: Modular Monolith](docs/architecture/decisions/ADR-001-modular-monolith-architecture.md)
+- [ADR-002: Domain-Driven Design](docs/architecture/decisions/ADR-002-domain-driven-design.md)
+- [ADR-003: Separate Database Schemas](docs/architecture/decisions/ADR-003-separate-database-schemas.md)
+- [ADR-004: Mappers in Persistence Layer](docs/architecture/decisions/ADR-004-mappers-in-persistence-layer.md)
+- [ADR-005: Event-Driven Communication](docs/architecture/decisions/ADR-005-event-driven-communication.md)
+- [ADR-006: Worldview Pattern](docs/architecture/decisions/ADR-006-worldview-pattern.md)
+- [ADR-007: Feature File Tests Strategy](docs/architecture/decisions/ADR-007-feature-file-tests-strategy.md)
+- [ADR-008: Error Handling in REST Endpoints](docs/architecture/decisions/ADR-008-error-handling-in-rest-endpoints.md)
+- [ADR-009: Hexagonal Module Architecture](docs/architecture/decisions/ADR-009-hexagonal-module-architecture.md)
 
 ## Critical Rules
 

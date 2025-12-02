@@ -6,7 +6,7 @@
 
 **Updated**: 2024-11-05
 
-**Related ADRs**: [ADR-001: Modular Monolith](ADR-001.md), [ADR-002: Domain-Driven Design](ADR-002.md)
+**Related ADRs**: [ADR-001: Modular Monolith](ADR-001-modular-monolith-architecture.md), [ADR-002: Domain-Driven Design](ADR-002-domain-driven-design.md)
 
 ---
 
