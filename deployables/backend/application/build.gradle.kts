@@ -1,7 +1,7 @@
 plugins {
     id("kotlin-conventions")
-    id("org.springframework.boot") version "3.2.0"
-    id("io.spring.dependency-management") version "1.1.4"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
     application
 }
 
@@ -12,26 +12,26 @@ dependencies {
     implementation(project(":products:products-impl"))
     implementation(project(":products:products-worldview"))
 
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.data.jdbc)
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+    implementation(libs.springdoc.openapi)
 
-    implementation("org.flywaydb:flyway-core")
-    runtimeOnly("org.postgresql:postgresql")
+    implementation(libs.flyway.core)
+    runtimeOnly(libs.postgresql)
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.kotlin.reflect)
 
-    testImplementation("io.cucumber:cucumber-java:7.14.0")
-    testImplementation("io.cucumber:cucumber-junit-platform-engine:7.14.0")
-    testImplementation("io.cucumber:cucumber-spring:7.14.0")
-    testImplementation("org.junit.platform:junit-platform-suite:1.10.1")
-    testImplementation("org.testcontainers:postgresql:1.19.1")
-    testImplementation("org.testcontainers:junit-jupiter:1.19.1")
-    testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("io.rest-assured:rest-assured:5.4.0")
+    testImplementation(libs.cucumber.java)
+    testImplementation(libs.cucumber.junit.platform)
+    testImplementation(libs.cucumber.spring)
+    testImplementation(libs.junit.platform.suite)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.junit)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.rest.assured)
     testImplementation(testFixtures(project(":products:products-api")))
 }
 

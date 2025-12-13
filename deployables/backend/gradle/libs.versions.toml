@@ -5,6 +5,51 @@ dependency-management = "1.1.4"
 jib = "3.4.0"
 sonarqube = "4.4.1.3373"
 
+# Test dependencies
+cucumber = "7.14.0"
+testcontainers = "1.19.1"
+junit-platform = "1.10.1"
+assertj = "3.24.2"
+mockito-kotlin = "5.2.1"
+rest-assured = "5.4.0"
+
+# Other
+springdoc = "2.3.0"
+
+[libraries]
+# Spring Boot starters (managed by BOM, no version needed in usage)
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+
+# Spring (managed by BOM)
+spring-context = { module = "org.springframework:spring-context" }
+
+# Database
+postgresql = { module = "org.postgresql:postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core" }
+
+# Jackson
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+
+# Kotlin
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
+
+# SpringDoc
+springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# Test dependencies
+cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber" }
+cucumber-junit-platform = { module = "io.cucumber:cucumber-junit-platform-engine", version.ref = "cucumber" }
+cucumber-spring = { module = "io.cucumber:cucumber-spring", version.ref = "cucumber" }
+junit-platform-suite = { module = "org.junit.platform:junit-platform-suite", version.ref = "junit-platform" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }
+
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
