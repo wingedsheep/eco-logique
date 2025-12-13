@@ -1,22 +1,24 @@
+# justfile
+
 # List all available commands
 default:
     @just --list
 
 # Build the project
 build:
-    ./gradlew build
+    cd deployables/backend && ./gradlew build
 
 # Run the application
 run:
-    ./gradlew :deployables:ecologique:bootRun
+    cd deployables/backend && ./gradlew :application:bootRun
 
 # Run tests
 test:
-    ./gradlew test
+    cd deployables/backend && ./gradlew test
 
 # Clean build artifacts
 clean:
-    ./gradlew clean
+    cd deployables/backend && ./gradlew clean
 
 # Start Docker services
 docker-up:

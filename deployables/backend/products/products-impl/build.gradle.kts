@@ -11,7 +11,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation(project(":deployables:backend:products:products-api"))
+    implementation(project(":products:products-api"))
     implementation(project(":common:common-money"))
     implementation(project(":common:common-result"))
 
@@ -21,7 +21,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-    testImplementation(testFixtures(project(":deployables:backend:products:products-api")))
+    testImplementation(testFixtures(project(":products:products-api")))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("org.assertj:assertj-core:3.24.2")

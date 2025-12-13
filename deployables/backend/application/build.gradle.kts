@@ -9,8 +9,8 @@ group = "com.wingedsheep"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
-    implementation(project(":deployables:backend:products:products-impl"))
-    implementation(project(":deployables:backend:products:products-worldview"))
+    implementation(project(":products:products-impl"))
+    implementation(project(":products:products-worldview"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -32,7 +32,7 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.19.1")
     testImplementation("org.assertj:assertj-core:3.24.2")
     testImplementation("io.rest-assured:rest-assured:5.4.0")
-    testImplementation(testFixtures(project(":deployables:backend:products:products-api")))
+    testImplementation(testFixtures(project(":products:products-api")))
 }
 
 application {
