@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: deployables/backend
+
     steps:
       - uses: actions/checkout@v4
 
@@ -45,5 +49,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: '**/build/reports/tests/'
+          path: 'deployables/backend/**/build/reports/tests/'
           retention-days: 7
