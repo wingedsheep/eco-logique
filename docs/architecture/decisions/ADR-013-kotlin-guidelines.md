@@ -25,20 +25,48 @@ maintainable code.
 | Packages              | lowercase, no underscores | `com.example.products`               |
 | Type Parameters       | Single uppercase letter   | `T`, `R`, `E`                        |
 
-### Taxonomic Naming
+### Naming Priority
 
-Name from generic to specific:
+**1. Ubiquitous Language First**
+
+Use the terminology that domain experts use. If the business says "Smart Meter Allocation", name it
+`SmartMeterAllocation`:
 
 ```kotlin
-// ✓ Good - Generic to specific
-ProductRepository
-ProductServiceImpl
-AllocationSmartMeterIsp
+// ✓ Good - Matches domain language
+class SmartMeterAllocation
+class InvoiceLineItem
+class ShippingLabel
+class BalanceResponsibleParty
 
-// ✗ Bad - Specific to generic
-RepositoryProduct
-IspSmartMeterAllocation
+// ✗ Bad - Forced taxonomic structure that doesn't match domain
+class AllocationSmartMeter
+class ItemLineInvoice
+class LabelShipping
 ```
+
+**2. Taxonomic Naming for Technical Concerns**
+
+For infrastructure and technical components without strong domain terminology, taxonomic naming (generic to specific)
+helps with discoverability and sorting:
+
+```kotlin
+// ✓ Good - Technical components benefit from grouping
+ProductRepository
+ProductRepositoryImpl
+ProductRepositoryJdbc
+ProductController
+ProductControllerV1
+
+// Exception handlers, configurations, etc.
+ExceptionHandlerGlobal
+ConfigurationSecurity
+```
+
+**3. When in Doubt**
+
+Ask: "How would a domain expert refer to this?" If there's a natural term, use it. If it's purely technical
+infrastructure, taxonomic naming can help organize code.
 
 ### Method Naming
 
@@ -457,7 +485,7 @@ Use trailing commas in multi-line declarations:
 data class Product(
     val id: ProductId,
     val name: String,
-    val price: Money, // Trailing comma
+    val price: Money,
 )
 ```
 
