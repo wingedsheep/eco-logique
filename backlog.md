@@ -37,16 +37,16 @@
 * **Description**: Integrate Keycloak and secure APIs with JWT.
 * **Deliverables**:
 
-  * [ ] Add Keycloak to Docker Compose (dev realm + client config).
-  * [ ] Spring Security integration (Resource Server JWT).
-  * [ ] Roles (demo-level): `ROLE_CUSTOMER`, `ROLE_ADMIN`.
-  * [ ] Protect endpoints:
+  * [x] Add Keycloak to Docker Compose (dev realm + client config).
+  * [x] Spring Security integration (Resource Server JWT).
+  * [x] Roles (demo-level): `ROLE_CUSTOMER`, `ROLE_ADMIN`.
+  * [x] Protect endpoints:
 
-    * [ ] Public: health + product catalog read (`GET /products`, `GET /products/{id}`)
-    * [ ] Authenticated customer: cart/checkout/orders/users
-    * [ ] Admin (optional): product write endpoints
-  * [ ] Swagger/OpenAPI configured with Bearer auth.
-  * [ ] Seed demo users in Keycloak (e.g., `john@demo.com`, `jane@demo.com`) + roles.
+    * [x] Public: health + product catalog read (`GET /products`, `GET /products/{id}`)
+    * [x] Authenticated customer: cart/checkout/orders/users
+    * [x] Admin (optional): product write endpoints
+  * [x] Swagger/OpenAPI configured with Bearer auth.
+  * [x] Seed demo users in Keycloak (e.g., `john@demo.com`, `jane@demo.com`) + roles.
 
 ---
 

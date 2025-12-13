@@ -12,6 +12,12 @@ spring:
     locations:
       - classpath:db/migration/products
     create-schemas: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/ecologique
+          jwk-set-uri: http://localhost:8180/realms/ecologique/protocol/openid-connect/certs
 
 server:
   port: 8080

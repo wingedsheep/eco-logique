@@ -3,6 +3,8 @@ package com.wingedsheep.ecologique.cucumber
 import com.wingedsheep.ecologique.EcologiqueApplication
 import io.cucumber.spring.CucumberContextConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
@@ -15,6 +17,9 @@ import org.testcontainers.junit.jupiter.Testcontainers
 )
 @Testcontainers
 class CucumberSpringConfiguration {
+
+    @MockBean
+    lateinit var jwtDecoder: JwtDecoder
 
     companion object {
         private val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:14-alpine")
