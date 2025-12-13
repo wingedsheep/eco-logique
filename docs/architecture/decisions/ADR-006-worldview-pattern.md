@@ -4,7 +4,7 @@
 
 **Date**: 2024-11-02
 
-**Updated**: 2024-11-05
+**Updated**: 2025-11-30
 
 **Related ADRs**: [ADR-001: Modular Monolith](ADR-001-modular-monolith-architecture.md), [ADR-002: Domain-Driven Design](ADR-002-domain-driven-design.md)
 
@@ -12,129 +12,106 @@
 
 ## Decision
 
-Each module contains **realistic domain data as code** in its `-impl` test fixtures. This serves as test data, living documentation, and shared domain vocabulary.
+Each module contains **realistic domain data as code** in test fixtures. This serves as test data, living documentation, and shared domain vocabulary.
 
 ---
 
 ## Structure
 
-Worldview objects and builders live in `-impl/src/testFixtures`:
+Worldview lives in `-impl/src/testFixtures` alongside builders:
 
 ```
-products-impl/
-├── src/
-│   ├── main/kotlin/
-│   │   └── domain/model/
-│   │       ├── Product.kt           # internal
-│   │       ├── ProductId.kt         # internal
-│   │       └── Money.kt             # internal
-│   └── testFixtures/kotlin/
-│       └── com/example/products/
-│           ├── WorldviewProduct.kt  # Realistic product instances
-│           └── ProductBuilder.kt    # Test data builders
+products/
+├── products-api/
+│   └── src/testFixtures/          # Builders for public DTOs
+└── products-impl/
+    ├── src/main/kotlin/           # Implementation
+    └── src/testFixtures/kotlin/   # Worldview + domain builders
+        └── com/example/products/
+            ├── WorldviewProduct.kt    # Realistic product instances
+            └── ProductBuilder.kt      # Test data builders
 ```
 
-**Dependencies**: Test fixtures can access internal types from the same module.
+**Dependencies**:
 
 ```kotlin
 // products-impl/build.gradle.kts
-plugins {
-    `java-test-fixtures`
+dependencies {
+    testFixturesApi(project(":products:products-api"))
+    testFixturesApi(testFixtures(project(":products:products-api")))
 }
 
+// Other modules can use worldview data in their tests
+// orders-impl/build.gradle.kts
 dependencies {
-    // Test fixtures can use internal domain types from main
-    testFixturesImplementation(project(":domain:products:products-impl"))
-}
-```
-
-Other modules consume test fixtures in test scope:
-
-```kotlin
-// shipping-impl/build.gradle.kts
-dependencies {
-    testImplementation(testFixtures(project(":domain:products:products-impl")))
-    testImplementation(testFixtures(project(":domain:inventory:inventory-impl")))
+    testImplementation(testFixtures(project(":products:products-impl")))
 }
 ```
 
 ---
 
+## Design Trade-offs
+
+### Why Test Fixtures (Not a Separate Module)
+
+| Aspect | Test Fixtures in `-impl` | Separate `-worldview` Module |
+|--------|--------------------------|------------------------------|
+| Access to internal types | ✓ Yes (can use domain entities) | ✗ No (uses public DTOs only) |
+| Data loading | Direct repository access | Through public API |
+| Simplicity | ✓ No extra module | ✗ Additional module to maintain |
+| Local development | Requires loader configuration | Easy to include/exclude |
+| Test data colocation | ✓ Builders and worldview together | Spread across modules |
+
+**Rationale**: Keeping worldview in test fixtures allows direct use of domain types, keeps builders and worldview data together, and avoids module proliferation.
+
+---
+
 ## Worldview Objects
 
-Define realistic, named instances of domain concepts:
+Define realistic, named instances using domain types:
 
 ```kotlin
 // products-impl/src/testFixtures/kotlin/.../WorldviewProduct.kt
 object WorldviewProduct {
-    val organicCottonTShirt = Product(
-        id = ProductId("PROD-001"),
-        name = "Organic Cotton T-Shirt",
+
+    val organicCottonTShirt = buildProduct(
+        name = ProductName("Organic Cotton T-Shirt"),
+        description = "Soft, breathable t-shirt made from 100% organic cotton. GOTS certified.",
         category = ProductCategory.CLOTHING,
-        price = Money(BigDecimal("29.99"), EUR),
-        weight = Weight(150, GRAMS),
+        price = Money(BigDecimal("29.99"), Currency.EUR),
+        weight = Weight.grams(150),
         sustainabilityRating = SustainabilityRating.A_PLUS,
-        carbonFootprint = CarbonFootprint(BigDecimal("2.1"), KG_CO2)
+        carbonFootprint = CarbonFootprint.kg(BigDecimal("2.1"))
     )
 
-    val bambooToothbrush = Product(
-        id = ProductId("PROD-002"),
-        name = "Bamboo Toothbrush Set (4 pack)",
-        category = ProductCategory.HOUSEHOLD,
-        price = Money(BigDecimal("12.50"), EUR),
-        weight = Weight(80, GRAMS),
+    val bambooToothbrushSet = buildProduct(
+        name = ProductName("Bamboo Toothbrush Set (4 pack)"),
+        description = "Eco-friendly bamboo toothbrushes with soft BPA-free bristles.",
+        category = ProductCategory.PERSONAL_CARE,
+        price = Money(BigDecimal("12.50"), Currency.EUR),
+        weight = Weight.grams(80),
         sustainabilityRating = SustainabilityRating.A,
-        carbonFootprint = CarbonFootprint(BigDecimal("0.4"), KG_CO2)
+        carbonFootprint = CarbonFootprint.kg(BigDecimal("0.4"))
     )
 
-    val solarPoweredCharger = Product(
-        id = ProductId("PROD-003"),
-        name = "Solar Powered Phone Charger",
+    val solarPoweredCharger = buildProduct(
+        name = ProductName("Solar Powered Phone Charger"),
+        description = "Portable solar charger with 10000mAh battery. Waterproof and durable.",
         category = ProductCategory.ELECTRONICS,
-        price = Money(BigDecimal("45.00"), EUR),
-        weight = Weight(300, GRAMS),
-        sustainabilityRating = SustainabilityRating.A_PLUS,
-        carbonFootprint = CarbonFootprint(BigDecimal("3.2"), KG_CO2)
-    )
-
-    val reusableWaterBottle = Product(
-        id = ProductId("PROD-004"),
-        name = "Stainless Steel Water Bottle 750ml",
-        category = ProductCategory.HOUSEHOLD,
-        price = Money(BigDecimal("18.99"), EUR),
-        weight = Weight(250, GRAMS),
+        price = Money(BigDecimal("45.00"), Currency.EUR),
+        weight = Weight.grams(300),
         sustainabilityRating = SustainabilityRating.A,
-        carbonFootprint = CarbonFootprint(BigDecimal("1.8"), KG_CO2)
-    )
-}
-```
-
-```kotlin
-// users-impl/src/testFixtures/kotlin/.../WorldviewUser.kt
-object WorldviewUser {
-    val johnDoe = User(
-        id = UserId("USER-001"),
-        email = "john.doe@example.com",
-        name = "John Doe",
-        address = Address(
-            street = "Prinsengracht 263",
-            city = "Amsterdam",
-            postalCode = "1016HV",
-            country = Country.NETHERLANDS
-        )
+        carbonFootprint = CarbonFootprint.kg(BigDecimal("3.2"))
     )
 
-    val hansMuller = User(
-        id = UserId("USER-002"),
-        email = "hans.mueller@example.de",
-        name = "Hans Müller",
-        address = Address(
-            street = "Hauptstraße 42",
-            city = "Berlin",
-            postalCode = "10115",
-            country = Country.GERMANY
-        )
+    val allProducts = listOf(
+        organicCottonTShirt,
+        bambooToothbrushSet,
+        solarPoweredCharger
     )
+
+    fun findByName(name: String): Product? =
+        allProducts.find { it.name.value == name }
 }
 ```
 
@@ -142,108 +119,29 @@ object WorldviewUser {
 
 ## Builder Functions
 
-Provide builders with sensible defaults:
+Builders live alongside worldview in test fixtures:
 
 ```kotlin
 // products-impl/src/testFixtures/kotlin/.../ProductBuilder.kt
 fun buildProduct(
-    id: ProductId = ProductId("PROD-TEST-${UUID.randomUUID()}"),
-    name: String = "Test Product",
+    id: ProductId = ProductId.generate(),
+    name: ProductName = ProductName("Test Eco Product"),
+    description: String = "A sustainable test product",
     category: ProductCategory = ProductCategory.HOUSEHOLD,
-    price: Money = Money(BigDecimal("19.99"), EUR),
-    weight: Weight = Weight(100, GRAMS),
+    price: Money = Money(BigDecimal("19.99"), Currency.EUR),
+    weight: Weight = Weight.grams(100),
     sustainabilityRating: SustainabilityRating = SustainabilityRating.B,
-    carbonFootprint: CarbonFootprint = CarbonFootprint(BigDecimal("1.5"), KG_CO2)
-): Product = Product(id, name, category, price, weight, sustainabilityRating, carbonFootprint)
-```
-
-```kotlin
-// inventory-impl/src/testFixtures/kotlin/.../InventoryItemBuilder.kt
-fun buildInventoryItem(
-    productId: ProductId = WorldviewProduct.organicCottonTShirt.id,
-    warehouseId: WarehouseId = WorldviewWarehouse.amsterdam.id,
-    quantity: Quantity = Quantity(100)
-): InventoryItem = InventoryItem(productId, warehouseId, quantity)
-```
-
----
-
-## Worldview Data Loader
-
-For local development and integration tests, the `application` module loads worldview data on startup. Since domain types are internal, insertion goes through repositories (which the application module wires together):
-
-```kotlin
-// application/src/main/kotlin/worldview/WorldviewDataLoader.kt
-@Component
-@Profile("!prod")
-class WorldviewDataLoader(
-    private val productRepository: ProductRepository,
-    private val userRepository: UserRepository,
-    private val inventoryRepository: InventoryRepository
-) {
-    private val logger = LoggerFactory.getLogger(javaClass)
-
-    @EventListener(ApplicationReadyEvent::class)
-    fun loadWorldviewData() {
-        logger.info("Loading worldview data...")
-        loadProducts()
-        loadUsers()
-        loadInventory()
-        logger.info("Worldview data loaded successfully")
-    }
-
-    private fun loadProducts() {
-        listOf(
-            WorldviewProduct.organicCottonTShirt,
-            WorldviewProduct.bambooToothbrush,
-            WorldviewProduct.solarPoweredCharger,
-            WorldviewProduct.reusableWaterBottle
-        ).forEach { product ->
-            productRepository.save(product)
-        }
-    }
-
-    private fun loadUsers() {
-        listOf(
-            WorldviewUser.johnDoe,
-            WorldviewUser.hansMuller
-        ).forEach { user ->
-            userRepository.save(user)
-        }
-    }
-
-    private fun loadInventory() {
-        listOf(
-            buildInventoryItem(
-                productId = WorldviewProduct.organicCottonTShirt.id,
-                quantity = Quantity(50)
-            ),
-            buildInventoryItem(
-                productId = WorldviewProduct.bambooToothbrush.id,
-                quantity = Quantity(100)
-            )
-        ).forEach { item ->
-            inventoryRepository.save(item)
-        }
-    }
-}
-```
-
-The application module includes test fixtures as a runtime dependency for local development:
-
-```kotlin
-// application/build.gradle.kts
-dependencies {
-    // Production dependencies
-    implementation(project(":domain:products:products-impl"))
-    implementation(project(":domain:users:users-impl"))
-    implementation(project(":domain:inventory:inventory-impl"))
-    
-    // Worldview for local development (non-prod profiles)
-    runtimeOnly(testFixtures(project(":domain:products:products-impl")))
-    runtimeOnly(testFixtures(project(":domain:users:users-impl")))
-    runtimeOnly(testFixtures(project(":domain:inventory:inventory-impl")))
-}
+    carbonFootprint: CarbonFootprint = CarbonFootprint.kg(BigDecimal("1.5"))
+): Product = Product(
+    id = id,
+    name = name,
+    description = description,
+    category = category,
+    price = price,
+    weight = weight,
+    sustainabilityRating = sustainabilityRating,
+    carbonFootprint = carbonFootprint
+)
 ```
 
 ---
@@ -252,43 +150,40 @@ dependencies {
 
 ### Unit Tests
 
-Reference worldview data for realistic assertions:
+Use builders directly:
 
 ```kotlin
 @Test
-fun `calculateShippingCost should apply correct rate for heavy products`() {
-    // Given
-    val product = WorldviewProduct.solarPoweredCharger  // 300g
-
-    // When
-    val cost = shippingService.calculateCost(product.weight)
-
-    // Then
-    assertThat(cost.amount).isGreaterThan(BigDecimal("5.00"))
+fun `calculateShippingCost should apply correct rate`() {
+    val product = buildProduct(
+        weight = Weight.grams(300),
+        category = ProductCategory.ELECTRONICS
+    )
+    // ...
 }
 ```
 
 ### Integration Tests
 
-Use builders based on worldview:
+Use worldview for realistic data:
 
 ```kotlin
 @SpringBootTest
-class ProductRepositoryIntegrationTest {
+class ProductServiceIntegrationTest {
+
+    @Autowired
+    private lateinit var productRepository: ProductRepository
 
     @Test
-    fun `save should persist product`() {
+    fun `should calculate correct sustainability rating for electronics`() {
         // Given
-        val product = buildProduct(
-            name = "Test Eco Bag",
-            category = ProductCategory.HOUSEHOLD
-        )
+        productRepository.save(WorldviewProduct.solarPoweredCharger)
 
         // When
-        val saved = productRepository.save(product)
+        val result = productService.findByCategory(ProductCategory.ELECTRONICS)
 
         // Then
-        assertThat(saved.id).isNotNull()
+        assertThat(result).containsExactly(WorldviewProduct.solarPoweredCharger)
     }
 }
 ```
@@ -298,38 +193,22 @@ class ProductRepositoryIntegrationTest {
 Reference worldview by name:
 
 ```gherkin
-# checkout.feature
 Feature: Checkout Flow
 
   Scenario: Customer orders eco-product
     Given the product "Organic Cotton T-Shirt" exists
-    And the customer "John Doe" is logged in
-    When the customer places an order for 2 "Organic Cotton T-Shirt"
-    And the payment completes successfully
-    Then a shipment should be created
-    And inventory should be reduced by 2
+    When the customer places an order
+    Then the order should contain "Organic Cotton T-Shirt"
 ```
 
 ```kotlin
-// CheckoutSteps.kt
+// ProductSteps.kt
 @Given("the product {string} exists")
 fun productExists(productName: String) {
-    val product = when (productName) {
-        "Organic Cotton T-Shirt" -> WorldviewProduct.organicCottonTShirt
-        "Bamboo Toothbrush Set (4 pack)" -> WorldviewProduct.bambooToothbrush
-        else -> throw IllegalArgumentException("Unknown product: $productName")
-    }
-    productRepository.save(product)
-}
+    val product = WorldviewProduct.findByName(productName)
+        ?: throw IllegalArgumentException("Unknown worldview product: $productName")
 
-@Given("the customer {string} is logged in")
-fun customerLoggedIn(customerName: String) {
-    val user = when (customerName) {
-        "John Doe" -> WorldviewUser.johnDoe
-        "Hans Müller" -> WorldviewUser.hansMuller
-        else -> throw IllegalArgumentException("Unknown user: $customerName")
-    }
-    userRepository.save(user)
+    productRepository.save(product)
 }
 ```
 
@@ -343,17 +222,17 @@ Use actual product names, weights, prices:
 
 ```kotlin
 // ✓ Good - Realistic
-val organicCottonTShirt = Product(
-    name = "Organic Cotton T-Shirt",
-    weight = Weight(150, GRAMS),
-    price = Money(BigDecimal("29.99"), EUR)
+val organicCottonTShirt = buildProduct(
+    name = ProductName("Organic Cotton T-Shirt"),
+    weight = Weight.grams(150),
+    price = Money(BigDecimal("29.99"), Currency.EUR)
 )
 
 // ✗ Bad - Generic
-val productA = Product(
-    name = "Product A",
-    weight = Weight(100, GRAMS),
-    price = Money(BigDecimal("10.00"), EUR)
+val productA = buildProduct(
+    name = ProductName("Product A"),
+    weight = Weight.grams(100),
+    price = Money(BigDecimal("10.00"), Currency.EUR)
 )
 ```
 
@@ -363,42 +242,30 @@ Include boundary conditions:
 
 ```kotlin
 object WorldviewProduct {
-    // Very light product
-    val paperStraw = Product(
-        weight = Weight(5, GRAMS),  // Minimum weight
-        ...
-    )
+    // Very light product (minimum shipping weight considerations)
+    val paperStraw = buildProduct(weight = Weight.grams(5))
 
-    // Very heavy product
-    val solarPanel = Product(
-        weight = Weight(22500, GRAMS),  // 22.5kg
-        ...
-    )
+    // Very heavy product (special handling required)
+    val solarPanel = buildProduct(weight = Weight.grams(22500))
 
-    // High value triggers special handling
-    val premiumSolarKit = Product(
-        price = Money(BigDecimal("999.99"), EUR),
-        ...
-    )
+    // High value (triggers insurance requirements)
+    val premiumSolarKit = buildProduct(price = Money(BigDecimal("999.99"), Currency.EUR))
 }
 ```
 
-### Keep IDs Stable
+### Document with Names
 
-Worldview IDs should never change:
+Worldview object names should be self-explanatory:
 
 ```kotlin
-// ✓ Good - Stable, predictable IDs
-val organicCottonTShirt = Product(
-    id = ProductId("PROD-001"),  // Always PROD-001
-    ...
-)
+// ✓ Good - Descriptive names
+WorldviewProduct.organicCottonTShirt
+WorldviewUser.johnDoeNetherlands
+WorldviewWarehouse.amsterdamFulfillmentCenter
 
-// ✗ Bad - Random IDs
-val organicCottonTShirt = Product(
-    id = ProductId.generate(),  // Different every time
-    ...
-)
+// ✗ Bad - Generic names
+WorldviewProduct.product1
+WorldviewUser.testUser
 ```
 
 ---
@@ -408,38 +275,29 @@ val organicCottonTShirt = Product(
 New team members can browse worldview to understand the domain:
 
 ```kotlin
-// products-impl testFixtures show what products look like
-WorldviewProduct.organicCottonTShirt  // Real name, weight, price
+// Products show what eco-products look like
+WorldviewProduct.organicCottonTShirt
 
-// inventory-impl testFixtures show warehouse structure
-object WorldviewWarehouse {
-    val amsterdam = Warehouse(
-        id = WarehouseId("WH-NL-001"),
-        name = "Amsterdam Fulfillment Center",
-        country = Country.NETHERLANDS
+// Users show customer personas
+object WorldviewUser {
+    val johnDoeNetherlands = buildUser(
+        name = UserName("John Doe"),
+        email = Email("john.doe@example.com"),
+        country = Country.NL
     )
 
-    val berlin = Warehouse(
-        id = WarehouseId("WH-DE-001"),
-        name = "Berlin Fulfillment Center",
-        country = Country.GERMANY
+    val hansMullerGermany = buildUser(
+        name = UserName("Hans Müller"),
+        email = Email("hans.mueller@example.de"),
+        country = Country.DE
     )
 }
 
-// Scenarios show realistic workflows
-object WorldviewScenario {
-    val localDeliveryNL = Scenario(
-        customer = WorldviewUser.johnDoe,  // Lives in NL
-        product = WorldviewProduct.organicCottonTShirt,
-        warehouse = WorldviewWarehouse.amsterdam,  // Ships from NL
-        expectedShippingCost = Money(BigDecimal("3.50"), EUR)
-    )
-
-    val crossBorderDelivery = Scenario(
-        customer = WorldviewUser.hansMuller,  // Lives in DE
-        product = WorldviewProduct.bambooToothbrush,
-        warehouse = WorldviewWarehouse.amsterdam,  // Ships from NL
-        expectedShippingCost = Money(BigDecimal("5.99"), EUR)
+// Warehouses show fulfillment structure
+object WorldviewWarehouse {
+    val amsterdam = buildWarehouse(
+        name = WarehouseName("Amsterdam Fulfillment Center"),
+        country = Country.NL
     )
 }
 ```
@@ -451,31 +309,26 @@ object WorldviewScenario {
 ### Positive
 
 - Shared vocabulary across team
-- Realistic test data catches bugs
+- Realistic data catches integration issues
 - Living documentation (can't drift from code)
 - New developers learn domain quickly
-- Consistent test data across all tests
-- Easy manual testing via loaded data
-- Uses standard Gradle test fixtures plugin
-- Domain types stay internal to `-impl`
-- No additional submodules to maintain
+- Direct access to domain types (more expressive)
+- Builders and worldview colocated
+- No extra modules to maintain
 
 ### Negative
 
-- Test fixtures depend on `-impl` (acceptable for test scope)
 - Need to keep worldview data updated
-- Can grow large over time
-- Temptation to use in production (prevented by `@Profile("!prod")`)
-- Application module needs `runtimeOnly` dependency on test fixtures for local dev
+- Duplicate worldview objects if same data needed in multiple modules
+- Test fixtures dependency chain can grow
 
 ---
 
 ## Best Practices
 
-1. **Name worldview objects clearly**: `organicCottonTShirt`, not `product1`
-2. **Use realistic values**: actual weights, prices, names
-3. **Keep IDs stable**: tests depend on them
-4. **Cover edge cases**: heavy/light, expensive/cheap
-5. **Document scenarios**: explain why each worldview object exists
-6. **Load only in dev/test**: use `@Profile("!prod")`
-7. **Reference by name in Cucumber**: "Organic Cotton T-Shirt", not IDs
+1. **Use realistic values**: actual weights, prices, names from the domain
+2. **Cover edge cases**: heavy/light, expensive/cheap, cross-border scenarios
+3. **Document with names**: `organicCottonTShirt`, not `product1`
+4. **Reference by name in Cucumber**: "Organic Cotton T-Shirt", not by ID
+5. **Keep builders and worldview together**: both in `-impl/src/testFixtures`
+6. **Use domain types**: leverage the expressiveness of internal types

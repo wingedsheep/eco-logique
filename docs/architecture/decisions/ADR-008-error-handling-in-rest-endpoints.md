@@ -1,4 +1,4 @@
-# ADR-008: Error Handling in REST Endpoints
+# ADR-008: Error Handling
 
 **Status**: Accepted
 
@@ -44,11 +44,11 @@ The Controller acts as the translation layer between the Domain and HTTP.
 
 *   **Calls** the service/use case.
 *   **Matches** on the `Result`.
-*   **On Success**: Returns `ResponseEntity` with the DTO.
-*   **On Failure (Domain Error)**: Maps the specific domain error to the appropriate HTTP status and Problem detail.
+*   **On Success**: Returns typed `ResponseEntity<T>` with the DTO.
+*   **On Failure (Domain Error)**: Throws `ResponseStatusException` which Spring converts to Problem Details.
 
 ### 4. Error Response Structure (RFC 7807 Problem Details)
-All error responses must follow the [RFC 7807](https://tools.ietf.org/html/rfc7807) standard (Problem Details for HTTP APIs) using Spring Boot 3's `ProblemDetail` class.
+All error responses follow the [RFC 7807](https://tools.ietf.org/html/rfc7807) standard. Spring Boot 3 automatically converts `ResponseStatusException` to Problem Details format.
 
 *   `type`: URI reference that identifies the problem type.
 *   `title`: Short, human-readable summary of the problem type.
@@ -60,44 +60,42 @@ All error responses must follow the [RFC 7807](https://tools.ietf.org/html/rfc78
 
 **Domain Layer**:
 ```kotlin
-sealed class CreateOrderError {
-    data object OutOfStock : CreateOrderError()
-    data class InvalidAddress(val reason: String) : CreateOrderError()
+sealed class OrderCreateError {
+    data object OutOfStock : OrderCreateError()
+    data class InvalidAddress(val reason: String) : OrderCreateError()
 }
 
 interface OrderService {
-    fun createOrder(order: Order): Result<Order, CreateOrderError>
+    fun createOrder(order: Order): Result<Order, OrderCreateError>
 }
 ```
 
 **Controller Layer**:
 ```kotlin
 @PostMapping
-fun createOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<Any> {
+fun createOrder(@RequestBody request: OrderCreateRequest): ResponseEntity<OrderResponse> {
     return orderService.createOrder(request.toDomain())
         .fold(
-            onSuccess = { order -> ResponseEntity.ok(order.toDto()) },
-            onFailure = { error ->
-                val problemDetail = when (error) {
-                    is CreateOrderError.OutOfStock -> ProblemDetail.forStatusAndDetail(
-                        HttpStatus.CONFLICT,
-                        "The requested product is out of stock."
-                    ).apply {
-                        type = URI.create("urn:problem:order:out-of-stock")
-                        title = "Out of Stock"
-                    }
-                    is CreateOrderError.InvalidAddress -> ProblemDetail.forStatusAndDetail(
-                        HttpStatus.BAD_REQUEST,
-                        error.reason
-                    ).apply {
-                        type = URI.create("urn:problem:order:invalid-address")
-                        title = "Invalid Address"
-                    }
-                }
-                ResponseEntity.status(problemDetail.status).body(problemDetail)
-            }
+            onSuccess = { order -> ResponseEntity.ok(order.toResponse()) },
+            onFailure = { error -> throw error.toResponseStatusException() }
         )
 }
+```
+
+**Error Mapper** (in the REST layer, alongside the controller):
+```kotlin
+// rest/v1/OrderCreateErrorMappers.kt
+fun OrderCreateError.toResponseStatusException(): ResponseStatusException =
+    when (this) {
+        is OrderCreateError.OutOfStock -> ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "The requested product is out of stock."
+        )
+        is OrderCreateError.InvalidAddress -> ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            reason
+        )
+    }
 ```
 
 ---
@@ -105,11 +103,12 @@ fun createOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<Any> {
 ## Consequences
 
 ### Positive
-*   **Type-safety**: The compiler enforces handling of all known domain errors.
+*   **Type-safety**: The compiler enforces handling of all known domain errors. Controllers return typed `ResponseEntity<T>`.
 *   **Separation of Concerns**: The domain layer remains pure, while the controller handles HTTP specifics.
-*   **Standardization**: Clients receive consistent error responses (Problem JSON).
+*   **Standardization**: Clients receive consistent error responses (Problem JSON) via Spring's built-in handling.
 *   **Predictability**: No "magic" exception throwing for control flow in business logic.
+*   **Simplicity**: `ResponseStatusException` leverages Spring's native Problem Details support.
 
 ### Negative
-*   **Boilerplate**: Controllers must explicitly map every domain error, leading to more code compared to global exception handling.
 *   **Hierarchy Maintenance**: Developers must define and maintain error class hierarchies.
+*   **Mapper Boilerplate**: Each error type needs a mapper to `ResponseStatusException`.
