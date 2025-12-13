@@ -1,196 +1,137 @@
 # ADR-006: Worldview Pattern for Domain Knowledge
 
-**Status**: Accepted
-
-**Date**: 2024-11-02
-
-**Updated**: 2025-11-30
-
-**Related ADRs**: [ADR-001: Modular Monolith](ADR-001-modular-monolith-architecture.md), [ADR-002: Domain-Driven Design](ADR-002-domain-driven-design.md)
+| Field            | Value                                                                                                                                   |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| **Status**       | Accepted                                                                                                                                |
+| **Date**         | 2024-12-13                                                                                                                              |
+| **Related ADRs** | [ADR-001: Modular Monolith](ADR-001-modular-monolith-architecture.md), [ADR-002: Domain-Driven Design](ADR-002-domain-driven-design.md) |
 
 ---
 
 ## Decision
 
-Each module contains **realistic domain data as code** in test fixtures. This serves as test data, living documentation, and shared domain vocabulary.
+We implement **Worldview Modules** (`-worldview`) alongside API and Implementation modules. These modules contain
+realistic domain data defined as code, builders, and data loaders.
+
+Unlike Gradle `testFixtures`, which are limited to test scopes, a separate module allows this data to be used at *
+*runtime** (e.g., for seeding development databases, demo modes, or documentation generation) as well as in tests.
 
 ---
 
 ## Structure
 
-Worldview lives in `-impl/src/testFixtures` alongside builders:
+Each domain consists of three artifacts:
 
-```
+```text
 products/
-├── products-api/
-│   └── src/testFixtures/          # Builders for public DTOs
-└── products-impl/
-    ├── src/main/kotlin/           # Implementation
-    └── src/testFixtures/kotlin/   # Worldview + domain builders
-        └── com/example/products/
-            ├── WorldviewProduct.kt    # Realistic product instances
-            └── ProductBuilder.kt      # Test data builders
-```
+├── products-api/          # Public contract (Interfaces, DTOs)
+├── products-impl/         # Business logic & Persistence
+└── products-worldview/    # Shared Domain Knowledge
+    ├── src/main/kotlin/
+    │   └── com/example/products/worldview/
+    │       ├── WorldviewProduct.kt         # Named, realistic instances
+    │       ├── ProductBuilder.kt           # Builders for API DTOs
+    │       └── WorldviewProductLoader.kt   # Spring component to seed DB
+````
 
-**Dependencies**:
+### Dependencies
+
+1. **Worldview** depends on **API** (to construct DTOs).
+2. **Impl** (test scope) depends on **Worldview**.
+3. **Application** (runtime) depends on **Worldview** (optional, for dev profiles).
 
 ```kotlin
-// products-impl/build.gradle.kts
+// products-worldview/build.gradle.kts
 dependencies {
-    testFixturesApi(project(":products:products-api"))
-    testFixturesApi(testFixtures(project(":products:products-api")))
+    api(project(":products:products-api")) // Constructs API objects
 }
 
-// Other modules can use worldview data in their tests
-// orders-impl/build.gradle.kts
+// products-impl/build.gradle.kts
 dependencies {
-    testImplementation(testFixtures(project(":products:products-impl")))
+    testImplementation(project(":products:products-worldview"))
+}
+
+// application/build.gradle.kts
+dependencies {
+    implementation(project(":products:products-worldview"))
 }
 ```
 
 ---
 
-## Design Trade-offs
+## Rationale: Why not `testFixtures`?
 
-### Why Test Fixtures (Not a Separate Module)
+While Gradle's `java-test-fixtures` plugin is excellent for sharing test code, it has significant limitations for our
+use case:
 
-| Aspect | Test Fixtures in `-impl` | Separate `-worldview` Module |
-|--------|--------------------------|------------------------------|
-| Access to internal types | ✓ Yes (can use domain entities) | ✗ No (uses public DTOs only) |
-| Data loading | Direct repository access | Through public API |
-| Simplicity | ✓ No extra module | ✗ Additional module to maintain |
-| Local development | Requires loader configuration | Easy to include/exclude |
-| Test data colocation | ✓ Builders and worldview together | Spread across modules |
+1. **Runtime Unavailability**
+   Test fixtures are not available on the main classpath. We cannot use them to seed a local development database or run
+   a "Demo Mode" in production.
 
-**Rationale**: Keeping worldview in test fixtures allows direct use of domain types, keeps builders and worldview data together, and avoids module proliferation.
+2. **Consumer Perspective**
+   By forcing the Worldview module to depend **only** on the `-api` module (and not internals), we ensure our test data
+   represents valid **consumer usage**. It forces us to "eat our own dog food" regarding the API design.
+
+3. **Documentation**
+   A separate module is more visible as "Living Documentation" to new developers than a hidden folder inside
+   `src/testFixtures`.
 
 ---
 
 ## Worldview Objects
 
-Define realistic, named instances using domain types:
+Define realistic, named instances using public API DTOs:
 
 ```kotlin
-// products-impl/src/testFixtures/kotlin/.../WorldviewProduct.kt
+// products-worldview/.../WorldviewProduct.kt
 object WorldviewProduct {
 
-    val organicCottonTShirt = buildProduct(
-        name = ProductName("Organic Cotton T-Shirt"),
+    val organicCottonTShirt = ProductDto(
+        id = "PROD-001",
+        name = "Organic Cotton T-Shirt",
         description = "Soft, breathable t-shirt made from 100% organic cotton. GOTS certified.",
-        category = ProductCategory.CLOTHING,
-        price = Money(BigDecimal("29.99"), Currency.EUR),
-        weight = Weight.grams(150),
-        sustainabilityRating = SustainabilityRating.A_PLUS,
-        carbonFootprint = CarbonFootprint.kg(BigDecimal("2.1"))
+        category = "CLOTHING",
+        priceAmount = BigDecimal("29.99"),
+        priceCurrency = "EUR",
+        weightGrams = 150,
+        sustainabilityRating = "A_PLUS",
+        carbonFootprintKg = BigDecimal("2.1")
     )
 
-    val bambooToothbrushSet = buildProduct(
-        name = ProductName("Bamboo Toothbrush Set (4 pack)"),
-        description = "Eco-friendly bamboo toothbrushes with soft BPA-free bristles.",
-        category = ProductCategory.PERSONAL_CARE,
-        price = Money(BigDecimal("12.50"), Currency.EUR),
-        weight = Weight.grams(80),
-        sustainabilityRating = SustainabilityRating.A,
-        carbonFootprint = CarbonFootprint.kg(BigDecimal("0.4"))
-    )
-
-    val solarPoweredCharger = buildProduct(
-        name = ProductName("Solar Powered Phone Charger"),
-        description = "Portable solar charger with 10000mAh battery. Waterproof and durable.",
-        category = ProductCategory.ELECTRONICS,
-        price = Money(BigDecimal("45.00"), Currency.EUR),
-        weight = Weight.grams(300),
-        sustainabilityRating = SustainabilityRating.A,
-        carbonFootprint = CarbonFootprint.kg(BigDecimal("3.2"))
-    )
-
-    val allProducts = listOf(
-        organicCottonTShirt,
-        bambooToothbrushSet,
-        solarPoweredCharger
-    )
-
-    fun findByName(name: String): Product? =
-        allProducts.find { it.name.value == name }
+    val allProducts = listOf(organicCottonTShirt /*, ... */)
 }
 ```
 
 ---
 
-## Builder Functions
+## Data Loaders
 
-Builders live alongside worldview in test fixtures:
+Worldview modules can contain Spring components to seed data automatically when specific profiles are active.
 
 ```kotlin
-// products-impl/src/testFixtures/kotlin/.../ProductBuilder.kt
-fun buildProduct(
-    id: ProductId = ProductId.generate(),
-    name: ProductName = ProductName("Test Eco Product"),
-    description: String = "A sustainable test product",
-    category: ProductCategory = ProductCategory.HOUSEHOLD,
-    price: Money = Money(BigDecimal("19.99"), Currency.EUR),
-    weight: Weight = Weight.grams(100),
-    sustainabilityRating: SustainabilityRating = SustainabilityRating.B,
-    carbonFootprint: CarbonFootprint = CarbonFootprint.kg(BigDecimal("1.5"))
-): Product = Product(
-    id = id,
-    name = name,
-    description = description,
-    category = category,
-    price = price,
-    weight = weight,
-    sustainabilityRating = sustainabilityRating,
-    carbonFootprint = carbonFootprint
-)
+// products-worldview/.../WorldviewProductDataLoader.kt
+@Component
+@Profile("local", "demo")
+class WorldviewProductDataLoader(
+    private val productService: ProductService
+) {
+    @PostConstruct
+    fun load() {
+        WorldviewProduct.allProducts.forEach { dto ->
+            val request = dto.toCreateRequest()
+            productService.createProduct(request)
+        }
+    }
+}
 ```
 
 ---
 
 ## Usage in Tests
 
-### Unit Tests
+### Cucumber / Integration Tests
 
-Use builders directly:
-
-```kotlin
-@Test
-fun `calculateShippingCost should apply correct rate`() {
-    val product = buildProduct(
-        weight = Weight.grams(300),
-        category = ProductCategory.ELECTRONICS
-    )
-    // ...
-}
-```
-
-### Integration Tests
-
-Use worldview for realistic data:
-
-```kotlin
-@SpringBootTest
-class ProductServiceIntegrationTest {
-
-    @Autowired
-    private lateinit var productRepository: ProductRepository
-
-    @Test
-    fun `should calculate correct sustainability rating for electronics`() {
-        // Given
-        productRepository.save(WorldviewProduct.solarPoweredCharger)
-
-        // When
-        val result = productService.findByCategory(ProductCategory.ELECTRONICS)
-
-        // Then
-        assertThat(result).containsExactly(WorldviewProduct.solarPoweredCharger)
-    }
-}
-```
-
-### Cucumber Tests
-
-Reference worldview by name:
+Reference entities by their Worldview name. This creates a ubiquitous language between the tests and the code.
 
 ```gherkin
 Feature: Checkout Flow
@@ -198,107 +139,18 @@ Feature: Checkout Flow
   Scenario: Customer orders eco-product
     Given the product "Organic Cotton T-Shirt" exists
     When the customer places an order
-    Then the order should contain "Organic Cotton T-Shirt"
+    Then the order should be successful
 ```
 
 ```kotlin
 // ProductSteps.kt
 @Given("the product {string} exists")
 fun productExists(productName: String) {
-    val product = WorldviewProduct.findByName(productName)
+    val productDto = WorldviewProduct.findByName(productName)
         ?: throw IllegalArgumentException("Unknown worldview product: $productName")
 
-    productRepository.save(product)
-}
-```
-
----
-
-## Principles
-
-### Be Realistic
-
-Use actual product names, weights, prices:
-
-```kotlin
-// ✓ Good - Realistic
-val organicCottonTShirt = buildProduct(
-    name = ProductName("Organic Cotton T-Shirt"),
-    weight = Weight.grams(150),
-    price = Money(BigDecimal("29.99"), Currency.EUR)
-)
-
-// ✗ Bad - Generic
-val productA = buildProduct(
-    name = ProductName("Product A"),
-    weight = Weight.grams(100),
-    price = Money(BigDecimal("10.00"), Currency.EUR)
-)
-```
-
-### Cover Edge Cases
-
-Include boundary conditions:
-
-```kotlin
-object WorldviewProduct {
-    // Very light product (minimum shipping weight considerations)
-    val paperStraw = buildProduct(weight = Weight.grams(5))
-
-    // Very heavy product (special handling required)
-    val solarPanel = buildProduct(weight = Weight.grams(22500))
-
-    // High value (triggers insurance requirements)
-    val premiumSolarKit = buildProduct(price = Money(BigDecimal("999.99"), Currency.EUR))
-}
-```
-
-### Document with Names
-
-Worldview object names should be self-explanatory:
-
-```kotlin
-// ✓ Good - Descriptive names
-WorldviewProduct.organicCottonTShirt
-WorldviewUser.johnDoeNetherlands
-WorldviewWarehouse.amsterdamFulfillmentCenter
-
-// ✗ Bad - Generic names
-WorldviewProduct.product1
-WorldviewUser.testUser
-```
-
----
-
-## Worldview as Documentation
-
-New team members can browse worldview to understand the domain:
-
-```kotlin
-// Products show what eco-products look like
-WorldviewProduct.organicCottonTShirt
-
-// Users show customer personas
-object WorldviewUser {
-    val johnDoeNetherlands = buildUser(
-        name = UserName("John Doe"),
-        email = Email("john.doe@example.com"),
-        country = Country.NL
-    )
-
-    val hansMullerGermany = buildUser(
-        name = UserName("Hans Müller"),
-        email = Email("hans.mueller@example.de"),
-        country = Country.DE
-    )
-}
-
-// Warehouses show fulfillment structure
-object WorldviewWarehouse {
-    val amsterdam = buildWarehouse(
-        name = WarehouseName("Amsterdam Fulfillment Center"),
-        country = Country.NL
-    )
+    // Use the API to create the product (Black Box Testing)
+    productService.createProduct(productDto.toRequest())
 }
 ```
 
@@ -308,27 +160,14 @@ object WorldviewWarehouse {
 
 ### Positive
 
-- Shared vocabulary across team
-- Realistic data catches integration issues
-- Living documentation (can't drift from code)
-- New developers learn domain quickly
-- Direct access to domain types (more expressive)
-- Builders and worldview colocated
-- No extra modules to maintain
+* **Runtime Availability**: Data can be used for local development, demos, and seeding staging environments.
+* **API Validation**: Since Worldview only sees the `-api` module, it validates that the API is sufficient to express
+  complex domain scenarios.
+* **Living Documentation**: Serves as a catalog of "canonical" business examples.
+* **Reuse**: The same data is used for Unit Tests, Integration Tests, E2E Tests, and Local Development.
 
 ### Negative
 
-- Need to keep worldview data updated
-- Duplicate worldview objects if same data needed in multiple modules
-- Test fixtures dependency chain can grow
-
----
-
-## Best Practices
-
-1. **Use realistic values**: actual weights, prices, names from the domain
-2. **Cover edge cases**: heavy/light, expensive/cheap, cross-border scenarios
-3. **Document with names**: `organicCottonTShirt`, not `product1`
-4. **Reference by name in Cucumber**: "Organic Cotton T-Shirt", not by ID
-5. **Keep builders and worldview together**: both in `-impl/src/testFixtures`
-6. **Use domain types**: leverage the expressiveness of internal types
+* **Module Overhead**: Adds an extra Gradle module per domain.
+* **DTO Maintenance**: If API DTOs change, Worldview data must be updated (though this ensures breaking changes are
+  caught early).
