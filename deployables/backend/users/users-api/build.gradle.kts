@@ -4,6 +4,5 @@ plugins {
 }
 
 dependencies {
-    api(project(":common:common-country"))
     api(project(":common:common-result"))
 }

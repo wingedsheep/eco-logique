@@ -11,7 +11,6 @@ dependencyManagement {
 
 dependencies {
     api(project(":users:users-api"))
-    implementation(project(":common:common-country"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework:spring-context")
