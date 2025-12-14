@@ -3,18 +3,8 @@ name: CI
 on:
   push:
     branches: [ main ]
-    paths:
-      - "deployables/backend/**"
-      - ".github/workflows/**"
   pull_request:
     branches: [ main ]
-    paths:
-      - "deployables/backend/**"
-      - ".github/workflows/**"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -38,13 +28,11 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - uses: gradle/actions/setup-gradle@v4
-
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Validate + Build + Test
-        run: ./gradlew validateModuleDependencies build --continue --build-cache
+      - name: Validate Module Dependencies
+        run: ./gradlew validateModuleDependencies
 
       - name: Publish Module Validation Report
         if: always()
@@ -53,6 +41,12 @@ jobs:
           if [ -f "$REPORT_FILE" ]; then
             cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Build
+        run: ./gradlew build -x test
+
+      - name: Run unit tests
+        run: ./gradlew test
 
       - name: Publish test report (viewable in the run)
         if: always()
@@ -68,5 +62,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: deployables/backend/**/build/reports/tests/
+          path: 'deployables/backend/**/build/reports/tests/'
           retention-days: 7
