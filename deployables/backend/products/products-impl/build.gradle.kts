@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.spring.context)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.kotlin.reflect)
+    implementation(libs.springdoc.openapi)
 
     testImplementation(testFixtures(project(":products:products-api")))
     testImplementation(libs.spring.boot.starter.test)

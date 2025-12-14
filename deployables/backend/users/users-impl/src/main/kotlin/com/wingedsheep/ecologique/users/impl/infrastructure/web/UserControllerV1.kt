@@ -5,6 +5,8 @@ import com.wingedsheep.ecologique.users.api.UserService
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import com.wingedsheep.ecologique.users.api.dto.UserUpdateAddressRequest
 import com.wingedsheep.ecologique.users.api.error.UserError
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
@@ -20,11 +22,13 @@ import java.net.URI
 
 @RestController
 @RequestMapping("/api/v1/users")
+@Tag(name = "Users", description = "User profile management")
 class UserControllerV1(
     private val userService: UserService
 ) {
 
     @PostMapping
+    @Operation(summary = "Create user profile", description = "Creates a new user profile linked to the authenticated user")
     fun createProfile(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestBody request: UserCreateRequest
@@ -40,6 +44,7 @@ class UserControllerV1(
     }
 
     @GetMapping
+    @Operation(summary = "Get user profile", description = "Retrieves the profile of the authenticated user")
     fun getProfile(@AuthenticationPrincipal jwt: Jwt): ResponseEntity<Any> {
         return userService.getProfile(jwt.subject).fold(
             onSuccess = { user ->
@@ -52,6 +57,7 @@ class UserControllerV1(
     }
 
     @PutMapping("/address")
+    @Operation(summary = "Update user address", description = "Updates the default delivery address of the authenticated user")
     fun updateAddress(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestBody request: UserUpdateAddressRequest
