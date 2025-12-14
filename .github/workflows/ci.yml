@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,6 +47,15 @@ jobs:
 
       - name: Run unit tests
         run: ./gradlew test
+
+      - name: Publish test report (viewable in the run)
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit tests
+          reporter: java-junit
+          path: deployables/backend/**/build/test-results/test/*.xml
+          fail-on-error: "false"
 
       - name: Upload test results
         if: always()
