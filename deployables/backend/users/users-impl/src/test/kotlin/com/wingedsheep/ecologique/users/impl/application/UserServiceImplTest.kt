@@ -1,16 +1,15 @@
-package com.wingedsheep.ecologique.users.impl.application.service
+package com.wingedsheep.ecologique.users.impl.application
 
 import com.ecologique.common.country.Country
-import com.wingedsheep.ecologique.common.result.Result
 import com.wingedsheep.ecologique.users.api.buildAddressDto
 import com.wingedsheep.ecologique.users.api.buildUserCreateRequest
 import com.wingedsheep.ecologique.users.api.buildUserUpdateAddressRequest
 import com.wingedsheep.ecologique.users.api.error.UserError
-import com.wingedsheep.ecologique.users.impl.domain.model.Address
-import com.wingedsheep.ecologique.users.impl.domain.model.Email
-import com.wingedsheep.ecologique.users.impl.domain.model.User
-import com.wingedsheep.ecologique.users.impl.domain.model.UserId
-import com.wingedsheep.ecologique.users.impl.domain.repository.UserRepository
+import com.wingedsheep.ecologique.users.impl.domain.Address
+import com.wingedsheep.ecologique.users.impl.domain.Email
+import com.wingedsheep.ecologique.users.impl.domain.User
+import com.wingedsheep.ecologique.users.impl.domain.UserId
+import com.wingedsheep.ecologique.users.impl.domain.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
