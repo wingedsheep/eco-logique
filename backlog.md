@@ -58,17 +58,17 @@
 * **Description**: Store customer profile (linked to Keycloak subject).
 * **Deliverables**:
 
-  * [ ] `User` entity (ID, keycloakSubject, name, email, default address).
-  * [ ] `UserService` to handle profile creation/updates.
-  * [ ] REST API (authenticated; subject derived from token, no userId required):
+  * [x] `User` entity (ID, keycloakSubject, name, email, default address).
+  * [x] `UserService` to handle profile creation/updates.
+  * [x] REST API (authenticated; subject derived from token, no userId required):
 
-    * [ ] `POST /users` (create profile)
-    * [ ] `GET /users` (get own profile)
-    * [ ] `PUT /users/address` (update own address)
-  * [ ] Email uniqueness validation (within profile store).
-  * [ ] Error handling: `UserError` sealed hierarchy in `users-api`; controllers map errors to RFC7807 Problem Details.
-  * [ ] **DB**: ensure `users` schema migrations cover required fields.
-  * [ ] **Worldview**: Realistic user profiles (e.g., "John Doe" in Amsterdam, "Jane Smith" in Berlin).
+    * [x] `POST /users` (create profile)
+    * [x] `GET /users` (get own profile)
+    * [x] `PUT /users/address` (update own address)
+  * [x] Email uniqueness validation (within profile store).
+  * [x] Error handling: `UserError` sealed hierarchy in `users-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] **DB**: ensure `users` schema migrations cover required fields.
+  * [x] **Worldview**: Realistic user profiles (e.g., "John Doe" in Amsterdam, "Jane Smith" in Berlin).
 
 ---
 
