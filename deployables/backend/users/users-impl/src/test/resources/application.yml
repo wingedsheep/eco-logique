@@ -1,0 +1,9 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/users
+    schemas: users
+    default-schema: users
+    create-schemas: true

@@ -1,8 +1,7 @@
 package com.wingedsheep.ecologique.products.impl.application.service
 
-import com.ecologique.common.money.Currency
-import com.ecologique.common.money.Money
-import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.common.money.Money
 import com.wingedsheep.ecologique.products.api.buildProductCreateRequest
 import com.wingedsheep.ecologique.products.api.buildProductUpdatePriceRequest
 import com.wingedsheep.ecologique.products.api.error.ProductError

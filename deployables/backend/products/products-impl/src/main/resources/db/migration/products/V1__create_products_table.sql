@@ -1,4 +1,4 @@
-CREATE TABLE products.products (
+CREATE TABLE products (
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     description VARCHAR(2000) NOT NULL,
@@ -12,6 +12,6 @@ CREATE TABLE products.products (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_products_category ON products.products(category_code);
-CREATE INDEX idx_products_name ON products.products(name);
-CREATE INDEX idx_products_sustainability ON products.products(sustainability_rating);
+CREATE INDEX idx_products_category ON products(category_code);
+CREATE INDEX idx_products_name ON products(name);
+CREATE INDEX idx_products_sustainability ON products(sustainability_rating);

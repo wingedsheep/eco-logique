@@ -2,7 +2,4 @@ spring:
   profiles:
     active: test
   flyway:
-    enabled: true
-    locations: classpath:db/migration/products
-    schemas: products
-    create-schemas: true
+    enabled: false

@@ -97,8 +97,8 @@ moduleDependencyValidation {
 
 Module names are extracted from project paths by removing the `-api` or `-impl` suffix:
 
-- `:allocation:allocation-impl` → `allocation`
-- `:trading:collateral-management:impl` → `collateral-management`
+- `:orders:orders-impl` → `orders`
+- `:products:impl` → `products`
 
 ### Unconfigured Modules
 

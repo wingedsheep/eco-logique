@@ -1,6 +1,7 @@
 package com.wingedsheep.ecologique.products.impl.application.service
 
-import com.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.common.money.Money
 import com.wingedsheep.ecologique.common.result.Result
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
@@ -115,7 +116,7 @@ internal class ProductServiceImpl(
             ?: return Result.err(ProductError.NotFound(id))
 
         val updatedProduct = try {
-            product.updatePrice(com.ecologique.common.money.Money(request.priceAmount, currency))
+            product.updatePrice(Money(request.priceAmount, currency))
         } catch (e: IllegalArgumentException) {
             return Result.err(ProductError.ValidationFailed(e.message ?: "Validation failed"))
         }

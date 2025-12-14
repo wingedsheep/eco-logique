@@ -4,7 +4,9 @@ import com.wingedsheep.ecologique.products.impl.domain.model.Product
 import com.wingedsheep.ecologique.products.impl.domain.model.ProductCategory
 import com.wingedsheep.ecologique.products.impl.domain.model.ProductId
 import com.wingedsheep.ecologique.products.impl.domain.repository.ProductRepository
+import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Component
+import org.springframework.stereotype.Repository
 
 @Component
 internal class ProductRepositoryImpl(
@@ -49,4 +51,10 @@ internal class ProductRepositoryImpl(
     override fun existsById(id: ProductId): Boolean {
         return jdbc.existsById(id.value)
     }
+}
+
+@Repository
+internal interface ProductRepositoryJdbc : CrudRepository<ProductEntity, String> {
+    fun findByName(name: String): ProductEntity?
+    fun findByCategoryCode(categoryCode: String): List<ProductEntity>
 }

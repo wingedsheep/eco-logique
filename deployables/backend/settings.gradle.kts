@@ -23,9 +23,13 @@ include(":common:common-result")
 
 // Application modules
 include(":application")
+
 include(":products:products-api")
 include(":products:products-impl")
 include(":products:products-worldview")
+include(":users:users-api")
+include(":users:users-impl")
+include(":users:users-worldview")
 
 // Map common modules to the actual location
 project(":common:common-time").projectDir = file("../../common/common-time")
