@@ -10,13 +10,20 @@ import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import java.math.BigDecimal
 
 class ProductSteps {
 
     @LocalServerPort
     private var port: Int = 0
+
+    @Autowired
+    lateinit var jwtDecoder: JwtDecoder
 
     private var response: Response? = null
     private var createdProductId: String? = null
@@ -25,6 +32,18 @@ class ProductSteps {
     fun setup() {
         RestAssured.port = port
         RestAssured.basePath = "/api/v1/products"
+
+        val tokenValue = "fake-jwt-token"
+        val jwt = Jwt.withTokenValue(tokenValue)
+            .header("alg", "none")
+            .claim("sub", "jane")
+            .claim("realm_access", mapOf("roles" to listOf("ROLE_ADMIN")))
+            .build()
+
+        whenever(jwtDecoder.decode(tokenValue)).thenReturn(jwt)
+
+        RestAssured.requestSpecification = RestAssured.given()
+            .header("Authorization", "Bearer $tokenValue")
     }
 
     @Given("the products database is empty")
