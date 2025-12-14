@@ -8,9 +8,12 @@ spring:
     driver-class-name: org.postgresql.Driver
   flyway:
     enabled: true
-    schemas: products
+    schemas:
+      - products
+      - users
     locations:
       - classpath:db/migration/products
+      - classpath:db/migration/users
     create-schemas: true
   security:
     oauth2:

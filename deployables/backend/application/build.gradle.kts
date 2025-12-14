@@ -11,6 +11,8 @@ version = "0.0.1-SNAPSHOT"
 dependencies {
     implementation(project(":products:products-impl"))
     implementation(project(":products:products-worldview"))
+    implementation(project(":users:users-impl"))
+    implementation(project(":users:users-worldview"))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
