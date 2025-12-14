@@ -1,0 +1,57 @@
+{
+  "id": "ecologique",
+  "realm": "ecologique",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "ROLE_CUSTOMER",
+        "description": "Customer Role"
+      },
+      {
+        "name": "ROLE_ADMIN",
+        "description": "Admin Role"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "john",
+      "email": "john@demo.com",
+      "enabled": true,
+      "firstName": "John",
+      "lastName": "Doe",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": [ "ROLE_CUSTOMER" ]
+    },
+    {
+      "username": "jane",
+      "email": "jane@demo.com",
+      "enabled": true,
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": [ "ROLE_ADMIN", "ROLE_CUSTOMER" ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "ecologique-web",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [ "*" ],
+      "webOrigins": [ "*" ]
+    }
+  ]
+}

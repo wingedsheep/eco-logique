@@ -15,6 +15,8 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.data.jdbc)
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
 
     implementation(libs.springdoc.openapi)
 
@@ -33,6 +35,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.rest.assured)
     testImplementation(testFixtures(project(":products:products-api")))
+    testImplementation(libs.mockito.kotlin)
 }
 
 application {
