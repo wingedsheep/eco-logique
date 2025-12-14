@@ -3,6 +3,7 @@ package com.wingedsheep.ecologique.users.impl.cucumber
 import com.wingedsheep.ecologique.users.impl.TestApplication
 import io.cucumber.spring.CucumberContextConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
@@ -14,6 +15,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @Testcontainers
+@Import(JwtTestConfig::class)
 class ModuleCucumberSpringConfiguration {
 
     companion object {

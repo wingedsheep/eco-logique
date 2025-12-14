@@ -99,17 +99,15 @@ class UserServiceImplTest {
 
     @Test
     fun `createProfile should return InvalidCountry error for unknown country`() {
-        // Given
         val request = buildUserCreateRequest(
             address = buildAddressDto(countryCode = "INVALID_COUNTRY")
         )
-        whenever(userRepository.existsByExternalSubject("test-subject")).thenReturn(false)
-        whenever(userRepository.existsByEmail(any())).thenReturn(false)
 
-        // When
+        whenever(userRepository.existsByExternalSubject("test-subject")).thenReturn(false)
+        whenever(userRepository.existsByEmail(Email(request.email))).thenReturn(false) // ✅ no matcher
+
         val result = userService.createProfile("test-subject", request)
 
-        // Then
         assertThat(result.isErr).isTrue()
         result.fold(
             onSuccess = { },
