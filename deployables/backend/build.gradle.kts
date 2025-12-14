@@ -8,6 +8,7 @@ plugins {
 
 moduleDependencyValidation {
     allowedDependencies.put("products", emptySet())
+    allowedDependencies.put("users", emptySet())
     failOnViolation.set(true)
     reportFile.set(layout.buildDirectory.file("reports/module-validation/report.md"))
 }
