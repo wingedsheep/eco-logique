@@ -1,6 +1,6 @@
 package com.wingedsheep.ecologique.users.impl.application
 
-import com.ecologique.common.country.Country
+import com.wingedsheep.ecologique.common.country.Country
 import com.wingedsheep.ecologique.users.api.buildAddressDto
 import com.wingedsheep.ecologique.users.api.buildUserCreateRequest
 import com.wingedsheep.ecologique.users.api.buildUserUpdateAddressRequest

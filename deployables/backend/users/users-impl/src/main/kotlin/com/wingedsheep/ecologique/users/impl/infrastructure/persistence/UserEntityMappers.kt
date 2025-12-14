@@ -1,6 +1,6 @@
 package com.wingedsheep.ecologique.users.impl.infrastructure.persistence
 
-import com.ecologique.common.country.Country
+import com.wingedsheep.ecologique.common.country.Country
 import com.wingedsheep.ecologique.users.impl.domain.Address
 import com.wingedsheep.ecologique.users.impl.domain.Email
 import com.wingedsheep.ecologique.users.impl.domain.User

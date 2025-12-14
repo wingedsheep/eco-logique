@@ -1,7 +1,7 @@
 package com.wingedsheep.ecologique.products.impl.infrastructure.persistence
 
-import com.ecologique.common.money.Currency
-import com.ecologique.common.money.Money
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.common.money.Money
 import com.wingedsheep.ecologique.products.impl.domain.model.CarbonFootprint
 import com.wingedsheep.ecologique.products.impl.domain.model.Product
 import com.wingedsheep.ecologique.products.impl.domain.model.ProductCategory

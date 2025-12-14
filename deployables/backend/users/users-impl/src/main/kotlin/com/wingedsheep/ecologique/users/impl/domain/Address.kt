@@ -1,6 +1,6 @@
 package com.wingedsheep.ecologique.users.impl.domain
 
-import com.ecologique.common.country.Country
+import com.wingedsheep.ecologique.common.country.Country
 
 internal data class Address(
     val street: String,

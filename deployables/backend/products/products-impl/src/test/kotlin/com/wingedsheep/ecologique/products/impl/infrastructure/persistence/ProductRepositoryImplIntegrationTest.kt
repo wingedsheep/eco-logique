@@ -1,7 +1,7 @@
 package com.wingedsheep.ecologique.products.impl.infrastructure.persistence
 
-import com.ecologique.common.money.Currency
-import com.ecologique.common.money.Money
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.common.money.Money
 import com.wingedsheep.ecologique.products.impl.domain.model.CarbonFootprint
 import com.wingedsheep.ecologique.products.impl.domain.model.Product
 import com.wingedsheep.ecologique.products.impl.domain.model.ProductCategory
@@ -10,7 +10,6 @@ import com.wingedsheep.ecologique.products.impl.domain.model.SustainabilityRatin
 import com.wingedsheep.ecologique.products.impl.domain.model.Weight
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest

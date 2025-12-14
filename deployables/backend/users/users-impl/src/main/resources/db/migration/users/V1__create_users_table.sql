@@ -1,4 +1,4 @@
-CREATE TABLE users.users
+CREATE TABLE users
 (
     id               VARCHAR(255) PRIMARY KEY,
     external_subject VARCHAR(255) NOT NULL UNIQUE,
@@ -13,5 +13,5 @@ CREATE TABLE users.users
     updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_users_external_subject ON users.users (external_subject);
-CREATE INDEX idx_users_email ON users.users (email);
+CREATE INDEX idx_users_external_subject ON users (external_subject);
+CREATE INDEX idx_users_email ON users (email);

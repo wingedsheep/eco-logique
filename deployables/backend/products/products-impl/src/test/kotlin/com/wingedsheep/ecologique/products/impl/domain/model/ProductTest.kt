@@ -1,7 +1,7 @@
 package com.wingedsheep.ecologique.products.impl.domain.model
 
-import com.ecologique.common.money.Currency
-import com.ecologique.common.money.Money
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.common.money.Money
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
