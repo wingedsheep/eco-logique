@@ -1,4 +1,4 @@
-package com.wingedsheep.ecologique.products.impl.application.service
+package com.wingedsheep.ecologique.products.impl.application
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
@@ -9,10 +9,10 @@ import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import com.wingedsheep.ecologique.products.api.dto.ProductUpdatePriceRequest
 import com.wingedsheep.ecologique.products.api.error.ProductError
 import com.wingedsheep.ecologique.products.api.event.ProductCreated
-import com.wingedsheep.ecologique.products.impl.domain.model.Product
-import com.wingedsheep.ecologique.products.impl.domain.model.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.model.ProductId
-import com.wingedsheep.ecologique.products.impl.domain.repository.ProductRepository
+import com.wingedsheep.ecologique.products.impl.domain.Product
+import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
+import com.wingedsheep.ecologique.products.impl.domain.ProductId
+import com.wingedsheep.ecologique.products.impl.domain.ProductRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

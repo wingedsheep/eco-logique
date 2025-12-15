@@ -1,4 +1,4 @@
-package com.wingedsheep.ecologique.products.impl.domain.model
+package com.wingedsheep.ecologique.products.impl.domain
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money

@@ -2,12 +2,12 @@ package com.wingedsheep.ecologique.products.impl.infrastructure.persistence
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
-import com.wingedsheep.ecologique.products.impl.domain.model.CarbonFootprint
-import com.wingedsheep.ecologique.products.impl.domain.model.Product
-import com.wingedsheep.ecologique.products.impl.domain.model.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.model.ProductId
-import com.wingedsheep.ecologique.products.impl.domain.model.SustainabilityRating
-import com.wingedsheep.ecologique.products.impl.domain.model.Weight
+import com.wingedsheep.ecologique.products.impl.domain.CarbonFootprint
+import com.wingedsheep.ecologique.products.impl.domain.Product
+import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
+import com.wingedsheep.ecologique.products.impl.domain.ProductId
+import com.wingedsheep.ecologique.products.impl.domain.SustainabilityRating
+import com.wingedsheep.ecologique.products.impl.domain.Weight
 
 internal fun ProductEntity.toProduct(): Product = Product(
     id = ProductId(id),

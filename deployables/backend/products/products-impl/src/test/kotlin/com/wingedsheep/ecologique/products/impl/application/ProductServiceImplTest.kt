@@ -1,4 +1,4 @@
-package com.wingedsheep.ecologique.products.impl.application.service
+package com.wingedsheep.ecologique.products.impl.application
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
@@ -6,13 +6,13 @@ import com.wingedsheep.ecologique.products.api.buildProductCreateRequest
 import com.wingedsheep.ecologique.products.api.buildProductUpdatePriceRequest
 import com.wingedsheep.ecologique.products.api.error.ProductError
 import com.wingedsheep.ecologique.products.api.event.ProductCreated
-import com.wingedsheep.ecologique.products.impl.domain.model.CarbonFootprint
-import com.wingedsheep.ecologique.products.impl.domain.model.Product
-import com.wingedsheep.ecologique.products.impl.domain.model.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.model.ProductId
-import com.wingedsheep.ecologique.products.impl.domain.model.SustainabilityRating
-import com.wingedsheep.ecologique.products.impl.domain.model.Weight
-import com.wingedsheep.ecologique.products.impl.domain.repository.ProductRepository
+import com.wingedsheep.ecologique.products.impl.domain.CarbonFootprint
+import com.wingedsheep.ecologique.products.impl.domain.Product
+import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
+import com.wingedsheep.ecologique.products.impl.domain.ProductId
+import com.wingedsheep.ecologique.products.impl.domain.SustainabilityRating
+import com.wingedsheep.ecologique.products.impl.domain.Weight
+import com.wingedsheep.ecologique.products.impl.domain.ProductRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith

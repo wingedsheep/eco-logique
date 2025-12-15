@@ -1,5 +1,6 @@
-package com.wingedsheep.ecologique.products.impl.domain.model
+package com.wingedsheep.ecologique.products.impl.domain
 
+import com.wingedsheep.ecologique.products.impl.domain.ProductId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
