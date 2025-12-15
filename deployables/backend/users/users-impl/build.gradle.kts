@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.spring.context)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.kotlin.reflect)
+    implementation(libs.springdoc.openapi)
 
     testImplementation(testFixtures(project(":users:users-api")))
     testImplementation(libs.spring.boot.starter.test)

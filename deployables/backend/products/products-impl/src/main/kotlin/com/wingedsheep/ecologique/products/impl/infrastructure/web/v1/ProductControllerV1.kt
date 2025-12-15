@@ -5,6 +5,8 @@ import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import com.wingedsheep.ecologique.products.api.dto.ProductUpdatePriceRequest
 import com.wingedsheep.ecologique.products.api.error.ProductError
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
@@ -21,11 +23,13 @@ import java.net.URI
 
 @RestController
 @RequestMapping("/api/v1/products")
+@Tag(name = "Products", description = "Product catalog management")
 class ProductControllerV1(
     private val productService: ProductService
 ) {
 
     @PostMapping
+    @Operation(summary = "Create a new product", description = "Creates a new eco-friendly product with sustainability rating")
     fun createProduct(@RequestBody request: ProductCreateRequest): ResponseEntity<Any> {
         return productService.createProduct(request).fold(
             onSuccess = { product ->
@@ -38,6 +42,7 @@ class ProductControllerV1(
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get product by ID", description = "Retrieves a single product by its unique identifier")
     fun getProduct(@PathVariable id: String): ResponseEntity<Any> {
         return productService.getProduct(id).fold(
             onSuccess = { product ->
@@ -50,6 +55,7 @@ class ProductControllerV1(
     }
 
     @GetMapping
+    @Operation(summary = "List products", description = "Lists all products, optionally filtered by category")
     fun getAllProducts(@RequestParam(required = false) category: String?): ResponseEntity<Any> {
         val result = if (category != null) {
             productService.findProductsByCategory(category)
@@ -68,6 +74,7 @@ class ProductControllerV1(
     }
 
     @PutMapping("/{id}/price")
+    @Operation(summary = "Update product price", description = "Updates the price of an existing product")
     fun updateProductPrice(
         @PathVariable id: String,
         @RequestBody request: ProductUpdatePriceRequest
@@ -83,6 +90,7 @@ class ProductControllerV1(
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a product", description = "Removes a product from the catalog")
     fun deleteProduct(@PathVariable id: String): ResponseEntity<Any> {
         return productService.deleteProduct(id).fold(
             onSuccess = {

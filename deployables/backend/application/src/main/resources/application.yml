@@ -30,3 +30,5 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
+    oauth:
+      client-id: ecologique-web
