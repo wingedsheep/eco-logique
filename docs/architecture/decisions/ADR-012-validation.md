@@ -1,42 +1,102 @@
-# ADR-012: Validation in Init Blocks
+# ADR-012: Validation Strategy
 
 **Status**: Accepted
 
 **Date**: 2024-12-13
 
+**Updated**: 2025-01-15
+
 ---
 
 ## Decision
 
-We validate domain objects in Kotlin `init` blocks instead of using JSR-303 annotations (`@NotNull`, `@Size`, etc.).
+We validate using Kotlin `init` blocks instead of JSR-303 annotations. Validation happens at two levels:
+
+1. **Request DTOs** (in `-api`): Validate input at the boundary
+2. **Domain objects** (in `-impl`): Enforce business invariants
 
 ---
 
-## Rationale
+## Request DTO Validation
 
-JSR-303 validation requires `@Valid` or `@Validated` annotations at call sites to trigger validation. These are easy to forget, leading to invalid objects passing through silently.
+Request DTOs validate input immediately when deserialized:
+
 ```kotlin
-// ✗ Bad - Validation only runs if caller remembers @Valid
-data class Product(
-    @field:NotBlank val name: String,
-    @field:Positive val price: BigDecimal
-)
-
-fun createProduct(@Valid request: ProductRequest) // Easy to forget @Valid
+// products-api/dto/CreateProductRequest.kt
+data class CreateProductRequest(
+    val name: String,
+    val priceAmount: BigDecimal,
+    val priceCurrency: String,
+) {
+    init {
+        require(name.isNotBlank()) { "Name is required" }
+        require(name.length <= 200) { "Name too long" }
+        require(priceAmount > BigDecimal.ZERO) { "Price must be positive" }
+    }
+}
 ```
 
-Init block validation is **always enforced** at construction time:
+Invalid requests fail with `IllegalArgumentException`, caught by the global exception handler and returned as 400 Bad Request.
+
+---
+
+## Domain Object Validation
+
+Domain objects enforce business invariants:
+
 ```kotlin
-// ✓ Good - Impossible to create invalid Product
-data class Product(
+// products-impl/Product.kt
+internal data class Product(
+    val id: ProductId,
     val name: String,
-    val price: BigDecimal
+    val price: Money,
 ) {
     init {
         require(name.isNotBlank()) { "Product name cannot be blank" }
-        require(price > BigDecimal.ZERO) { "Price must be positive" }
     }
 }
+
+// products-impl/Money.kt
+internal data class Money(
+    val amount: BigDecimal,
+    val currency: Currency,
+) {
+    init {
+        require(amount >= BigDecimal.ZERO) { "Amount cannot be negative" }
+    }
+}
+```
+
+---
+
+## Why Not JSR-303?
+
+JSR-303 requires `@Valid` annotations at call sites—easy to forget:
+
+```kotlin
+// Validation only runs if caller remembers @Valid
+fun createProduct(@Valid request: ProductRequest)  // Easy to forget
+```
+
+Init block validation is **always enforced**:
+```kotlin
+// Impossible to create invalid Product
+val product = Product(name = "", price = money)  // Throws immediately
+```
+
+---
+
+## Response DTOs: No Validation
+
+Response DTOs are plain data carriers. They're constructed from validated domain objects, so no additional validation needed:
+
+```kotlin
+data class ProductDto(
+    val id: String,
+    val name: String,
+    val priceAmount: BigDecimal,
+    val priceCurrency: String,
+)
 ```
 
 ---
@@ -45,21 +105,20 @@ data class Product(
 
 - Use `require` for preconditions (argument validation)
 - Use `check` for state invariants
-- Throw `IllegalArgumentException` with clear messages
-- Validate at domain boundaries (value objects, entities)
+- Request DTOs: validate format, presence, basic constraints
+- Domain objects: validate business rules, invariants
 
 ---
 
 ## Consequences
 
 ### Positive
-
 - Validation cannot be bypassed
 - No annotation processing required
 - Clear, readable validation logic
 - Works everywhere (not just Spring contexts)
+- Fail-fast at boundaries
 
 ### Negative
-
 - More verbose than annotations
-- Validation logic spread across domain classes
+- Validation logic in multiple places (but appropriate places)

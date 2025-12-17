@@ -8,260 +8,25 @@
 
 ## Decision
 
-Database entities and their mappers stay in the persistence package marked `internal`. Entities **never leak** outside this package.
+Database entities and their mappers stay in the persistence package marked `internal`. Entities **never leak** outside this layer.
 
 ---
 
 ## Rationale
 
-Database entities are implementation details. Domain models are the contract. Keeping entities internal allows us to:
-- Change persistence technology without affecting domain
-- Keep domain models clean of persistence annotations
-- Enforce separation between domain and infrastructure layers
-
----
-
-## Mapper Location
-
-### Entity Mappers (Persistence Layer)
-Live in `persistence/` package alongside entities:
-
-```
-products-impl/
-├── domain/
-│   └── repository/
-│       └── ProductRepository.kt        # Repository interface (domain)
-└── infrastructure/
-    └── persistence/
-        ├── ProductRepositoryImpl.kt    # Implements domain interface
-        ├── ProductRepositoryJdbc.kt    # Spring Data, internal
-        ├── ProductEntity.kt            # Database entity, internal
-        └── ProductEntityMappers.kt     # Entity ↔ Domain, internal
-```
-
-### Request/Response Mappers (REST Layer)
-Live in `rest/` package alongside DTOs:
-
-```
-products-impl/
-└── infrastructure/
-    └── rest/
-        └── v1/
-            ├── ProductControllerV1.kt
-            ├── ProductCreateRequest.kt
-            ├── ProductResponseV1.kt
-            └── ProductRequestMappers.kt    # DTO ↔ Domain
-```
+Database entities are implementation details. Domain models are the contract. Keeping entities internal allows:
+- Changing persistence technology without affecting domain
+- Keeping domain models clean of persistence annotations
+- Enforcing separation between domain and infrastructure
 
 ---
 
 ## Implementation
 
 ### Entity Definition
-Always marked `internal`:
 
 ```kotlin
-// ProductEntity.kt (in infrastructure/persistence package)
-@Table("products", schema = "products")
-internal data class ProductEntity(
-    @Id val id: String,
-    val name: String,
-    val categoryCode: String,
-    val priceAmount: BigDecimal,
-    val priceCurrency: String,
-    val weightGrams: Int,
-    val sustainabilityRating: String,
-    val carbonFootprintKg: BigDecimal
-)
-```
-
-### Entity Mappers
-Extension functions, marked `internal`:
-
-```kotlin
-// ProductEntityMappers.kt (in infrastructure/persistence package)
-internal fun ProductEntity.toProduct(): Product {
-    return Product(
-        id = ProductId(this.id),
-        name = this.name,
-        category = ProductCategory.valueOf(this.categoryCode),
-        price = Money(this.priceAmount, Currency.valueOf(this.priceCurrency)),
-        weight = Weight(this.weightGrams, GRAMS),
-        sustainabilityRating = SustainabilityRating.valueOf(this.sustainabilityRating),
-        carbonFootprint = CarbonFootprint(this.carbonFootprintKg, KG_CO2)
-    )
-}
-
-internal fun Product.toProductEntity(): ProductEntity {
-    return ProductEntity(
-        id = this.id.value,
-        name = this.name,
-        categoryCode = this.category.name,
-        priceAmount = this.price.amount,
-        priceCurrency = this.price.currency.name,
-        weightGrams = this.weight.grams,
-        sustainabilityRating = this.sustainabilityRating.name,
-        carbonFootprintKg = this.carbonFootprint.kgCo2
-    )
-}
-```
-
-### Repository Interface
-Defined in domain layer, returns domain types:
-
-```kotlin
-// ProductRepository.kt (in domain/repository package)
-internal interface ProductRepository {
-    fun save(product: Product): Product
-    fun findById(id: ProductId): Product?
-    fun findAll(): List<Product>
-    fun findByCategory(category: ProductCategory): List<Product>
-}
-```
-
-### Repository Implementation
-Lives in persistence, uses mappers internally:
-
-```kotlin
-// ProductRepositoryImpl.kt (in infrastructure/persistence package)
-@Component
-internal class ProductRepositoryImpl(
-    private val jdbc: ProductRepositoryJdbc
-) : ProductRepository {
-
-    override fun save(product: Product): Product {
-        val entity = product.toProductEntity()
-        return jdbc.save(entity).toProduct()
-    }
-
-    override fun findById(id: ProductId): Product? {
-        return jdbc.findById(id.value)
-            .map { it.toProduct() }
-            .orElse(null)
-    }
-
-    override fun findAll(): List<Product> {
-        return jdbc.findAll().map { it.toProduct() }
-    }
-
-    override fun findByCategory(category: ProductCategory): List<Product> {
-        return jdbc.findByCategoryCode(category.name)
-            .map { it.toProduct() }
-    }
-}
-
-@Repository
-internal interface ProductRepositoryJdbc : CrudRepository<ProductEntity, String> {
-    fun findByCategoryCode(categoryCode: String): List<ProductEntity>
-}
-```
-
----
-
-## REST Layer Mappers
-
-Request/Response mappers are **not** marked internal:
-
-```kotlin
-// ProductRequestMappers.kt (in infrastructure/rest/v1 package)
-fun ProductCreateRequest.toProduct(): Product {
-    return Product(
-        id = ProductId.generate(),
-        name = this.name,
-        category = this.category,
-        price = Money(this.priceAmount, this.priceCurrency),
-        weight = Weight(this.weightGrams, GRAMS),
-        sustainabilityRating = SustainabilityRating.B,
-        carbonFootprint = CarbonFootprint(BigDecimal("1.5"), KG_CO2)
-    )
-}
-
-fun Product.toProductResponseV1(): ProductResponseV1 {
-    return ProductResponseV1(
-        id = this.id.value,
-        name = this.name,
-        category = this.category,
-        priceAmount = this.price.amount,
-        priceCurrency = this.price.currency,
-        weightGrams = this.weight.grams,
-        sustainabilityRating = this.sustainabilityRating
-    )
-}
-```
-
----
-
-## Naming Convention
-
-**File naming**:
-- Entity mappers: `<Type>EntityMappers.kt`
-- Request mappers: `<Type>RequestMappers.kt`
-
-**Function naming**:
-- Entity → Domain: `ProductEntity.toProduct()`
-- Domain → Entity: `Product.toProductEntity()`
-- Request → Domain: `ProductCreateRequest.toProduct()`
-- Domain → Response: `Product.toProductResponseV1()`
-
----
-
-## Anti-Patterns
-
-### ✗ Bad: Entity Leaking
-```kotlin
-// ✗ Don't return entities from repository
-interface ProductRepository {
-    fun findById(id: ProductId): ProductEntity?  // Entity leaked!
-}
-
-// ✗ Don't expose entities in service
-@Service
-class ProductServiceImpl {
-    fun getProduct(id: ProductId): ProductEntity {  // Entity leaked!
-        return productRepository.findById(id)
-    }
-}
-```
-
-### ✗ Bad: Mappers Outside Persistence
-```kotlin
-// ✗ Don't put entity mappers in service layer
-class ProductServiceImpl {
-    private fun toEntity(product: Product): ProductEntity { ... }
-}
-
-// ✗ Don't create separate mapper classes
-class ProductMapper {
-    fun toEntity(product: Product): ProductEntity { ... }
-}
-```
-
-### ✗ Bad: Public Entities
-```kotlin
-// ✗ Don't make entities public
-@Table("products")
-data class ProductEntity(...)  // Missing 'internal'
-```
-
----
-
-## Complete Example
-
-```kotlin
-// Domain model (products-impl/domain/model) - internal, clean
-internal data class Product(
-    val id: ProductId,
-    val name: String,
-    val price: Money
-)
-
-// Repository interface (products-impl/domain/repository) - internal
-internal interface ProductRepository {
-    fun save(product: Product): Product
-    fun findById(id: ProductId): Product?
-}
-
-// Entity (products-impl/infrastructure/persistence) - internal, annotated
+// persistence/ProductEntity.kt
 @Table("products", schema = "products")
 internal data class ProductEntity(
     @Id val id: String,
@@ -269,42 +34,67 @@ internal data class ProductEntity(
     val priceAmount: BigDecimal,
     val priceCurrency: String
 )
+```
 
-// Mappers (products-impl/infrastructure/persistence) - internal
+### Entity Mappers
+
+```kotlin
+// persistence/ProductEntityMappers.kt
 internal fun ProductEntity.toProduct(): Product = Product(
     id = ProductId(this.id),
     name = this.name,
     price = Money(this.priceAmount, Currency.valueOf(this.priceCurrency))
 )
 
-internal fun Product.toProductEntity(): ProductEntity = ProductEntity(
+internal fun Product.toEntity(): ProductEntity = ProductEntity(
     id = this.id.value,
     name = this.name,
     priceAmount = this.price.amount,
     priceCurrency = this.price.currency.name
 )
+```
 
-// Repository impl (products-impl/infrastructure/persistence) - returns domain
+### Repository Interface (Domain)
+
+```kotlin
+// ProductRepository.kt
+internal interface ProductRepository {
+    fun save(product: Product): Product
+    fun findById(id: ProductId): Product?
+    fun findAll(): List<Product>
+}
+```
+
+### Repository Implementation (Persistence)
+
+```kotlin
+// persistence/ProductRepositoryImpl.kt
 @Component
 internal class ProductRepositoryImpl(
     private val jdbc: ProductRepositoryJdbc
 ) : ProductRepository {
+
     override fun save(product: Product): Product {
-        return jdbc.save(product.toProductEntity()).toProduct()
+        return jdbc.save(product.toEntity()).toProduct()
+    }
+
+    override fun findById(id: ProductId): Product? {
+        return jdbc.findById(id.value)
+            .map { it.toProduct() }
+            .orElse(null)
     }
 }
 
-// Service (products-impl/application/service) - works with domain
-@Service
-class ProductServiceImpl(
-    private val productRepository: ProductRepository
-) : ProductService {
-    override fun createProduct(...): Result<Product> {
-        val product = Product(...)
-        return Result.success(productRepository.save(product))
-    }
-}
+@Repository
+internal interface ProductRepositoryJdbc : CrudRepository<ProductEntity, String>
 ```
+
+---
+
+## Naming Convention
+
+- Entity mappers: `<Type>EntityMappers.kt`
+- Functions: `ProductEntity.toProduct()`, `Product.toEntity()`
 
 ---
 
@@ -312,43 +102,10 @@ class ProductServiceImpl(
 
 ### Positive
 - Domain models independent of persistence technology
-- Easy to swap persistence (JPA → JDBC → MongoDB)
-- Entities cannot accidentally leak through APIs
+- Easy to swap persistence implementations
+- Entities cannot leak through APIs
 - Clear separation of concerns
-- Domain models stay clean
-- Repository interface is part of domain (Hexagonal Architecture)
 
 ### Negative
 - Additional mapping layer
-- Slight performance overhead (usually negligible)
 - More code to maintain
-
----
-
-## Testing
-
-Test mappers in integration tests:
-
-```kotlin
-@SpringBootTest
-class ProductRepositoryIntegrationTest {
-
-    @Test
-    fun `save should persist and retrieve product with correct mapping`() {
-        // Given
-        val product = buildProduct(
-            name = "Organic Cotton T-Shirt",
-            price = Money(BigDecimal("29.99"), EUR)
-        )
-
-        // When
-        val saved = productRepository.save(product)
-        val retrieved = productRepository.findById(saved.id)
-
-        // Then
-        assertThat(retrieved).isNotNull
-        assertThat(retrieved?.name).isEqualTo("Organic Cotton T-Shirt")
-        assertThat(retrieved?.price?.amount).isEqualByComparingTo(BigDecimal("29.99"))
-    }
-}
-```

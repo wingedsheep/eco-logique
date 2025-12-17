@@ -1,107 +1,107 @@
 # ADR-015: Test Pyramid Strategy
 
-**Status:** Accepted  
-**Date:** 2024-12-13  
-**Related ADRs:** ADR-007: Feature File Tests Strategy
+**Status**: Accepted
+
+**Date**: 2024-12-13
+
+---
 
 ## Decision
 
-We adopt a four-layer test pyramid tailored for a Modular Monolith. We prioritize fast feedback at the bottom layers
-while ensuring architectural integrity at the higher layers.
+We adopt a four-layer test pyramid prioritizing fast feedback at lower layers.
 
-## The Pyramid Layers
+---
 
-### 1. Unit Tests (The Base)
+## The Layers
 
-- **Focus:** Pure Domain Logic, Domain Entities, Value Objects, Utility Functions.
-- **Scope:** Single class or small cluster of related classes.
-- **Dependencies:** Mocked or Stubbed. No Spring Context. No Database.
-- **Volume:** High (~70%).
-- **Execution Time:** Milliseconds.
-- **Example:** `ProductTest.kt` ensuring a product cannot have a negative price.
+### 1. Unit Tests (Base, ~70%)
 
-### 2. Integration Tests (The Glue)
+- **Focus**: Domain logic, value objects, utilities
+- **Scope**: Single class with mocked dependencies
+- **Speed**: Milliseconds
+- **Use for**: Complex calculations, edge cases, state machines
 
-- **Focus:** Infrastructure Adapters (Repositories, Web Controllers, External Clients).
-- **Scope:** Interaction between application code and infrastructure components.
-- **Dependencies:** Real Database (Testcontainers), WireMock for external APIs. Slice-based Spring Context (e.g.,
-  `@DataJdbcTest`, `@WebMvcTest`).
-- **Volume:** Medium (~20%).
-- **Execution Time:** Seconds.
-- **Example:** `ProductRepositoryImplIntegrationTest.kt` verifying SQL mappings.
+```kotlin
+class MoneyTest {
+    @Test
+    fun `cannot create negative amount`() {
+        assertThatThrownBy { Money(BigDecimal("-10"), EUR) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+    }
+}
+```
 
-### 3. Module/Component Tests (The Boundary)
+### 2. Module Tests (Foundation, ~20%)
 
-- **Focus:** Acceptance criteria for a specific module (Bounded Context).
-- **Scope:** One specific `-impl` module (e.g., `products-impl`).
-- **Dependencies:**
-    - **Internal:** Real wiring of the module (Service + Repository + DB).
-    - **External Modules:** **MOCKED** `-api` interfaces of other modules.
-- **Format:** Gherkin Feature files (Cucumber) or `@SpringBootTest`.
-- **Goal:** Verify the module works in isolation and fulfills its contract.
-- **Volume:** Low-Medium (~7%).
-- **Example:** `products_module.feature` testing "Create Product" flow without involving Shipping or Inventory.
+- **Focus**: Module fulfills its contract
+- **Scope**: One module fully wired, others mocked
+- **Speed**: Seconds
+- **Use for**: All requirements, happy paths, error cases
 
-### 4. E2E / Application Tests (The Top)
+```gherkin
+Feature: Shipment Creation
 
-- **Focus:** Critical User Journeys across the entire system.
-- **Scope:** The full application.
-- **Dependencies:** Everything real. All modules wired together. Real Database.
-- **Format:** Gherkin Feature files (Cucumber).
-- **Goal:** Verify that modules interact correctly (e.g., Events flowing from Payment -> Inventory -> Shipping).
-- **Volume:** Low (~3%).
-- **Execution Time:** Minutes.
-- **Example:** `products.feature` (Application level) or Checkout E2E flow.
+  Scenario: Create shipment for valid product
+    Given a product exists with id "prod-123" and weight 500 grams
+    When I create a shipment for product "prod-123"
+    Then the shipment should be created with weight 500 grams
+```
+
+### 3. Integration Tests (~7%)
+
+- **Focus**: Infrastructure adapters
+- **Scope**: Repository + real DB, Controller + real Spring
+- **Speed**: Seconds
+- **Use for**: Complex queries, custom serialization
+
+### 4. Application Tests (Top, ~3%)
+
+- **Focus**: Critical user journeys
+- **Scope**: Full application, all modules wired
+- **Speed**: Minutes
+- **Use for**: Integration verification only
+
+---
 
 ## Testing Matrix
 
-| Layer       | Subject                           | Mocks                     | Context                         | Location               |
-|-------------|-----------------------------------|---------------------------|---------------------------------|------------------------|
-| Unit        | Entities, Value Objects, Services | Yes (Mockito)             | None                            | `*-impl/src/test`      |
-| Integration | Repositories, Controllers         | No (Docker)               | Sliced (`@DataJdbcTest`)        | `*-impl/src/test`      |
-| Module      | Functional Requirements           | Other Modules             | Full Module (`@SpringBootTest`) | `*-impl/src/test`      |
-| E2E         | User Journeys                     | None / External 3rd Party | Full App (`@SpringBootTest`)    | `application/src/test` |
+| Layer       | Subject                 | Mocks         | Context     |
+|-------------|-------------------------|---------------|-------------|
+| Unit        | Entities, Value Objects | Yes           | None        |
+| Module      | Requirements            | Other modules | Full module |
+| Integration | Adapters                | No            | Sliced      |
+| Application | User journeys           | None          | Full app    |
+
+---
 
 ## Guidelines
 
 ### "Shift Left"
 
-Push assertions as low as possible. If a rule can be tested in a Unit Test (e.g., "Price format"), do not test it in
-E2E.
+Push assertions as low as possible. If testable in a unit test, don't test in E2E.
 
-### Module Isolation Rule
+### Module Isolation
 
-Module Tests must **NOT** depend on the implementation of other modules.
+Module tests must mock other modules. This proves the module works assuming contracts are respected.
 
-If Shipping calls `ProductService`, the Module Test for Shipping must mock `ProductService`.
+### Where to Focus
 
-This proves that Shipping works assuming the contract (`-api`) is respected.
+- **Unit tests**: Technical edge cases, complex logic
+- **Module tests**: Every requirement
+- **Integration tests**: Where other tests don't cover
+- **Application tests**: Critical paths only
 
-### Integration Verification
-
-E2E Tests are the only place where real module-to-module communication is verified.
-
-Use these sparingly to verify wiring and critical paths.
-
-Rely on Worldview data to set up complex scenarios easily.
-
-### Database Usage
-
-- **Unit:** No DB.
-- **Integration:** Testcontainers (clean DB per test class or method).
-- **Module/E2E:** Testcontainers (schema initialized via Flyway).
+---
 
 ## Consequences
 
 ### Positive
 
-- **Speed:** Most tests run instantly (Unit).
-- **Stability:** Flaky E2E tests are minimized.
-- **Architecture enforcement:** Module tests force strict boundary checks by mocking external module APIs.
-- **Debuggability:** Failures in lower layers point exactly to the broken line of code.
+- Fast feedback (most tests are unit/module)
+- Clear failure isolation
+- Architecture enforcement through mocking
 
 ### Negative
 
-- **Mock Drift:** Module tests might pass with mocks even if the real dependency has changed behavior (mitigated by E2E
-  tests).
-- **Setup Complexity:** Requires maintaining configurations for Slice tests, Module tests, and App tests.
+- Mock drift risk (mitigated by application tests)
+- Setup complexity for multiple test types

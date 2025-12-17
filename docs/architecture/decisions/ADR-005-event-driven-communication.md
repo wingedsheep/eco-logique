@@ -1,4 +1,4 @@
-# ADR-005: Event-Driven Communication Between Modules
+# ADR-005: Communication Between Modules
 
 **Status**: Accepted
 
@@ -17,25 +17,17 @@ Use **domain events** for asynchronous, decoupled communication between modules.
 ### Use Events (Asynchronous)
 - Eventual consistency is acceptable
 - Loose coupling desired
-- One module shouldn't block another
-- Multiple listeners may be interested
+- Multiple modules might react
 - Action is a side effect, not core flow
 
-**Examples**:
-- Payment completed → trigger shipment
-- Product created → update search index
-- User registered → send welcome email
+**Examples**: Payment completed → trigger shipment, Product created → update search index
 
 ### Use Direct Calls (Synchronous)
 - Immediate consistency required
-- Operation fails if dependency unavailable
 - Need return value for decision
 - Part of core business flow
 
-**Examples**:
-- Shipping needs product weight
-- Inventory check before reservation
-- User validation before order
+**Examples**: Shipping needs product weight, Inventory check before reservation
 
 ---
 
@@ -44,112 +36,45 @@ Use **domain events** for asynchronous, decoupled communication between modules.
 Events are immutable data classes in the publishing module's `-api`:
 
 ```kotlin
-// payment-api/event/PaymentCompleted.kt
-data class PaymentCompleted(
-    val paymentId: PaymentId,
-    val orderId: OrderId,
-    val amount: Money,
-    val timestamp: Instant
-)
-
-data class PaymentFailed(
-    val paymentId: PaymentId,
-    val orderId: OrderId,
-    val reason: String,
-    val timestamp: Instant
+// payment-api/event/PaymentCompletedEvent.kt
+data class PaymentCompletedEvent(
+    val paymentId: String,
+    val orderId: String,
+    val amount: BigDecimal,
+    val currency: String,
+    val timestamp: Instant,
 )
 ```
 
-```kotlin
-// products-api/event/ProductCreated.kt
-data class ProductCreated(
-    val productId: ProductId,
-    val name: String,
-    val category: ProductCategory,
-    val timestamp: Instant
-)
-
-data class ProductPriceChanged(
-    val productId: ProductId,
-    val oldPrice: Money,
-    val newPrice: Money,
-    val timestamp: Instant
-)
-```
-
----
-
-## Event Naming
-
-**Pattern**: `<Entity><PastTense>` or `<Entity><Status>Changed`
-
-```kotlin
-// ✓ Good - Past tense, clear meaning
-PaymentCompleted
-ProductCreated
-ShipmentDispatched
-StockReserved
-
-// ✗ Bad - Present tense or vague
-PaymentComplete
-CreateProduct
-ShipmentEvent
-```
+**Naming**: `<Entity><PastTense>` — `PaymentCompleted`, `ProductCreated`, `ShipmentDispatched`
 
 ---
 
 ## Publishing Events
 
-### Setup Event Publisher
-
 ```kotlin
-// common/event/DomainEventPublisher.kt
-interface DomainEventPublisher {
-    fun publish(event: Any)
-}
-
-@Component
-class SpringEventPublisher(
-    private val applicationEventPublisher: ApplicationEventPublisher
-) : DomainEventPublisher {
-    override fun publish(event: Any) {
-        applicationEventPublisher.publishEvent(event)
-    }
-}
-```
-
-### Publish in Service
-
-```kotlin
-// payment-impl/service/PaymentServiceImpl.kt
 @Service
-class PaymentServiceImpl(
+internal class PaymentServiceImpl(
     private val paymentRepository: PaymentRepository,
-    private val eventPublisher: DomainEventPublisher
-) : PaymentService {
+    private val eventPublisher: ApplicationEventPublisher,
+) : PaymentServiceApi {
 
-    override fun completePayment(paymentId: PaymentId): Result<Payment> = runCatching {
-        val payment = paymentRepository.findById(paymentId)
-            ?: throw NoSuchElementException("Payment not found")
+    override fun completePayment(paymentId: String): Result<PaymentDto, PaymentError> {
+        val payment = paymentRepository.findById(PaymentId(paymentId))
+            ?: return Err(PaymentError.NotFound(paymentId))
 
-        val completedPayment = payment.copy(
-            status = PaymentStatus.COMPLETED,
-            completedAt = Instant.now()
-        )
+        val completed = payment.complete()
+        paymentRepository.save(completed)
 
-        paymentRepository.save(completedPayment)
+        eventPublisher.publishEvent(PaymentCompletedEvent(
+            paymentId = completed.id.value,
+            orderId = completed.orderId.value,
+            amount = completed.amount.amount,
+            currency = completed.amount.currency.name,
+            timestamp = Instant.now(),
+        ))
 
-        // Publish event after successful save
-        eventPublisher.publish(
-            PaymentCompleted(
-                paymentId = completedPayment.id,
-                orderId = completedPayment.orderId,
-                amount = completedPayment.amount,
-                timestamp = Instant.now()
-            )
-        )
-
-        completedPayment
+        return Ok(completed.toDto())
     }
 }
 ```
@@ -158,142 +83,16 @@ class PaymentServiceImpl(
 
 ## Listening to Events
 
-### Event Listener
-
 ```kotlin
-// shipping-impl/event/PaymentCompletedListener.kt
 @Component
 class PaymentCompletedListener(
-    private val shipmentService: ShipmentService
+    private val shipmentService: ShipmentServiceApi,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @EventListener
-    fun onPaymentCompleted(event: PaymentCompleted) {
-        logger.info("Payment completed: ${event.paymentId.value}, starting fulfillment")
-
-        shipmentService.startFulfillment(event.orderId)
-            .onFailure { error ->
-                logger.error("Failed to start fulfillment for order ${event.orderId.value}", error)
-            }
-    }
-}
-```
-
-### Async Processing (Optional)
-
-```kotlin
-@Component
-class PaymentCompletedListener(
-    private val shipmentService: ShipmentService
-) {
-    @EventListener
-    @Async  // Process in background thread
-    @Transactional
-    fun onPaymentCompleted(event: PaymentCompleted) {
-        shipmentService.startFulfillment(event.orderId)
-    }
-}
-
-// Enable async in configuration
-@Configuration
-@EnableAsync
-class AsyncConfig
-```
-
----
-
-## Event Flow Example
-
-Complete checkout flow using events:
-
-```kotlin
-// 1. Payment module publishes
-@Service
-class PaymentServiceImpl(private val eventPublisher: DomainEventPublisher) {
-    fun completePayment(paymentId: PaymentId): Result<Payment> {
-        // ... process payment ...
-        eventPublisher.publish(PaymentCompleted(paymentId, orderId, amount, now))
-    }
-}
-
-// 2. Inventory module listens and reserves
-@Component
-class PaymentCompletedInventoryListener(
-    private val inventoryService: InventoryService
-) {
-    @EventListener
-    fun onPaymentCompleted(event: PaymentCompleted) {
-        inventoryService.reserveForOrder(event.orderId)
-        // Publishes StockReserved event
-    }
-}
-
-// 3. Shipping module listens and creates shipment
-@Component
-class StockReservedListener(
-    private val shipmentService: ShipmentService
-) {
-    @EventListener
-    fun onStockReserved(event: StockReserved) {
-        shipmentService.createShipment(event.orderId)
-        // Publishes ShipmentCreated event
-    }
-}
-```
-
----
-
-## Error Handling
-
-### Retry Failed Event Processing
-
-```kotlin
-@Component
-class PaymentCompletedListener(
-    private val shipmentService: ShipmentService
-) {
-    private val logger = LoggerFactory.getLogger(javaClass)
-
-    @EventListener
-    @Retryable(
-        value = [Exception::class],
-        maxAttempts = 3,
-        backoff = Backoff(delay = 1000, multiplier = 2.0)
-    )
-    fun onPaymentCompleted(event: PaymentCompleted) {
-        shipmentService.startFulfillment(event.orderId)
-            .onFailure { error ->
-                logger.error("Failed to start fulfillment", error)
-                throw error  // Trigger retry
-            }
-    }
-
-    @Recover
-    fun recover(e: Exception, event: PaymentCompleted) {
-        logger.error("Failed after retries for payment ${event.paymentId.value}", e)
-        // Send to dead letter queue or alert
-    }
-}
-```
-
-### Idempotent Listeners
-
-```kotlin
-@Component
-class PaymentCompletedListener(
-    private val shipmentService: ShipmentService,
-    private val shipmentRepository: ShipmentRepository
-) {
-    @EventListener
-    fun onPaymentCompleted(event: PaymentCompleted) {
-        // Check if already processed
-        val existing = shipmentRepository.findByOrderId(event.orderId)
-        if (existing != null) {
-            logger.info("Shipment already exists for order ${event.orderId.value}")
-            return
-        }
-
+    fun onPaymentCompleted(event: PaymentCompletedEvent) {
+        logger.info("Payment completed: ${event.paymentId}, starting fulfillment")
         shipmentService.startFulfillment(event.orderId)
     }
 }
@@ -301,117 +100,31 @@ class PaymentCompletedListener(
 
 ---
 
-## Event Ordering
+## The Dual-Write Problem
 
-Events are processed in order they're published **within the same transaction**. Across transactions, no ordering guarantee.
+If database write succeeds but event publishing fails, the payment is complete but nobody knows. The **transactional outbox** solves this:
 
-```kotlin
-// Events published in this order
-eventPublisher.publish(PaymentStarted(...))
-eventPublisher.publish(PaymentCompleted(...))
+1. Write event to an outbox table in the same transaction as business data
+2. A separate processor polls the outbox and publishes to listeners
+3. If transaction rolls back, outbox entry rolls back too
 
-// Listeners receive in same order
-@EventListener fun onPaymentStarted(...) { }   // Called first
-@EventListener fun onPaymentCompleted(...) { } // Called second
-```
-
-For strict ordering across modules, use event chain with explicit dependencies:
-
-```
-PaymentCompleted → StockReserved → ShipmentCreated
-```
+For in-process Spring events, direct publishing is often sufficient. The outbox becomes important for external message brokers or when event delivery is critical.
 
 ---
 
-## Testing Events
+## Idempotent Listeners
 
-### Test Event Publishing
-
-```kotlin
-@SpringBootTest
-class PaymentServiceImplTest {
-    @MockBean
-    private lateinit var eventPublisher: DomainEventPublisher
-
-    @Autowired
-    private lateinit var paymentService: PaymentService
-
-    @Test
-    fun `completePayment should publish PaymentCompleted event`() {
-        // Given
-        val paymentId = PaymentId("PAY-001")
-
-        // When
-        paymentService.completePayment(paymentId)
-
-        // Then
-        verify(eventPublisher).publish(
-            argThat<PaymentCompleted> {
-                it.paymentId == paymentId
-            }
-        )
-    }
-}
-```
-
-### Test Event Listening
+Events may be delivered more than once. Listeners must handle duplicates:
 
 ```kotlin
-@SpringBootTest
-class PaymentCompletedListenerTest {
-    @MockBean
-    private lateinit var shipmentService: ShipmentService
-
-    @Autowired
-    private lateinit var listener: PaymentCompletedListener
-
-    @Test
-    fun `onPaymentCompleted should start fulfillment`() {
-        // Given
-        val event = PaymentCompleted(
-            paymentId = PaymentId("PAY-001"),
-            orderId = OrderId("ORD-001"),
-            amount = Money(BigDecimal("100"), EUR),
-            timestamp = Instant.now()
-        )
-        whenever(shipmentService.startFulfillment(any())).thenReturn(Result.success(Unit))
-
-        // When
-        listener.onPaymentCompleted(event)
-
-        // Then
-        verify(shipmentService).startFulfillment(OrderId("ORD-001"))
+@EventListener
+fun onPaymentCompleted(event: PaymentCompletedEvent) {
+    val existing = shipmentRepository.findByOrderId(event.orderId)
+    if (existing != null) {
+        logger.info("Shipment already exists for order ${event.orderId}")
+        return
     }
-}
-```
-
-### Integration Test with Real Events
-
-```kotlin
-@SpringBootTest
-class CheckoutFlowIntegrationTest {
-    @Autowired
-    private lateinit var paymentService: PaymentService
-
-    @Autowired
-    private lateinit var shipmentRepository: ShipmentRepository
-
-    @Test
-    fun `payment completion should trigger shipment creation`() {
-        // Given
-        val paymentId = PaymentId("PAY-001")
-        val orderId = OrderId("ORD-001")
-
-        // When
-        paymentService.completePayment(paymentId)
-
-        // Then - Wait for async event processing
-        await().atMost(Duration.ofSeconds(5)).untilAsserted {
-            val shipment = shipmentRepository.findByOrderId(orderId)
-            assertThat(shipment).isNotNull
-            assertThat(shipment?.status).isEqualTo(ShipmentStatus.PENDING)
-        }
-    }
+    shipmentService.startFulfillment(event.orderId)
 }
 ```
 
@@ -421,34 +134,11 @@ class CheckoutFlowIntegrationTest {
 
 ### Positive
 - Loose coupling between modules
-- Easy to add new event listeners
+- Easy to add new listeners
 - Modules don't block each other
-- Natural fit for eventual consistency
 - Supports scaling (can move to message queue later)
 
 ### Negative
-- Harder to debug (async flow)
+- Harder to debug async flows
 - Eventual consistency challenges
 - Need idempotency handling
-- No automatic ordering guarantees
-- Error handling more complex
-
----
-
-## Migration to Message Queue
-
-Current implementation uses Spring's in-memory event bus. Can migrate to RabbitMQ/Kafka later:
-
-```kotlin
-// Current: Spring ApplicationEventPublisher
-eventPublisher.publishEvent(PaymentCompleted(...))
-
-// Future: RabbitMQ
-rabbitTemplate.convertAndSend("payment.completed", PaymentCompleted(...))
-
-// Listener unchanged (use @RabbitListener instead of @EventListener)
-@RabbitListener(queues = ["payment.completed"])
-fun onPaymentCompleted(event: PaymentCompleted) { ... }
-```
-
-Events defined in `-api` stay the same. Only infrastructure changes.

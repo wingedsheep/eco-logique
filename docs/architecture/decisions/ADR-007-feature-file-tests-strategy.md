@@ -8,82 +8,78 @@
 
 ## Decision
 
-We implement feature file tests on two distinct levels: **Module** and **Application**. This separation ensures fast
-feedback, thorough coverage of domain logic, and verification of the integrated system.
+We implement feature file tests on two distinct levels: **Module** and **Application**.
 
 ---
 
 ## Module Tests
 
-Module tests focus on the behavior of a single module in isolation.
-
 ### Scope and Boundaries
 
-- **Scope**: Limited to the module under test.
-- **Boundaries**: The tests end at the module boundaries.
-- **Dependencies**: Interfaces from other modules (e.g., other `-api` modules) are **mocked**.
-- **Data**: Uses the module's own database schema.
+- **Scope**: Single module under test
+- **Dependencies**: Other modules are **mocked**
+- **Data**: Real database (module's own schema)
 
 ### Scenarios
 
-- **Primary Goal**: Verification of business logic and domain rules within the module.
-- **Coverage**:
-    - Happy paths.
-    - **Alternative scenarios**: Error conditions, edge cases, business rule violations.
-    - Extensive coverage of the module's capabilities.
+- Happy paths
+- Error conditions and edge cases
+- Extensive coverage of module's capabilities
 
 ### Implementation
 
-- Tests interact with the module's public API.
-- External dependencies are replaced with test doubles (mocks/stubs) to simulate various responses and failures from
-  other parts of the system.
-
 ```kotlin
-// Example: Testing Shipping Module
-// ProductService is mocked to return specific product details
-val productService = mock<ProductService>()
-whenever(productService.getProduct(any())).thenReturn(product)
-
-// Test runs against ShippingService
-shippingService.createShipment(...)
+class ShipmentSteps(
+    private val shippingService: ShippingServiceApi,
+    private val productService: ProductServiceApi,  // Mocked
+) {
+    @Given("a product exists with id {string} and weight {int} grams")
+    fun mockProduct(productId: String, weight: Int) {
+        every { productService.getProduct(productId) } returns Ok(
+            buildProductDto(id = productId, weightGrams = weight)
+        )
+    }
+}
 ```
 
 ---
 
 ## Application Tests
 
-Application tests verify that the modules work together correctly as a cohesive system.
-
 ### Scope and Boundaries
 
-- **Scope**: The entire application.
-- **Entry Points**: Tests use the **actual entry points** of the application (e.g., REST endpoints, public API surface).
-- **Dependencies**: Real wiring of all modules. No mocking of internal module communication.
+- **Scope**: Entire application
+- **Entry Points**: REST endpoints, public API
+- **Dependencies**: All modules wired, no mocking
 
 ### Scenarios
 
-- **Primary Goal**: Verification of critical user journeys and integration between modules.
-- **Coverage**:
-    - **Happy flows**: End-to-end success scenarios.
-    - Critical integration paths.
-    - Significantly **fewer** tests than module tests.
-
-### Implementation
-
-- Tests run against the fully assembled application (e.g., Spring Boot context with all modules loaded).
-- Verifies that real modules interact correctly.
+- Critical user journeys only
+- Happy flows and integration paths
+- Significantly fewer tests than module tests
 
 ---
 
 ## Comparison
 
-| Feature          | Module Tests                             | Application Tests                   |
-|:-----------------|:-----------------------------------------|:------------------------------------|
-| **Scope**        | Single Module                            | Full Application                    |
-| **Dependencies** | Mocked (other modules)                   | Real (all modules wired)            |
-| **Entry Point**  | Module Interface/Service                 | Application Entry Points (REST/API) |
-| **Focus**        | Logic, Alternative Scenarios, Edge Cases | Happy Flows, Integration, E2E       |
-| **Quantity**     | Many                                     | Few                                 |
+| Aspect       | Module Tests      | Application Tests |
+|--------------|-------------------|-------------------|
+| Scope        | Single module     | Full application  |
+| Dependencies | Mocked            | Real              |
+| Entry Point  | Service interface | REST/API          |
+| Focus        | Logic, edge cases | Integration, E2E  |
+| Quantity     | Many              | Few               |
+
+---
+
+## Step Definition Boundaries
+
+**Module test fixtures own only their module's steps.** They mock external dependencies rather than calling them.
+
+**Steps that cross module boundaries belong to application-level tests.** These live in the application module with full
+visibility.
+
+This keeps test dependencies flat and failures local.
 
 ---
 
@@ -91,13 +87,11 @@ Application tests verify that the modules work together correctly as a cohesive 
 
 ### Positive
 
-- **Faster Feedback**: Module tests run faster as they are isolated.
-- **Better Coverage**: Easier to test edge cases in isolation using mocks.
-- **Clearer Failures**: Module test failures clearly indicate the source of the problem.
-- **Critical Paths Secured**: Application tests ensure the system holds together for main use cases.
+- Fast feedback from isolated module tests
+- Better edge case coverage with mocks
+- Clear failure isolation
 
 ### Negative
 
-- **Mock Maintenance**: Mocks in module tests need to be updated when external APIs change.
-- **Gap Risk**: Risk of integration bugs if mocks don't behave exactly like the real implementations (mitigated by
-  Application tests).
+- Mock maintenance when APIs change
+- Risk of integration bugs if mocks diverge (mitigated by application tests)

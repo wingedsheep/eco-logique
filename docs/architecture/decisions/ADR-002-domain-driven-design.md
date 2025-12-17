@@ -30,51 +30,47 @@ Each module represents one bounded context with its own domain model and languag
 
 ## Domain Model Location
 
-Domain models live in the **`-impl/domain`** package and are **internal** to the module. The `-api` module contains only interfaces, DTOs, events, and error hierarchies.
+Domain models live in the **`-impl`** module and are **internal**. The `-api` module contains interfaces, DTOs, events, and error hierarchies.
 
 ```
 products-api/
-├── ProductService.kt              # Public interface
+├── ProductServiceApi.kt           # Public interface
 ├── dto/
-│   ├── ProductDto.kt              # Data carrier, no behavior
-│   └── CreateProductRequest.kt
+│   ├── ProductDto.kt              # Response DTO (plain data)
+│   └── CreateProductRequest.kt    # Request DTO (may validate)
 ├── error/
 │   └── ProductError.kt            # Sealed error hierarchy
 └── event/
-    └── ProductCreated.kt
+    └── ProductCreatedEvent.kt
 
 products-impl/
-├── domain/
-│   ├── model/
-│   │   ├── Product.kt             # Rich domain entity (internal)
-│   │   ├── ProductId.kt           # Value object (internal)
-│   │   └── Money.kt               # Value object with behavior (internal)
-│   └── repository/
-│       └── ProductRepository.kt   # Repository interface (internal)
-├── application/
-│   └── service/
-│       └── ProductServiceImpl.kt  # Implements API, maps DTO ↔ Domain
-└── infrastructure/
-    ├── persistence/
-    └── web/
+├── Product.kt                     # Domain entity (internal)
+├── ProductId.kt                   # Value object (internal)
+├── Money.kt                       # Value object (internal)
+├── ProductRepository.kt           # Repository interface (internal)
+├── ProductServiceImpl.kt          # Implements API
+├── ProductMappers.kt              # DTO ↔ Domain mapping
+└── persistence/
+    ├── ProductEntity.kt
+    └── ProductRepositoryJdbc.kt
 ```
 
 **Rules**:
 - Domain models are `internal` to `-impl`
-- DTOs in `-api` are dumb data carriers
-- Application layer handles mapping between DTOs and domain models
-- Domain models contain validation and business logic
+- Response DTOs in `-api` are plain data carriers
+- Request DTOs in `-api` may include validation (fail-fast at boundary)
+- Domain models contain business rules and invariants
 
 ---
 
 ## Tactical Design Patterns
 
-### Entities (in `-impl/domain`)
+### Entities (in `-impl`)
 
 Objects with identity that persist over time. Internal to the module.
 
 ```kotlin
-// products-impl/domain/model/Product.kt
+// products-impl/Product.kt
 internal data class Product(
     val id: ProductId,
     val name: String,
@@ -82,22 +78,20 @@ internal data class Product(
 ) {
     init {
         require(name.isNotBlank()) { "Product name cannot be blank" }
-        require(price.amount > BigDecimal.ZERO) { "Price must be positive" }
     }
 
     fun withUpdatedPrice(newPrice: Money): Product {
-        require(newPrice.amount > BigDecimal.ZERO)
         return copy(price = newPrice)
     }
 }
 ```
 
-### Value Objects (in `-impl/domain`)
+### Value Objects (in `-impl`)
 
 Objects defined by their attributes, not identity. Immutable, with behavior.
 
 ```kotlin
-// products-impl/domain/model/Money.kt
+// products-impl/Money.kt
 internal data class Money(
     val amount: BigDecimal,
     val currency: Currency
@@ -111,96 +105,40 @@ internal data class Money(
         return Money(amount + other.amount, currency)
     }
 }
+```
 
-// products-impl/domain/model/ProductId.kt
-@JvmInline
-internal value class ProductId(val value: String) {
+### Request DTOs (in `-api`)
+
+Request DTOs validate input at the boundary. Invalid requests fail immediately.
+
+```kotlin
+// products-api/dto/CreateProductRequest.kt
+data class CreateProductRequest(
+    val name: String,
+    val priceAmount: BigDecimal,
+    val priceCurrency: String,
+) {
     init {
-        require(value.isNotBlank()) { "ProductId cannot be blank" }
-    }
-
-    companion object {
-        fun generate(): ProductId = ProductId(UUID.randomUUID().toString())
+        require(name.isNotBlank()) { "Name is required" }
+        require(priceAmount > BigDecimal.ZERO) { "Price must be positive" }
     }
 }
 ```
 
-### DTOs (in `-api`)
+### Response DTOs (in `-api`)
 
-Dumb data carriers. No validation, no business logic.
+Response DTOs are plain data carriers. No validation, no business logic.
 
 ```kotlin
 // products-api/dto/ProductDto.kt
 data class ProductDto(
     val id: String,
     val name: String,
-    val category: String,
     val priceAmount: BigDecimal,
     val priceCurrency: String,
     val weightGrams: Int,
-    val sustainabilityRating: String
-)
-
-// products-api/dto/CreateProductRequest.kt
-data class CreateProductRequest(
-    val name: String,
-    val category: String,
-    val priceAmount: BigDecimal,
-    val priceCurrency: String,
-    val weightGrams: Int
 )
 ```
-
-### Aggregates (in `-impl/domain`)
-
-Cluster of entities and value objects with one root entity.
-
-```kotlin
-// shipping-impl/domain/model/Order.kt
-internal data class Order(
-    val id: OrderId,
-    val items: List<OrderItem>,
-    val totalPrice: Money,
-    val shippingAddress: Address
-) {
-    fun addItem(item: OrderItem): Order {
-        return copy(
-            items = items + item,
-            totalPrice = totalPrice + item.price
-        )
-    }
-}
-```
-
----
-
-## Ubiquitous Language
-
-Use domain terms consistently in code, conversations, and documentation.
-
-### In Domain Layer (internal)
-```kotlin
-// products-impl/domain/model/SustainabilityRating.kt
-internal enum class SustainabilityRating { A_PLUS, A, B, C, D }
-
-// shipping-impl/domain/model/ShipmentStatus.kt
-internal enum class ShipmentStatus { PENDING, IN_TRANSIT, DELIVERED }
-```
-
-### In API Layer (public DTOs)
-```kotlin
-// products-api/dto/ProductDto.kt
-data class ProductDto(
-    val sustainabilityRating: String  // String representation
-)
-
-// shipping-api/dto/ShipmentDto.kt
-data class ShipmentDto(
-    val status: String  // String representation
-)
-```
-
-The application layer translates between domain enums and string representations.
 
 ---
 
@@ -208,46 +146,39 @@ The application layer translates between domain enums and string representations
 
 ### API Interface (in `-api`)
 
-Defines the public contract using DTOs.
+Defines the public contract using DTOs and sealed error types.
 
 ```kotlin
-// products-api/ProductService.kt
-interface ProductService {
+// products-api/ProductServiceApi.kt
+interface ProductServiceApi {
     fun createProduct(request: CreateProductRequest): Result<ProductDto, ProductError>
     fun getProduct(id: String): Result<ProductDto, ProductError>
-    fun updatePrice(id: String, newPrice: BigDecimal, currency: String): Result<ProductDto, ProductError>
 }
 ```
 
-### Domain Service (in `-impl/application`)
+### Service Implementation (in `-impl`)
 
 Implements the API, orchestrates domain logic, handles mapping.
 
 ```kotlin
-// products-impl/application/service/ProductServiceImpl.kt
+// products-impl/ProductServiceImpl.kt
 @Service
 internal class ProductServiceImpl(
-    private val productRepository: ProductRepository
-) : ProductService {
+    private val productRepository: ProductRepository,
+    private val eventPublisher: ApplicationEventPublisher,
+) : ProductServiceApi {
 
     override fun createProduct(request: CreateProductRequest): Result<ProductDto, ProductError> {
-        return runCatching {
-            val product = Product(
-                id = ProductId.generate(),
-                name = request.name,
-                category = ProductCategory.valueOf(request.category),
-                price = Money(request.priceAmount, Currency.valueOf(request.priceCurrency)),
-                weight = Weight(request.weightGrams, GRAMS),
-                sustainabilityRating = calculateRating(request.category)
-            )
-            productRepository.save(product)
-            product.toDto()
-        }.mapError { e ->
-            when (e) {
-                is IllegalArgumentException -> ProductError.ValidationFailed(e.message ?: "Validation failed")
-                else -> ProductError.Unexpected(e.message ?: "Unexpected error")
-            }
-        }
+        val product = Product(
+            id = ProductId.generate(),
+            name = request.name,
+            price = Money(request.priceAmount, Currency.valueOf(request.priceCurrency)),
+        )
+        
+        val saved = productRepository.save(product)
+        eventPublisher.publishEvent(ProductCreatedEvent(saved.id.value))
+        
+        return Ok(saved.toDto())
     }
 
     override fun getProduct(id: String): Result<ProductDto, ProductError> {
@@ -258,98 +189,21 @@ internal class ProductServiceImpl(
 }
 ```
 
-### Mapping Extension Functions (in `-impl`)
-
-```kotlin
-// products-impl/application/ProductMappers.kt
-internal fun Product.toDto(): ProductDto = ProductDto(
-    id = id.value,
-    name = name,
-    category = category.name,
-    priceAmount = price.amount,
-    priceCurrency = price.currency.name,
-    weightGrams = weight.grams,
-    sustainabilityRating = sustainabilityRating.name
-)
-```
-
 ---
 
 ## Domain Events
 
-Events capture important business occurrences. Defined in `-api` as simple data classes.
+Events capture important business occurrences. Defined in `-api` using primitive types.
 
 ```kotlin
-// payment-api/event/PaymentCompleted.kt
-data class PaymentCompleted(
+// payment-api/event/PaymentCompletedEvent.kt
+data class PaymentCompletedEvent(
     val paymentId: String,
     val orderId: String,
     val amount: BigDecimal,
     val currency: String,
-    val timestamp: Instant
+    val timestamp: Instant,
 )
-
-// products-api/event/ProductCreated.kt
-data class ProductCreated(
-    val productId: String,
-    val name: String,
-    val category: String,
-    val timestamp: Instant
-)
-```
-
-Events use primitive types and strings, not domain value objects (which are internal to `-impl`).
-
----
-
-## Anti-Corruption Layer
-
-When integrating with external systems, use adapters to translate to our domain model.
-
-```kotlin
-// payment-impl/infrastructure/psp/PspAdapter.kt
-@Component
-internal class PspAdapter(
-    private val pspClient: PspClient
-) {
-    fun processPayment(payment: Payment): Result<Payment, PaymentError> {
-        val pspRequest = PspPaymentRequest(
-            externalId = payment.id.value,
-            amount = payment.amount.amount.toDouble(),
-            currency = payment.amount.currency.name
-        )
-
-        return runCatching {
-            val pspResponse = pspClient.createPayment(pspRequest)
-            payment.copy(
-                status = mapPspStatus(pspResponse.status),
-                externalReference = pspResponse.transactionId
-            )
-        }.mapError { PaymentError.PspFailure(it.message ?: "PSP call failed") }
-    }
-
-    private fun mapPspStatus(pspStatus: String): PaymentStatus = when (pspStatus) {
-        "SUCCESS" -> PaymentStatus.COMPLETED
-        "FAILED" -> PaymentStatus.FAILED
-        else -> PaymentStatus.PENDING
-    }
-}
-```
-
----
-
-## Repository Interface (in `-impl/domain`)
-
-Repositories use domain types and are internal to the module.
-
-```kotlin
-// products-impl/domain/repository/ProductRepository.kt
-internal interface ProductRepository {
-    fun save(product: Product): Product
-    fun findById(id: ProductId): Product?
-    fun findByCategory(category: ProductCategory): List<Product>
-    fun findAll(): List<Product>
-}
 ```
 
 ---
@@ -362,9 +216,8 @@ Sealed classes for exhaustive error handling.
 // products-api/error/ProductError.kt
 sealed class ProductError {
     data class NotFound(val id: String) : ProductError()
-    data class ValidationFailed(val reason: String) : ProductError()
-    data class DuplicateName(val name: String) : ProductError()
-    data class Unexpected(val message: String) : ProductError()
+    data class InvalidData(val reason: String) : ProductError()
+    data object DuplicateName : ProductError()
 }
 ```
 
@@ -374,71 +227,12 @@ sealed class ProductError {
 
 ### Positive
 - Code reflects business language
-- Domain experts can discuss ubiquitous language
 - Clear boundaries between contexts
-- Business logic isolated from technical concerns (internal to `-impl`)
-- API contracts are stable (DTOs don't change when domain evolves)
-- Modules are truly decoupled (no shared domain types)
+- Business logic isolated from infrastructure
+- API contracts are stable
+- Modules are truly decoupled
 
 ### Negative
 - More upfront modeling effort
-- Mapping between DTOs and domain models adds boilerplate
-- Requires continuous collaboration with domain experts
-- Can be overkill for simple CRUD operations
-
----
-
-## Examples
-
-### Rich Domain Model (internal)
-```kotlin
-// shipping-impl/domain/model/Shipment.kt
-internal data class Shipment(
-    val id: ShipmentId,
-    val productId: ProductId,
-    val status: ShipmentStatus,
-    val trackingNumber: TrackingNumber?
-) {
-    fun markAsInTransit(trackingNumber: TrackingNumber): Shipment {
-        require(status == ShipmentStatus.PENDING) {
-            "Can only mark pending shipments as in transit"
-        }
-        return copy(
-            status = ShipmentStatus.IN_TRANSIT,
-            trackingNumber = trackingNumber
-        )
-    }
-
-    fun isDelivered(): Boolean = status == ShipmentStatus.DELIVERED
-}
-```
-
-### Corresponding DTO (public)
-```kotlin
-// shipping-api/dto/ShipmentDto.kt
-data class ShipmentDto(
-    val id: String,
-    val productId: String,
-    val status: String,
-    val trackingNumber: String?
-)
-```
-
-### Anemic Model (avoid)
-```kotlin
-// ✗ Bad - No validation, mutable, business logic elsewhere
-internal data class Shipment(
-    val id: ShipmentId,
-    var status: ShipmentStatus,
-    var trackingNumber: String?
-)
-
-internal class ShipmentDomainService {
-    fun markAsInTransit(shipment: Shipment, tracking: String) {
-        if (shipment.status == ShipmentStatus.PENDING) {
-            shipment.status = ShipmentStatus.IN_TRANSIT
-            shipment.trackingNumber = tracking
-        }
-    }
-}
-```
+- Mapping between DTOs and domain models
+- Requires collaboration with domain experts

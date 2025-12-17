@@ -8,280 +8,158 @@
 
 ## Decision
 
-Each module owns its data exclusively through **separate PostgreSQL schemas**. No shared tables, no foreign keys across schemas.
+Each module owns its data exclusively. We support two approaches based on team needs:
+
+1. **Table prefixes** (simpler): One schema, tables prefixed by module name
+2. **Separate schemas** (stronger isolation): One PostgreSQL schema per module
+
+No shared tables, no foreign keys across module boundaries.
 
 ---
 
-## Schema Setup
+## Option 1: Table Prefixes (Simpler)
 
-One schema per module:
+One database, one schema, tables prefixed by module:
+
+```
+products_product
+products_category
+shipping_shipment
+shipping_carrier
+orders_order
+orders_order_line
+```
+
+Logical separation without configuration overhead. Cross-module queries are still possible but obvious in code review.
+
+**Use when:**
+- Small team with good discipline
+- Service extraction isn't planned
+- Minimizing infrastructure complexity
+- Boundaries might still shift
+
+---
+
+## Option 2: Separate Schemas (Stronger Isolation)
+
+Each module gets its own PostgreSQL schema:
 
 ```sql
--- docker/init/init-databases.sql
-CREATE SCHEMA payment;
 CREATE SCHEMA products;
+CREATE SCHEMA orders;
 CREATE SCHEMA shipping;
 CREATE SCHEMA inventory;
+CREATE SCHEMA payments;
 CREATE SCHEMA users;
-
-GRANT ALL ON SCHEMA payment TO ecologique_app;
-GRANT ALL ON SCHEMA products TO ecologique_app;
-GRANT ALL ON SCHEMA shipping TO ecologique_app;
-GRANT ALL ON SCHEMA inventory TO ecologique_app;
-GRANT ALL ON SCHEMA users TO ecologique_app;
 ```
 
----
+**Use when:**
+- Service extraction is planned
+- Stronger enforcement needed
+- Multiple teams working independently
 
-## Migration Structure
-
-Flyway migrations organized by module:
-
-```
-application/src/main/resources/db/migration/
-├── payment/
-│   ├── V1__create_payment_tables.sql
-│   └── V2__add_settlement_table.sql
-├── products/
-│   ├── V1__create_products_table.sql
-│   └── V2__add_sustainability_columns.sql
-├── shipping/
-│   └── V1__create_shipment_tables.sql
-├── inventory/
-│   └── V1__create_inventory_tables.sql
-└── users/
-    └── V1__create_users_table.sql
-```
-
-**Flyway configuration**:
-```yaml
-# application.yml
-spring:
-  flyway:
-    locations:
-      - classpath:db/migration/payment
-      - classpath:db/migration/products
-      - classpath:db/migration/shipping
-      - classpath:db/migration/inventory
-      - classpath:db/migration/users
-```
-
----
-
-## Table Creation
-
-Always specify schema in migrations:
-
-```sql
--- products/V1__create_products_table.sql
-CREATE TABLE products.products (
-    id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    category_code VARCHAR(50) NOT NULL,
-    price_amount DECIMAL(19, 2) NOT NULL,
-    price_currency VARCHAR(3) NOT NULL,
-    weight_grams INTEGER NOT NULL,
-    sustainability_rating VARCHAR(10) NOT NULL,
-    carbon_footprint_kg DECIMAL(10, 2) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_products_category ON products.products(category_code);
-```
-
-```sql
--- inventory/V1__create_inventory_tables.sql
-CREATE TABLE inventory.warehouses (
-    id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    country_code VARCHAR(2) NOT NULL
-);
-
-CREATE TABLE inventory.inventory_items (
-    id VARCHAR(255) PRIMARY KEY,
-    product_id VARCHAR(255) NOT NULL,  -- Reference to products schema
-    warehouse_id VARCHAR(255) NOT NULL,
-    quantity INTEGER NOT NULL,
-    FOREIGN KEY (warehouse_id) REFERENCES inventory.warehouses(id)
-    -- NO foreign key to products.products
-);
-
-CREATE INDEX idx_inventory_product ON inventory.inventory_items(product_id);
-```
-
----
-
-## Entity Configuration
-
-Specify schema in entity annotations:
+### Entity Configuration
 
 ```kotlin
-// products-impl
+// products-impl/persistence/ProductEntity.kt
 @Table("products", schema = "products")
 internal data class ProductEntity(
     @Id val id: String,
     val name: String,
-    val categoryCode: String,
     val priceAmount: BigDecimal,
     val priceCurrency: String
 )
 
-// inventory-impl
-@Table("inventory_items", schema = "inventory")
-internal data class InventoryItemEntity(
+// shipping-impl/persistence/ShipmentEntity.kt
+@Table("shipments", schema = "shipping")
+internal data class ShipmentEntity(
     @Id val id: String,
-    val productId: String,  // String reference, not entity relation
-    val warehouseId: String,
-    val quantity: Int
+    val orderId: String,
+    val productId: String,  // Just an ID, not a foreign key
+    val weightGrams: Int,
 )
 ```
 
----
+### Flyway Configuration
 
-## Cross-Schema References
-
-**Never use foreign keys** across schemas. Reference by ID only.
-
-```sql
--- ✗ Bad - Foreign key across schemas
-CREATE TABLE inventory.inventory_items (
-    product_id VARCHAR(255) NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES products.products(id)  -- Don't do this
-);
-
--- ✓ Good - String reference only
-CREATE TABLE inventory.inventory_items (
-    product_id VARCHAR(255) NOT NULL
-    -- No foreign key
-);
-```
-
-**Access cross-schema data** through service APIs:
+Each schema gets its own Flyway instance with separate migration history:
 
 ```kotlin
-@Service
-class InventoryServiceImpl(
-    private val inventoryRepository: InventoryRepository,
-    private val productService: ProductService  // From products-api
-) : InventoryService {
-
-    override fun reserveStock(productId: ProductId, quantity: Quantity): Result<Unit> {
-        // Validate product exists via API, not database join
-        productService.getProduct(productId).getOrElse {
-            return Result.failure(it)
+@Configuration
+class FlywayConfig(dataSource: DataSource) {
+    init {
+        discoverMigrationModules().forEach { moduleName ->
+            Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration/$moduleName")
+                .schemas(moduleName)
+                .defaultSchema(moduleName)
+                .createSchemas(true)
+                .load()
+                .migrate()
         }
-
-        val item = inventoryRepository.findByProductId(productId)
-            ?: return Result.failure(NoSuchElementException("No inventory for product"))
-
-        // Process reservation
     }
 }
 ```
 
 ---
 
-## Querying Across Schemas
+## No Cross-Schema Foreign Keys
 
-### Option 1: Service Layer Composition (Preferred)
-Combine data in application code:
+**Never use foreign keys across module boundaries.**
+
+```sql
+-- Don't do this
+CREATE TABLE shipping.shipments (
+                                    product_id VARCHAR(255) REFERENCES products.products(id)  -- No!
+);
+
+-- Do this instead
+CREATE TABLE shipping.shipments (
+                                    product_id VARCHAR(255) NOT NULL  -- Just data, no constraint
+);
+```
+
+Validate through the API instead:
 
 ```kotlin
 @Service
-class ShippingServiceImpl(
+internal class ShipmentServiceImpl(
     private val shipmentRepository: ShipmentRepository,
-    private val productService: ProductService,
-    private val inventoryService: InventoryService
-) : ShippingService {
+    private val productService: ProductServiceApi,
+) : ShipmentServiceApi {
 
-    override fun createShipment(productId: ProductId): Result<Shipment> {
-        // Get data from different schemas via services
-        val product = productService.getProduct(productId).getOrElse {
-            return Result.failure(it)
-        }
+    override fun createShipment(request: CreateShipmentRequest): Result<ShipmentDto, ShipmentError> {
+        // Validate product exists through API
+        val product = productService.getProduct(request.productId)
+            .getOrElse { return Err(ShipmentError.ProductNotFound(request.productId)) }
 
-        val warehouse = inventoryService.findWarehouseForProduct(productId).getOrElse {
-            return Result.failure(it)
-        }
-
-        // Combine in application
-        return Result.success(
-            Shipment(
-                id = ShipmentId.generate(),
-                productId = productId,
-                weight = product.weight,
-                originWarehouse = warehouse.id
-            )
+        val shipment = Shipment(
+            id = ShipmentId.generate(),
+            productId = ProductId(request.productId),
+            weightGrams = product.weightGrams,  // Copy data we need
         )
+
+        return Ok(shipmentRepository.save(shipment).toDto())
     }
 }
 ```
 
-### Option 2: Read-Only Views (If Needed)
-Create materialized views for complex reporting:
-
-```sql
--- reporting schema (separate from domain schemas)
-CREATE SCHEMA reporting;
-
-CREATE MATERIALIZED VIEW reporting.product_inventory AS
-SELECT
-    p.id as product_id,
-    p.name as product_name,
-    i.warehouse_id,
-    i.quantity
-FROM products.products p
-JOIN inventory.inventory_items i ON p.id = i.product_id;
-
--- Refresh periodically
-REFRESH MATERIALIZED VIEW reporting.product_inventory;
-```
-
 ---
 
-## Schema Ownership
+## Copying Data Across Boundaries
 
-**Rules**:
-1. Only the owning module can modify its schema
-2. Other modules read through service APIs
-3. No cross-schema joins in application code
-4. No shared tables or "common" schema
-
-```
-✓ products-impl modifies products schema
-✗ shipping-impl modifies products schema
-✗ products-impl reads from inventory schema directly
-✓ products-impl calls InventoryService API
-```
-
----
-
-## Testing
-
-Use separate schemas in tests too:
+Store snapshots of data at transaction time:
 
 ```kotlin
-@SpringBootTest
-@Testcontainers
-class ProductRepositoryIntegrationTest {
-
-    @Container
-    private val postgres = PostgreSQLContainer<Nothing>("postgres:15")
-        .withInitScript("init-schemas.sql")
-
-    @Autowired
-    private lateinit var productRepository: ProductRepository
-
-    @Test
-    fun `save should persist product in products schema`() {
-        val product = buildProduct()
-
-        val saved = productRepository.save(product)
-
-        assertThat(saved.id).isNotNull()
-    }
-}
+internal data class Shipment(
+    val id: ShipmentId,
+    val productId: ProductId,
+    val weightGrams: Int,  // Copied from Products at creation time
+)
 ```
+
+This isn't duplication—it's a snapshot. The weight at time of shipment shouldn't change if the product weight is later updated.
 
 ---
 
@@ -292,28 +170,8 @@ class ProductRepositoryIntegrationTest {
 - Modules can evolve independently
 - Easy to extract to separate databases later
 - Forces proper API boundaries
-- No accidental coupling through database
 
 ### Negative
-- Cannot use foreign keys for referential integrity across modules
-- Cannot use database joins across modules
-- More complex reporting queries
-- Potential data consistency challenges (eventual consistency)
-
----
-
-## Migration Strategy
-
-If extracting module to microservice later:
-
-1. Module already has separate schema
-2. Export schema to new database
-3. Change connection string in extracted module
-4. Replace in-process API calls with HTTP/gRPC
-5. Original application continues with remaining schemas
-
-**Example**:
-```
-Before: Single DB with schemas [payment, products, shipping, inventory, users]
-After:  Payment DB [payment] + Main DB [products, shipping, inventory, users]
-```
+- No database-enforced referential integrity across modules
+- More application code for validation
+- Potential for orphaned references (handle with soft deletes or grace periods)
