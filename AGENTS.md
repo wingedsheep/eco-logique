@@ -15,7 +15,7 @@ The architecture is defined through ADRs in `docs/architecture/decisions/`. If i
 
 - **Style**: Modular Monolith + DDD
 - **Modules / Bounded Contexts**: Payment, Products, Shipping, Inventory, Users
-- **Internal structure**: Flexible (flat for simple modules, vertical slices for complex ones)
+- **Internal structure**: Flexible (flat for simple modules, organize per feature for complex ones)
 - **Communication**: Synchronous (direct API calls) + Asynchronous (domain events)
 - **Database**: PostgreSQL with **separate schema per module** (or table prefixes for simpler setups)
 - **Persistence**: **Spring Data JDBC** (not JPA/Hibernate)
@@ -112,39 +112,50 @@ notifications-impl/
         └── NotificationRepositoryImpl.kt
 ```
 
-### Complex Modules: Vertical Slices
+### Complex Modules: Group per feature
 
 ```text
 products-impl/
 └── src/main/kotlin/com/example/products/
-    ├── CreateProductHandler.kt
-    ├── GetProductHandler.kt
-    ├── UpdatePriceHandler.kt
+    ├── create/
+    │   ├── CreateProductHandler.kt
+    │   ├── CreateProductRequest.kt
+    │   └── CreateProductValidator.kt
+    ├── get/
+    │   └── GetProductHandler.kt
+    ├── updateprice/
+    │   ├── UpdatePriceHandler.kt
+    │   └── PriceCalculator.kt
     ├── bulkimport/
     │   ├── BulkImportHandler.kt
-    │   └── ImportParser.kt
-    ├── shared/
+    │   ├── ImportParser.kt
+    │   └── ImportValidationRules.kt
+    ├── domain/
     │   ├── Product.kt
-    │   ├── ProductRepository.kt
-    │   └── ProductMappers.kt
+    │   ├── ProductId.kt
+    │   └── Money.kt
     └── persistence/
-        ├── ProductEntity.kt
-        └── ProductRepositoryImpl.kt
+        ├── ProductRepository.kt
+        ├── ProductRepositoryJdbc.kt
+        └── ProductEntity.kt
 ```
 
 ### Layer Responsibilities
 
 **Domain** (in `shared/` or root)
+
 * Pure Kotlin business logic, no Spring dependencies
 * Entities/value objects validate in `init` blocks
 * Repository interfaces defined here
 
 **Services/Handlers**
+
 * Implement `-api` interfaces or handle specific use cases
 * Orchestrate: load → domain logic → save → publish event
 * Return `Result<T, E>` with sealed error hierarchies from `-api`
 
 **Infrastructure** (in `persistence/`, `rest/`, `messaging/`)
+
 * Controllers, repository implementations, external clients
 * Mappers live in their respective outer layers (ADR-004)
 * Infrastructure types stay internal, never leak inward
@@ -155,11 +166,11 @@ products-impl/
 
 Mappers live in the **outer layer** that needs them:
 
-| Layer | File | Functions |
-|-------|------|-----------|
-| Persistence | `<Type>EntityMappers.kt` | `Entity.toDomain()`, `Domain.toEntity()` |
-| REST | `<Type>Mappers.kt` | `Request.toDomain()`, `Domain.toDto()` |
-| Messaging | `<Type>MessageMappers.kt` | `Message.toDomain()`, `Domain.toMessage()` |
+| Layer       | File                      | Functions                                  |
+|-------------|---------------------------|--------------------------------------------|
+| Persistence | `<Type>EntityMappers.kt`  | `Entity.toDomain()`, `Domain.toEntity()`   |
+| REST        | `<Type>Mappers.kt`        | `Request.toDomain()`, `Domain.toDto()`     |
+| Messaging   | `<Type>MessageMappers.kt` | `Message.toDomain()`, `Domain.toMessage()` |
 
 The domain layer contains no mappers—it doesn't know about external representations.
 
@@ -191,6 +202,7 @@ The domain layer contains no mappers—it doesn't know about external representa
 Two-level validation strategy:
 
 ### Request DTOs (in `-api`)
+
 Validate input at the boundary—fail fast on bad requests:
 
 ```kotlin
@@ -206,6 +218,7 @@ data class CreateProductRequest(
 ```
 
 ### Domain Objects (in `-impl`)
+
 Enforce business invariants:
 
 ```kotlin
@@ -249,6 +262,7 @@ Response DTOs are plain data carriers—no validation needed.
 ### Shared Test Data
 
 **Builders** (in `testFixtures` of `-api` modules):
+
 * Use for module tests
 * Feature files should be self-documenting with explicit values
 
@@ -261,6 +275,7 @@ fun buildProductDto(
 ```
 
 **Worldview** (in `-worldview` modules):
+
 * Use for **runtime seeding only**: local dev, demos, staging
 * Use for **application-level tests** (not module tests)
 * Module tests should NOT reference worldview data
@@ -293,15 +308,14 @@ Each module should provide:
 ### When to Use Which Internal Structure
 
 **Flat structure** when:
+
 - Few operations (< 5 service methods)
 - Simple CRUD operations
-- Single developer on module
 
-**Vertical slices** when:
-- Many distinct features
+**Organize per feature** when:
+
+- Multiple distinct features
 - Features have supporting classes
-- Multiple developers on module
-- Service class is getting large
 
 ---
 

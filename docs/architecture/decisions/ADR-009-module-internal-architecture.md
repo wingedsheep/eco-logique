@@ -14,7 +14,7 @@ Internal module structure is **flexible** based on complexity. The key principle
 
 We support two patterns:
 1. **Flat structure** for simple modules
-2. **Vertical slices** for complex modules with multiple features
+2. **Organized per feature** for complex modules with multiple features
 
 ---
 
@@ -46,35 +46,39 @@ Everything in one package. Easy to navigate. When it grows, reorganize.
 
 ---
 
-## Complex Modules: Vertical Slices
+## Complex Modules: Per feature
 
 For modules with multiple distinct features, organize by use case:
 
 ```
 products-impl/
 └── src/main/kotlin/com/example/products/
-    ├── CreateProductHandler.kt
-    ├── GetProductHandler.kt
-    ├── UpdatePriceHandler.kt
+    ├── create/
+    │   ├── CreateProductHandler.kt
+    │   ├── CreateProductRequest.kt
+    │   └── CreateProductValidator.kt
+    ├── get/
+    │   └── GetProductHandler.kt
+    ├── updateprice/
+    │   ├── UpdatePriceHandler.kt
+    │   └── PriceCalculator.kt
     ├── bulkimport/
     │   ├── BulkImportHandler.kt
-    │   └── ImportParser.kt
-    ├── shared/
+    │   ├── ImportParser.kt
+    │   └── ImportValidationRules.kt
+    ├── domain/
     │   ├── Product.kt
     │   ├── ProductId.kt
-    │   ├── Money.kt
-    │   ├── ProductMappers.kt
-    │   └── ProductRepository.kt
+    │   └── Money.kt
     └── persistence/
-        ├── ProductEntity.kt
-        ├── ProductEntityMappers.kt
-        └── ProductRepositoryImpl.kt
+        ├── ProductRepository.kt
+        ├── ProductRepositoryJdbc.kt
+        └── ProductEntity.kt
 ```
 
 **Guidelines**:
 - Simple handlers are just files
 - Folders only when a feature has multiple classes
-- Shared domain code in `shared/`
 - Infrastructure adapters in `persistence/`, `web/`, etc.
 
 ---
@@ -160,13 +164,10 @@ data class ProductDto(
 **Flat structure when:**
 - Few operations (< 5 service methods)
 - Operations are simple CRUD
-- Single developer working on module
 
-**Vertical slices when:**
-- Many distinct features
+**Per feature when:**
+- Multiple distinct features
 - Features have supporting classes
-- Multiple developers on the module
-- You're thinking "this service class is getting big"
 
 ---
 

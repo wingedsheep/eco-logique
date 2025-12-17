@@ -117,7 +117,7 @@ fun onPaymentCompleted(event: PaymentCompletedEvent) {
 * **Services/Handlers**: Implements `-api` interfaces, orchestrates use cases.
 * **Infrastructure**: Controllers, repository implementations, external clients.
 
-Internal structure is flexible—flat for simple modules, vertical slices for complex ones.
+Internal structure is flexible—flat for simple modules, organized per feature for complex ones.
 
 ---
 
