@@ -36,3 +36,9 @@ tasks.jacocoTestReport {
         html.required.set(true)
     }
 }
+
+dependencies {
+    testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.0")
+}
