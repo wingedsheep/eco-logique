@@ -11,6 +11,8 @@ dependencyManagement {
 
 dependencies {
     api(project(":orders:orders-api"))
+    implementation(project(":products:products-api"))
+    implementation(project(":users:users-worldview"))
     implementation(project(":common:common-money"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")

@@ -16,6 +16,7 @@
   },
   "users": [
     {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
       "username": "john",
       "email": "john@demo.com",
       "enabled": true,
@@ -30,6 +31,7 @@
       "realmRoles": [ "ROLE_CUSTOMER" ]
     },
     {
+      "id": "550e8400-e29b-41d4-a716-446655440002",
       "username": "jane",
       "email": "jane@demo.com",
       "enabled": true,

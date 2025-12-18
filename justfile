@@ -28,6 +28,10 @@ docker-up:
 docker-down:
     cd docker && docker-compose down
 
+# Stop Docker services and remove volumes (clears all data)
+docker-clean:
+    cd docker && docker-compose down -v
+
 # View Docker logs
 docker-logs:
     cd docker && docker-compose logs -f
@@ -37,3 +41,6 @@ rebuild: clean build
 
 # Run with Docker environment
 dev: docker-up run
+
+# Reset everything (clear data and restart)
+reset: docker-clean docker-up

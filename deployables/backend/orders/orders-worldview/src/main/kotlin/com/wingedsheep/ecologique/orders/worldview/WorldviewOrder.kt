@@ -2,6 +2,8 @@ package com.wingedsheep.ecologique.orders.worldview
 
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineDto
+import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_KEYCLOAK_ID
+import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_KEYCLOAK_ID
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -9,7 +11,7 @@ object WorldviewOrder {
 
     val johnDoeCreatedOrder = OrderDto(
         id = "ORD-WV-001",
-        userId = "john-keycloak-subject",
+        userId = JOHN_KEYCLOAK_ID,
         status = "CREATED",
         lines = listOf(
             OrderLineDto(
@@ -28,7 +30,7 @@ object WorldviewOrder {
 
     val johnDoePaidOrder = OrderDto(
         id = "ORD-WV-002",
-        userId = "john-keycloak-subject",
+        userId = JOHN_KEYCLOAK_ID,
         status = "PAID",
         lines = listOf(
             OrderLineDto(
@@ -54,7 +56,7 @@ object WorldviewOrder {
 
     val janeSmithShippedOrder = OrderDto(
         id = "ORD-WV-003",
-        userId = "jane-keycloak-subject",
+        userId = JANE_KEYCLOAK_ID,
         status = "SHIPPED",
         lines = listOf(
             OrderLineDto(
@@ -73,7 +75,7 @@ object WorldviewOrder {
 
     val janeSmithDeliveredOrder = OrderDto(
         id = "ORD-WV-004",
-        userId = "jane-keycloak-subject",
+        userId = JANE_KEYCLOAK_ID,
         status = "DELIVERED",
         lines = listOf(
             OrderLineDto(
