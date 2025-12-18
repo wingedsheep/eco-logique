@@ -8,11 +8,17 @@ plugins {
 group = "com.wingedsheep"
 version = "0.0.1-SNAPSHOT"
 
+tasks.jacocoTestReport {
+    enabled = false
+}
+
 dependencies {
     implementation(project(":products:products-impl"))
     implementation(project(":products:products-worldview"))
     implementation(project(":users:users-impl"))
     implementation(project(":users:users-worldview"))
+    implementation(project(":orders:orders-impl"))
+    implementation(project(":orders:orders-worldview"))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
@@ -37,6 +43,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.rest.assured)
     testImplementation(testFixtures(project(":products:products-api")))
+    testImplementation(testFixtures(project(":orders:orders-api")))
     testImplementation(libs.mockito.kotlin)
 }
 

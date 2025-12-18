@@ -1,0 +1,8 @@
+package com.wingedsheep.ecologique.orders.impl.domain
+
+internal interface OrderRepository {
+    fun save(order: Order): Order
+    fun findById(id: OrderId): Order?
+    fun findByUserId(userId: String): List<Order>
+    fun existsById(id: OrderId): Boolean
+}

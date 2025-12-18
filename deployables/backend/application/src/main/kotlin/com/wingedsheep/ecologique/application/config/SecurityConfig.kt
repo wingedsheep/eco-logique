@@ -26,10 +26,14 @@ class SecurityConfig {
                     .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 
-                    // Admin endpoints
+                    // Admin endpoints (products management)
                     .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole("ADMIN")
+
+                    // Authenticated customer endpoints (orders, users)
+                    .requestMatchers("/api/v1/orders/**").authenticated()
+                    .requestMatchers("/api/v1/users/**").authenticated()
 
                     // Authenticated (any other request)
                     .anyRequest().authenticated()
