@@ -7,8 +7,14 @@ plugins {
 }
 
 moduleDependencyValidation {
-    allowedDependencies.put("products", emptySet())
-    allowedDependencies.put("users", emptySet())
     failOnViolation.set(true)
+    excludedModules.set(setOf(":application"))
     reportFile.set(layout.buildDirectory.file("reports/module-validation/report.md"))
+    allowedDependencies.set(
+        mapOf(
+            "products" to emptySet(),
+            "users" to emptySet(),
+            "orders" to setOf("products", "users"),
+        )
+    )
 }

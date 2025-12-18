@@ -3,3 +3,4 @@ CREATE SCHEMA products;
 CREATE SCHEMA shipping;
 CREATE SCHEMA inventory;
 CREATE SCHEMA users;
+CREATE SCHEMA orders;
