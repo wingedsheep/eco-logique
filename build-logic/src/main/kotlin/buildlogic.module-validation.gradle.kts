@@ -14,12 +14,19 @@ fun extractModuleName(projectPath: String): String? {
     if (segments.isEmpty()) return null
 
     val lastSegment = segments.last()
-    if (lastSegment.endsWith("-api") || lastSegment.endsWith("-impl")) {
-        return lastSegment.removeSuffix("-api").removeSuffix("-impl")
+    val suffixes = listOf("-api", "-impl", "-worldview")
+
+    for (suffix in suffixes) {
+        if (lastSegment.endsWith(suffix)) {
+            return lastSegment.removeSuffix(suffix)
+        }
     }
-    if (lastSegment == "api" || lastSegment == "impl") {
+
+    val knownSubmodules = listOf("api", "impl", "worldview")
+    if (lastSegment in knownSubmodules) {
         return segments.getOrNull(segments.size - 2)
     }
+
     return null
 }
 
@@ -46,9 +53,9 @@ fun buildMarkdownReport(violations: List<String>): String {
         appendLine()
 
         if (implToImplViolations.isNotEmpty()) {
-            appendLine("### Impl → Impl Dependencies")
+            appendLine("### Impl/Worldview → Impl/Worldview Dependencies")
             appendLine()
-            appendLine("Implementation modules must depend on API modules, not other implementation modules.")
+            appendLine("Implementation and worldview modules must depend on API modules, not other implementation or worldview modules.")
             appendLine()
             appendLine("| Source | Configuration | Target | Suggested Fix |")
             appendLine("|--------|---------------|--------|---------------|")
@@ -65,9 +72,9 @@ fun buildMarkdownReport(violations: List<String>): String {
         }
 
         if (apiToImplViolations.isNotEmpty()) {
-            appendLine("### API → Impl Dependencies")
+            appendLine("### API → Impl/Worldview Dependencies")
             appendLine()
-            appendLine("API modules cannot depend on implementation modules.")
+            appendLine("API modules cannot depend on implementation or worldview modules.")
             appendLine()
             appendLine("| Source | Configuration | Target |")
             appendLine("|--------|---------------|--------|")
@@ -126,8 +133,10 @@ tasks.register("validateModuleDependencies") {
 
             val isApiModule = projectPath.endsWith("-api") || projectPath.endsWith(":api")
             val isImplModule = projectPath.endsWith("-impl") || projectPath.endsWith(":impl")
+            val isWorldviewModule = projectPath.endsWith("-worldview") || projectPath.endsWith(":worldview")
+            val isConcreteModule = isImplModule || isWorldviewModule
 
-            if (!isApiModule && !isImplModule) return@forEach
+            if (!isApiModule && !isConcreteModule) return@forEach
 
             val sourceModule = extractModuleName(projectPath)
 
@@ -144,16 +153,23 @@ tasks.register("validateModuleDependencies") {
                     val isTestAllowedDep = isTestConfig && isTestFixturesDep
 
                     val depIsImpl = depPath.endsWith("-impl") || depPath.endsWith(":impl")
+                    val depIsWorldview = depPath.endsWith("-worldview") || depPath.endsWith(":worldview")
+                    val depIsConcrete = depIsImpl || depIsWorldview
                     val targetModule = extractModuleName(depPath)
 
                     if (depPath == projectPath) return@depLoop
 
-                    if (isApiModule && depIsImpl) {
-                        violations.add("'$projectPath' [$normalizedConfig] depends on '$depPath' - api modules cannot depend on impl modules")
+                    if (isApiModule && depIsConcrete) {
+                        violations.add("'$projectPath' [$normalizedConfig] depends on '$depPath' - api modules cannot depend on impl/worldview modules")
                     }
 
-                    if (isImplModule && depIsImpl && sourceModule != targetModule && !isTestAllowedDep) {
-                        val apiPath = depPath.replace("-impl", "-api").replace(":impl", ":api")
+                    val isWorldviewToWorldview = isWorldviewModule && depIsWorldview
+                    if (isConcreteModule && depIsConcrete && sourceModule != targetModule && !isTestAllowedDep && !isWorldviewToWorldview) {
+                        val apiPath = depPath
+                            .replace("-impl", "-api")
+                            .replace(":impl", ":api")
+                            .replace("-worldview", "-api")
+                            .replace(":worldview", ":api")
                         violations.add("'$projectPath' [$normalizedConfig] depends on '$depPath' - use '$apiPath' instead")
                     }
 
