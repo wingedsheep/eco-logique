@@ -46,19 +46,33 @@ jobs:
       - name: Build
         run: ./gradlew build -x test
 
-      - name: Run unit tests with coverage
-        run: ./gradlew test jacocoTestReport
+      - name: Run module tests with coverage
+        run: ./gradlew test -x :application:test jacocoTestReport
 
       - name: Generate aggregated coverage report
         run: ./gradlew jacocoAggregatedReport
 
-      - name: Publish test report
+      - name: Run application tests
+        run: ./gradlew :application:test
+
+      - name: Publish module test report
         if: always()
         uses: dorny/test-reporter@v1
         with:
-          name: Unit Tests
+          name: Module Tests
           reporter: java-junit
-          path: deployables/backend/**/build/test-results/test/*.xml
+          path: |
+            deployables/backend/**/build/test-results/test/*.xml
+            !deployables/backend/application/build/test-results/test/*.xml
+          fail-on-error: "false"
+
+      - name: Publish application test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Application Tests (E2E)
+          reporter: java-junit
+          path: deployables/backend/application/build/test-results/test/*.xml
           fail-on-error: "false"
 
       - name: Add coverage to PR
@@ -69,13 +83,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 60
           min-coverage-changed-files: 80
-          title: Code Coverage
+          title: Code Coverage (Module Tests)
           update-comment: true
 
       - name: Publish coverage summary
         if: always()
         run: |
-          echo "## 📊 Code Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 📊 Code Coverage (Module Tests)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_Excludes application-level E2E tests_" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           
           if [ -f "build/reports/jacoco/aggregated.xml" ]; then
@@ -91,9 +107,6 @@ jobs:
           else
             echo "Coverage report not found" >> "$GITHUB_STEP_SUMMARY"
           fi
-          
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "See the [coverage report](../actions/runs/${{ github.run_id }}) artifacts for details." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage report
         if: always()

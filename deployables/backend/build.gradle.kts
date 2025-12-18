@@ -24,16 +24,20 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
+val coverageExcludedProjects = setOf(":application")
+
 tasks.register<JacocoReport>("jacocoAggregatedReport") {
     group = "verification"
-    description = "Generates aggregated code coverage report"
+    description = "Generates aggregated code coverage report for module tests"
 
-    val testTasks = subprojects.flatMap { subproject ->
+    val includedProjects = subprojects.filter { it.path !in coverageExcludedProjects }
+
+    val testTasks = includedProjects.flatMap { subproject ->
         subproject.tasks.withType<Test>()
     }
     dependsOn(testTasks)
 
-    val sourceSets = subprojects.mapNotNull { subproject ->
+    val sourceSets = includedProjects.mapNotNull { subproject ->
         subproject.extensions.findByType<SourceSetContainer>()?.findByName("main")
     }
 
@@ -41,8 +45,10 @@ tasks.register<JacocoReport>("jacocoAggregatedReport") {
     classDirectories.setFrom(sourceSets.map { it.output })
 
     executionData.setFrom(
-        fileTree(layout.projectDirectory) {
-            include("**/build/jacoco/*.exec")
+        includedProjects.flatMap { subproject ->
+            fileTree(subproject.layout.buildDirectory) {
+                include("jacoco/*.exec")
+            }
         }
     )
 

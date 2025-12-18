@@ -8,6 +8,10 @@ plugins {
 group = "com.wingedsheep"
 version = "0.0.1-SNAPSHOT"
 
+tasks.jacocoTestReport {
+    enabled = false
+}
+
 dependencies {
     implementation(project(":products:products-impl"))
     implementation(project(":products:products-worldview"))
