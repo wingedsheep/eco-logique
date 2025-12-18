@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -32,8 +33,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Validate Module Dependencies
-        run: ./gradlew validateModuleDependencies
+      - name: Build and run module tests with coverage
+        run: ./gradlew build -x :application:test jacocoAggregatedReport
+
+      - name: Run application tests
+        run: ./gradlew :application:test
+        continue-on-error: true
 
       - name: Publish Module Validation Report
         if: always()
@@ -42,19 +47,6 @@ jobs:
           if [ -f "$REPORT_FILE" ]; then
             cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
           fi
-
-      - name: Build
-        run: ./gradlew build -x test
-
-      - name: Run module tests with coverage
-        run: ./gradlew test -x :application:test jacocoTestReport
-
-      - name: Generate aggregated coverage report
-        run: ./gradlew jacocoAggregatedReport
-
-      - name: Run application tests
-        run: ./gradlew :application:test
-        continue-on-error: true
 
       - name: Publish test report
         if: always()
