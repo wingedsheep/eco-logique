@@ -80,26 +80,26 @@
 * **Description**: Implement ordering domain model and history endpoints.
 * **Deliverables**:
 
-  * [ ] Entities:
+  * [x] Entities:
 
-    * [ ] `Order` (id, userId, status, totalsSnapshot, createdAt)
-    * [ ] `OrderLine` (orderId, sku/productId, nameSnapshot, unitPriceSnapshot, quantity, lineTotal)
-  * [ ] Status model (demo-level):
+    * [x] `Order` (id, userId, status, totalsSnapshot, createdAt)
+    * [x] `OrderLine` (orderId, sku/productId, nameSnapshot, unitPriceSnapshot, quantity, lineTotal)
+  * [x] Status model (demo-level):
 
-    * [ ] `CREATED`, `RESERVED`, `PAYMENT_PENDING`, `PAID`, `CANCELLED`, `SHIPPED`, `DELIVERED`
-  * [ ] `OrderService`:
+    * [x] `CREATED`, `RESERVED`, `PAYMENT_PENDING`, `PAID`, `CANCELLED`, `SHIPPED`, `DELIVERED`
+  * [x] `OrderService`:
 
-    * [ ] `createOrder(userId, lines, totalsSnapshot)`
-    * [ ] `getOrder(orderId)` (ownership check)
-    * [ ] `listOrdersForUser(userId)` (order history)
-    * [ ] Status transition methods used by checkout/payment/shipping (via `orders-api`)
-  * [ ] REST API:
+    * [x] `createOrder(userId, lines, totalsSnapshot)`
+    * [x] `getOrder(orderId)` (ownership check)
+    * [x] `listOrdersForUser(userId)` (order history)
+    * [x] Status transition methods used by checkout/payment/shipping (via `orders-api`)
+  * [x] REST API:
 
-    * [ ] `GET /orders/{id}`
-    * [ ] `GET /orders` (order history for authenticated user)
-  * [ ] Error handling: `OrderError` sealed hierarchy in `orders-api`; controllers map errors to RFC7807 Problem Details.
-  * [ ] **DB**: add `orders` schema + Flyway migrations for orders tables.
-  * [ ] **Worldview**: A few example orders for seeded users (created + paid + shipped).
+    * [x] `GET /orders/{id}`
+    * [x] `GET /orders` (order history for authenticated user)
+  * [x] Error handling: `OrderError` sealed hierarchy in `orders-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] **DB**: add `orders` schema + Flyway migrations for orders tables.
+  * [x] **Worldview**: A few example orders for seeded users (created + paid + shipped).
 
 ---
 
