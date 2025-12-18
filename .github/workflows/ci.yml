@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
   checks: write
+  pull-requests: write
 
 jobs:
   build:
@@ -45,17 +46,62 @@ jobs:
       - name: Build
         run: ./gradlew build -x test
 
-      - name: Run unit tests
-        run: ./gradlew test
+      - name: Run unit tests with coverage
+        run: ./gradlew test jacocoTestReport
 
-      - name: Publish test report (viewable in the run)
+      - name: Generate aggregated coverage report
+        run: ./gradlew jacocoAggregatedReport
+
+      - name: Publish test report
         if: always()
         uses: dorny/test-reporter@v1
         with:
-          name: Unit tests
+          name: Unit Tests
           reporter: java-junit
           path: deployables/backend/**/build/test-results/test/*.xml
           fail-on-error: "false"
+
+      - name: Add coverage to PR
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.6.1
+        with:
+          paths: deployables/backend/build/reports/jacoco/aggregated.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 60
+          min-coverage-changed-files: 80
+          title: Code Coverage
+          update-comment: true
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          echo "## 📊 Code Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          
+          if [ -f "build/reports/jacoco/aggregated.xml" ]; then
+            INSTRUCTION_MISSED=$(grep -oP 'type="INSTRUCTION"[^/]*missed="\K[0-9]+' build/reports/jacoco/aggregated.xml | head -1 || echo "0")
+            INSTRUCTION_COVERED=$(grep -oP 'type="INSTRUCTION"[^/]*covered="\K[0-9]+' build/reports/jacoco/aggregated.xml | head -1 || echo "0")
+          
+            if [ "$((INSTRUCTION_MISSED + INSTRUCTION_COVERED))" -gt 0 ]; then
+              COVERAGE=$((100 * INSTRUCTION_COVERED / (INSTRUCTION_MISSED + INSTRUCTION_COVERED)))
+              echo "**Overall Coverage: ${COVERAGE}%**" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "No coverage data available" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          else
+            echo "Coverage report not found" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "See the [coverage report](../actions/runs/${{ github.run_id }}) artifacts for details." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: deployables/backend/build/reports/jacoco/aggregated-html/
+          retention-days: 7
 
       - name: Upload test results
         if: always()
