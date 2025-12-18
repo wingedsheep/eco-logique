@@ -62,22 +62,8 @@ jobs:
         with:
           name: Tests
           reporter: java-junit
-          path: |
-            deployables/backend/products/**/build/test-results/test/*.xml
-            deployables/backend/users/**/build/test-results/test/*.xml
-            deployables/backend/orders/**/build/test-results/test/*.xml
-            common/**/build/test-results/test/*.xml
+          path: "**/build/test-results/test/*.xml"
           fail-on-error: "false"
-
-      - name: Publish application test report
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Application Tests (E2E)
-          reporter: java-junit
-          path: deployables/backend/application/build/test-results/test/*.xml
-          fail-on-error: "false"
-          fail-on-empty: "false"
 
       - name: Add coverage to PR
         if: github.event_name == 'pull_request'
@@ -125,7 +111,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: |
-            deployables/backend/**/build/reports/tests/
-            common/**/build/reports/tests/
+          path: "**/build/reports/tests/"
           retention-days: 7
