@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class UserServiceImplTest {
@@ -35,7 +36,7 @@ class UserServiceImplTest {
         val request = buildUserCreateRequest(
             name = "John Doe",
             email = "john@example.com",
-            address = buildAddressDto(city = "Amsterdam", countryCode = "NETHERLANDS")
+            address = buildAddressDto(city = "Amsterdam", countryCode = "NL")
         )
         whenever(userRepository.existsByExternalSubject("test-subject")).thenReturn(false)
         whenever(userRepository.existsByEmail(Email("john@example.com"))).thenReturn(false)
@@ -158,7 +159,7 @@ class UserServiceImplTest {
     fun `updateAddress should return updated UserDto`() {
         // Given
         val user = buildUser()
-        val request = buildUserUpdateAddressRequest(city = "Berlin", countryCode = "GERMANY")
+        val request = buildUserUpdateAddressRequest(city = "Berlin", countryCode = "DE")
         whenever(userRepository.findByExternalSubject("test-subject")).thenReturn(user)
         whenever(userRepository.save(any())).thenAnswer { it.arguments[0] as User }
 
@@ -170,7 +171,7 @@ class UserServiceImplTest {
         result.fold(
             onSuccess = { dto ->
                 assertThat(dto.defaultAddress?.city).isEqualTo("Berlin")
-                assertThat(dto.defaultAddress?.countryCode).isEqualTo("GERMANY")
+                assertThat(dto.defaultAddress?.countryCode).isEqualTo("DE")
             },
             onFailure = { }
         )
@@ -196,7 +197,7 @@ class UserServiceImplTest {
     }
 
     private fun buildUser(
-        id: UserId = UserId("USER-001"),
+        id: UserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
         externalSubject: String = "test-subject",
         name: String = "Test User",
         email: String = "test@example.com"
@@ -210,7 +211,7 @@ class UserServiceImplTest {
             houseNumber = "1",
             postalCode = "1234 AB",
             city = "Amsterdam",
-            country = Country.NETHERLANDS
+            country = Country.NL
         )
     )
 }

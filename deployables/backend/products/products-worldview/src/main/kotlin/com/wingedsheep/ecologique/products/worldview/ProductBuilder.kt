@@ -6,7 +6,7 @@ import java.math.BigDecimal
 import java.util.UUID
 
 fun buildWorldviewProduct(
-    id: String = "PROD-${UUID.randomUUID().toString().take(8)}",
+    id: UUID = UUID.randomUUID(),
     name: String = "Test Eco Product",
     description: String = "A sustainable test product",
     category: String = "HOUSEHOLD",

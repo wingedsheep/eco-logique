@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 
 @Service
 internal class ProductServiceImpl(
@@ -57,7 +58,7 @@ internal class ProductServiceImpl(
 
         eventPublisher.publishEvent(
             ProductCreated(
-                productId = savedProduct.id.value,
+                productId = savedProduct.id.value.toString(),
                 name = savedProduct.name,
                 category = savedProduct.category.name,
                 priceAmount = savedProduct.price.amount,
@@ -70,12 +71,8 @@ internal class ProductServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getProduct(id: String): Result<ProductDto, ProductError> {
-        val productId = try {
-            ProductId(id)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(ProductError.ValidationFailed("Invalid product ID"))
-        }
+    override fun getProduct(id: UUID): Result<ProductDto, ProductError> {
+        val productId = ProductId(id)
 
         val product = productRepository.findById(productId)
             ?: return Result.err(ProductError.NotFound(id))
@@ -99,12 +96,8 @@ internal class ProductServiceImpl(
     }
 
     @Transactional
-    override fun updateProductPrice(id: String, request: ProductUpdatePriceRequest): Result<ProductDto, ProductError> {
-        val productId = try {
-            ProductId(id)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(ProductError.ValidationFailed("Invalid product ID"))
-        }
+    override fun updateProductPrice(id: UUID, request: ProductUpdatePriceRequest): Result<ProductDto, ProductError> {
+        val productId = ProductId(id)
 
         val currency = try {
             Currency.valueOf(request.priceCurrency)
@@ -126,12 +119,8 @@ internal class ProductServiceImpl(
     }
 
     @Transactional
-    override fun deleteProduct(id: String): Result<Unit, ProductError> {
-        val productId = try {
-            ProductId(id)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(ProductError.ValidationFailed("Invalid product ID"))
-        }
+    override fun deleteProduct(id: UUID): Result<Unit, ProductError> {
+        val productId = ProductId(id)
 
         if (!productRepository.existsById(productId)) {
             return Result.err(ProductError.NotFound(id))

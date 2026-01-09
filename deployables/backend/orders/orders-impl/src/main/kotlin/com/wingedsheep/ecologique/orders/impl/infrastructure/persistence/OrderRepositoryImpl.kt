@@ -8,6 +8,7 @@ import org.springframework.data.jdbc.repository.query.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
+import java.util.UUID
 
 @Component
 internal class OrderRepositoryImpl(
@@ -52,15 +53,15 @@ internal class OrderRepositoryImpl(
 }
 
 @Repository
-internal interface OrderRepositoryJdbc : CrudRepository<OrderEntity, String> {
+internal interface OrderRepositoryJdbc : CrudRepository<OrderEntity, UUID> {
     fun findByUserIdOrderByCreatedAtDesc(userId: String): List<OrderEntity>
 }
 
 @Repository
 internal interface OrderLineRepositoryJdbc : CrudRepository<OrderLineEntity, Long> {
-    fun findByOrderId(orderId: String): List<OrderLineEntity>
+    fun findByOrderId(orderId: UUID): List<OrderLineEntity>
 
     @Modifying
     @Query("DELETE FROM orders.order_lines WHERE order_id = :orderId")
-    fun deleteByOrderId(orderId: String)
+    fun deleteByOrderId(orderId: UUID)
 }

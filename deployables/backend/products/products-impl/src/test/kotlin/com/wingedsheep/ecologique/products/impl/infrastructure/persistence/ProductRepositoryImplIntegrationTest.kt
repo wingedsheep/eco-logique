@@ -21,6 +21,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.math.BigDecimal
+import java.util.UUID
 
 @DataJdbcTest
 @Testcontainers
@@ -88,7 +89,7 @@ class ProductRepositoryImplIntegrationTest {
     @Test
     fun `findById should return null when not exists`() {
         // Given & When
-        val found = productRepository.findById(ProductId("NON-EXISTENT"))
+        val found = productRepository.findById(ProductId(UUID.fromString("00000000-0000-0000-0000-000000000000")))
 
         // Then
         assertThat(found).isNull()

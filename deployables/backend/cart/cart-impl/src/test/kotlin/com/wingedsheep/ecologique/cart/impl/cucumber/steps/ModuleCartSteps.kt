@@ -25,6 +25,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import java.math.BigDecimal
+import java.util.UUID
 
 class ModuleCartSteps {
 
@@ -75,7 +76,7 @@ class ModuleCartSteps {
     @Given("the following products are available for cart:")
     fun productsAvailableForCart(dataTable: DataTable) {
         dataTable.asMaps().forEach { row ->
-            val productId = row["productId"]!!
+            val productId = UUID.fromString(row["productId"]!!)
             val productName = row["productName"]!!
             val price = BigDecimal(row["price"]!!)
             whenever(productService.getProduct(productId))
@@ -86,7 +87,7 @@ class ModuleCartSteps {
     @Given("no products are available")
     fun noProductsAvailable() {
         whenever(productService.getProduct(any()))
-            .thenReturn(Result.err(ProductError.NotFound("unknown")))
+            .thenReturn(Result.err(ProductError.NotFound(UUID.randomUUID())))
     }
 
     @Given("my cart is empty")
@@ -98,7 +99,7 @@ class ModuleCartSteps {
     fun cartHasItems(dataTable: DataTable) {
         cartService.clearCart(currentSubject)
         dataTable.asMaps().forEach { row ->
-            val productId = row["productId"]!!
+            val productId = UUID.fromString(row["productId"]!!)
             val productName = row["productName"]!!
             val price = BigDecimal(row["price"]!!)
             val quantity = row["quantity"]!!.toInt()
@@ -106,7 +107,7 @@ class ModuleCartSteps {
             whenever(productService.getProduct(productId))
                 .thenReturn(Result.ok(buildProductDto(id = productId, name = productName, priceAmount = price)))
 
-            cartService.addItem(currentSubject, AddCartItemRequest(productId, quantity))
+            cartService.addItem(currentSubject, AddCartItemRequest(productId.toString(), quantity))
         }
     }
 
@@ -148,6 +149,7 @@ class ModuleCartSteps {
 
     @Then("my cart should have {int} item\\(s)")
     fun cartShouldHaveItems(expectedCount: Int) {
+        ensureCartFetched()
         assertThat(response!!.statusCode).isEqualTo(200)
         val items = response!!.jsonPath().getList<Map<String, Any>>("items")
         assertThat(items).hasSize(expectedCount)
@@ -155,22 +157,31 @@ class ModuleCartSteps {
 
     @Then("the cart subtotal should be {double}")
     fun cartSubtotalShouldBe(expectedSubtotal: Double) {
+        ensureCartFetched()
         val subtotal = response!!.jsonPath().getDouble("subtotal")
         assertThat(subtotal).isEqualTo(expectedSubtotal)
     }
 
     @Then("the cart total items should be {int}")
     fun cartTotalItemsShouldBe(expectedTotal: Int) {
+        ensureCartFetched()
         val totalItems = response!!.jsonPath().getInt("totalItems")
         assertThat(totalItems).isEqualTo(expectedTotal)
     }
 
     @Then("the item {string} should have quantity {int}")
     fun itemShouldHaveQuantity(productId: String, expectedQuantity: Int) {
+        ensureCartFetched()
         val items = response!!.jsonPath().getList<Map<String, Any>>("items")
         val item = items.find { it["productId"] == productId }
         assertThat(item).isNotNull
         assertThat(item!!["quantity"]).isEqualTo(expectedQuantity)
+    }
+
+    private fun ensureCartFetched() {
+        if (response!!.statusCode != 200) {
+            response = authenticatedRequest.get()
+        }
     }
 
     @Then("I should receive a product not found error for cart")

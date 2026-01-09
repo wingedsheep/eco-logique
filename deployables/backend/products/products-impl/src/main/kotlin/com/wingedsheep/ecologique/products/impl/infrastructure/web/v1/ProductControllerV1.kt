@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
+import org.springframework.web.ErrorResponseException
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import java.net.URI
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -30,33 +31,33 @@ class ProductControllerV1(
 
     @PostMapping
     @Operation(summary = "Create a new product", description = "Creates a new eco-friendly product with sustainability rating")
-    fun createProduct(@RequestBody request: ProductCreateRequest): ResponseEntity<Any> {
+    fun createProduct(@RequestBody request: ProductCreateRequest): ResponseEntity<ProductDto> {
         return productService.createProduct(request).fold(
             onSuccess = { product ->
                 ResponseEntity.status(HttpStatus.CREATED).body(product)
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get product by ID", description = "Retrieves a single product by its unique identifier")
-    fun getProduct(@PathVariable id: String): ResponseEntity<Any> {
+    fun getProduct(@PathVariable id: UUID): ResponseEntity<ProductDto> {
         return productService.getProduct(id).fold(
             onSuccess = { product ->
                 ResponseEntity.ok(product)
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
 
     @GetMapping
     @Operation(summary = "List products", description = "Lists all products, optionally filtered by category")
-    fun getAllProducts(@RequestParam(required = false) category: String?): ResponseEntity<Any> {
+    fun getAllProducts(@RequestParam(required = false) category: String?): ResponseEntity<List<ProductDto>> {
         val result = if (category != null) {
             productService.findProductsByCategory(category)
         } else {
@@ -68,7 +69,7 @@ class ProductControllerV1(
                 ResponseEntity.ok(products)
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
@@ -76,75 +77,62 @@ class ProductControllerV1(
     @PutMapping("/{id}/price")
     @Operation(summary = "Update product price", description = "Updates the price of an existing product")
     fun updateProductPrice(
-        @PathVariable id: String,
+        @PathVariable id: UUID,
         @RequestBody request: ProductUpdatePriceRequest
-    ): ResponseEntity<Any> {
+    ): ResponseEntity<ProductDto> {
         return productService.updateProductPrice(id, request).fold(
             onSuccess = { product ->
                 ResponseEntity.ok(product)
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a product", description = "Removes a product from the catalog")
-    fun deleteProduct(@PathVariable id: String): ResponseEntity<Any> {
+    fun deleteProduct(@PathVariable id: UUID): ResponseEntity<Unit> {
         return productService.deleteProduct(id).fold(
             onSuccess = {
                 ResponseEntity.noContent().build()
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
+}
 
-    private fun ProductError.toHttpStatus(): HttpStatus = when (this) {
-        is ProductError.NotFound -> HttpStatus.NOT_FOUND
-        is ProductError.ValidationFailed -> HttpStatus.BAD_REQUEST
-        is ProductError.DuplicateName -> HttpStatus.CONFLICT
-        is ProductError.InvalidCategory -> HttpStatus.BAD_REQUEST
-        is ProductError.Unexpected -> HttpStatus.INTERNAL_SERVER_ERROR
-    }
-
-    private fun ProductError.toProblemDetail(): ProblemDetail = when (this) {
-        is ProductError.NotFound -> ProblemDetail.forStatusAndDetail(
+private fun ProductError.toErrorResponseException(): ErrorResponseException {
+    val (status, title, detail) = when (this) {
+        is ProductError.NotFound -> Triple(
             HttpStatus.NOT_FOUND,
-            "Product not found with id: $id"
-        ).apply {
-            type = URI.create("urn:problem:product:not-found")
-            title = "Product Not Found"
-        }
-        is ProductError.ValidationFailed -> ProblemDetail.forStatusAndDetail(
+            "Product Not Found",
+            "Product not found: $id"
+        )
+        is ProductError.ValidationFailed -> Triple(
             HttpStatus.BAD_REQUEST,
+            "Validation Failed",
             reason
-        ).apply {
-            type = URI.create("urn:problem:product:validation-failed")
-            title = "Validation Failed"
-        }
-        is ProductError.DuplicateName -> ProblemDetail.forStatusAndDetail(
+        )
+        is ProductError.DuplicateName -> Triple(
             HttpStatus.CONFLICT,
-            "Product with name '$name' already exists"
-        ).apply {
-            type = URI.create("urn:problem:product:duplicate-name")
-            title = "Duplicate Product Name"
-        }
-        is ProductError.InvalidCategory -> ProblemDetail.forStatusAndDetail(
+            "Duplicate Product Name",
+            "Product name already exists: $name"
+        )
+        is ProductError.InvalidCategory -> Triple(
             HttpStatus.BAD_REQUEST,
-            "Invalid category: $category. Valid categories are: CLOTHING, HOUSEHOLD, ELECTRONICS, FOOD, PERSONAL_CARE"
-        ).apply {
-            type = URI.create("urn:problem:product:invalid-category")
-            title = "Invalid Category"
-        }
-        is ProductError.Unexpected -> ProblemDetail.forStatusAndDetail(
+            "Invalid Category",
+            "Invalid category: $category"
+        )
+        is ProductError.Unexpected -> Triple(
             HttpStatus.INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
             message
-        ).apply {
-            type = URI.create("urn:problem:product:unexpected")
-            title = "Unexpected Error"
-        }
+        )
     }
+    val problemDetail = ProblemDetail.forStatusAndDetail(status, detail)
+    problemDetail.title = title
+    return ErrorResponseException(status, problemDetail, null)
 }

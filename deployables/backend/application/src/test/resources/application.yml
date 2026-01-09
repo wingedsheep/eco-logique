@@ -1,6 +1,9 @@
 spring:
   profiles:
     active: test
+  mvc:
+    problemdetails:
+      enabled: true
   flyway:
     enabled: false
   security:

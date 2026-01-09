@@ -4,10 +4,11 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.Persistable
 import org.springframework.data.relational.core.mapping.Table
+import java.util.UUID
 
 @Table("users", schema = "users")
 internal class UserEntity(
-    @Id private val id: String,
+    @Id private val id: UUID,
     val externalSubject: String,
     val name: String,
     val email: String,
@@ -16,12 +17,12 @@ internal class UserEntity(
     val postalCode: String?,
     val city: String?,
     val countryCode: String?
-) : Persistable<String> {
+) : Persistable<UUID> {
 
     @Transient
     private var isNewEntity: Boolean = true
 
-    override fun getId(): String = id
+    override fun getId(): UUID = id
 
     override fun isNew(): Boolean = isNewEntity
 

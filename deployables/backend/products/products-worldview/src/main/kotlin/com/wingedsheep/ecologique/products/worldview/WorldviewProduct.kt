@@ -2,11 +2,12 @@ package com.wingedsheep.ecologique.products.worldview
 
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import java.math.BigDecimal
+import java.util.UUID
 
 object WorldviewProduct {
 
     val organicCottonTShirt = ProductDto(
-        id = "PROD-001",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
         name = "Organic Cotton T-Shirt",
         description = "Soft, breathable t-shirt made from 100% organic cotton. GOTS certified.",
         category = "CLOTHING",
@@ -18,7 +19,7 @@ object WorldviewProduct {
     )
 
     val bambooToothbrushSet = ProductDto(
-        id = "PROD-002",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
         name = "Bamboo Toothbrush Set (4 pack)",
         description = "Eco-friendly bamboo toothbrushes with soft BPA-free bristles.",
         category = "PERSONAL_CARE",
@@ -30,7 +31,7 @@ object WorldviewProduct {
     )
 
     val solarPoweredCharger = ProductDto(
-        id = "PROD-003",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
         name = "Solar Powered Phone Charger",
         description = "Portable solar charger with 10000mAh battery. Waterproof and durable.",
         category = "ELECTRONICS",
@@ -42,7 +43,7 @@ object WorldviewProduct {
     )
 
     val reusableWaterBottle = ProductDto(
-        id = "PROD-004",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000004"),
         name = "Stainless Steel Water Bottle 750ml",
         description = "Double-walled insulated bottle keeps drinks cold 24h or hot 12h.",
         category = "HOUSEHOLD",
@@ -54,7 +55,7 @@ object WorldviewProduct {
     )
 
     val organicCoffeeBeans = ProductDto(
-        id = "PROD-005",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000005"),
         name = "Fair Trade Organic Coffee Beans 500g",
         description = "Single-origin Arabica beans from sustainable farms in Colombia.",
         category = "FOOD",
@@ -66,7 +67,7 @@ object WorldviewProduct {
     )
 
     val recycledYogaMat = ProductDto(
-        id = "PROD-006",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000006"),
         name = "Recycled Rubber Yoga Mat",
         description = "Non-slip yoga mat made from recycled rubber tires. 6mm thick.",
         category = "HOUSEHOLD",
@@ -78,7 +79,7 @@ object WorldviewProduct {
     )
 
     val miniSolarPanel = ProductDto(
-        id = "PROD-007",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000007"),
         name = "Portable Solar Panel 100W",
         description = "Foldable solar panel for camping and outdoor activities.",
         category = "ELECTRONICS",

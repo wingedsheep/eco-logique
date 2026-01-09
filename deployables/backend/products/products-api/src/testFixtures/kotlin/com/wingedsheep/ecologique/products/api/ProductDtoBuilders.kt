@@ -4,9 +4,10 @@ import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import com.wingedsheep.ecologique.products.api.dto.ProductUpdatePriceRequest
 import java.math.BigDecimal
+import java.util.UUID
 
 fun buildProductDto(
-    id: String = "PROD-TEST-001",
+    id: UUID = UUID.randomUUID(),
     name: String = "Test Product",
     description: String = "A test product description",
     category: String = "HOUSEHOLD",

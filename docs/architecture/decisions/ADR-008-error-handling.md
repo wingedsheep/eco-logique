@@ -4,7 +4,7 @@
 
 **Date**: 2024-11-04
 
-**Updated**: 2025-01-09
+**Updated**: 2026-01-09
 
 ---
 
@@ -12,8 +12,8 @@
 
 We implement structured error handling using:
 1. **Sealed classes** for domain errors returned as `Result<T, E>`
-2. **Controller-level mapping** to HTTP responses via `fold`
-3. **RFC 7807 Problem Details** with URN type identifiers
+2. **Controller-level translation** to HTTP via `ResponseStatusException`
+3. **RFC 7807 Problem Details** via Spring Boot 3 automatic conversion
 4. **Global exception handler** for unexpected errors
 
 ---
@@ -30,8 +30,8 @@ sealed class ProductError {
     data class DuplicateName(val name: String) : ProductError()
 }
 
-// products-api/ProductServiceApi.kt
-interface ProductServiceApi {
+// products-api/ProductService.kt
+interface ProductService {
     fun getProduct(id: String): Result<ProductDto, ProductError>
     fun createProduct(request: CreateProductRequest): Result<ProductDto, ProductError>
 }
@@ -45,7 +45,7 @@ interface ProductServiceApi {
 @Service
 internal class ProductServiceImpl(
     private val repository: ProductRepository,
-) : ProductServiceApi {
+) : ProductService {
 
     override fun getProduct(id: String): Result<ProductDto, ProductError> {
         val product = repository.findById(ProductId(id))
@@ -57,69 +57,77 @@ internal class ProductServiceImpl(
 
 ---
 
-## Controller Mapping
+## Translate at the Boundary
 
-Controllers use `fold` to map results to `ResponseEntity` with `ProblemDetail`:
+The domain layer doesn't know about HTTP. It returns `ProductError.NotFound`. Somewhere, that needs to become a 404 response.
+
+That translation happens at the **controller**—the boundary between your domain and the web:
 
 ```kotlin
 @RestController
+@RequestMapping("/api/v1/products")
 class ProductController(
-    private val productService: ProductServiceApi,
+    private val productService: ProductService,
 ) {
-    @GetMapping("/products/{id}")
-    fun getProduct(@PathVariable id: String): ResponseEntity<Any> {
+    @GetMapping("/{id}")
+    fun getProduct(@PathVariable id: String): ResponseEntity<ProductDto> {
         return productService.getProduct(id).fold(
             onSuccess = { ResponseEntity.ok(it) },
-            onFailure = { ResponseEntity.status(it.toHttpStatus()).body(it.toProblemDetail()) }
+            onFailure = { throw it.toResponseStatusException() }
+        )
+    }
+
+    @PostMapping
+    fun createProduct(@RequestBody request: ProductCreateRequest): ResponseEntity<ProductDto> {
+        return productService.createProduct(request).fold(
+            onSuccess = { ResponseEntity.status(HttpStatus.CREATED).body(it) },
+            onFailure = { throw it.toResponseStatusException() }
         )
     }
 }
 ```
 
-### Error Mappers
+**Key principles:**
+- Controllers return the **actual type** (`ResponseEntity<ProductDto>`), not `ResponseEntity<Any>`
+- On success, return the typed response
+- On failure, **throw** `ResponseStatusException` - Spring handles the rest
 
-Define mappers in the REST layer:
+---
+
+## Error Mappers
+
+Define a single extension function that converts domain errors to HTTP:
 
 ```kotlin
-private fun ProductError.toHttpStatus(): HttpStatus = when (this) {
-    is ProductError.NotFound -> HttpStatus.NOT_FOUND
-    is ProductError.ValidationFailed -> HttpStatus.BAD_REQUEST
-    is ProductError.DuplicateName -> HttpStatus.CONFLICT
-}
-
-private fun ProductError.toProblemDetail(): ProblemDetail = when (this) {
-    is ProductError.NotFound -> ProblemDetail.forStatusAndDetail(
+fun ProductError.toResponseStatusException(): ResponseStatusException = when (this) {
+    is ProductError.NotFound -> ResponseStatusException(
         HttpStatus.NOT_FOUND,
-        "Product not found with id: $id"
-    ).apply {
-        type = URI.create("urn:problem:product:not-found")
-        title = "Product Not Found"
-    }
-    is ProductError.ValidationFailed -> ProblemDetail.forStatusAndDetail(
+        "Product not found: $id"
+    )
+    is ProductError.ValidationFailed -> ResponseStatusException(
         HttpStatus.BAD_REQUEST,
         reason
-    ).apply {
-        type = URI.create("urn:problem:product:validation-failed")
-        title = "Validation Failed"
-    }
-    is ProductError.DuplicateName -> ProblemDetail.forStatusAndDetail(
+    )
+    is ProductError.DuplicateName -> ResponseStatusException(
         HttpStatus.CONFLICT,
-        "Product with name '$name' already exists"
-    ).apply {
-        type = URI.create("urn:problem:product:duplicate-name")
-        title = "Duplicate Product Name"
-    }
+        "Product name already exists: $name"
+    )
 }
 ```
 
-### URN Type Convention
+Spring Boot 3 converts `ResponseStatusException` to RFC 7807 Problem Details automatically—clients get consistent, parseable error responses.
 
-Use URN format for problem types: `urn:problem:<domain>:<error-type>`
+When you add a new error type, the `when` expression forces you to decide what HTTP status it maps to.
 
-Examples:
-- `urn:problem:product:not-found`
-- `urn:problem:order:access-denied`
-- `urn:problem:user:validation-failed`
+---
+
+## Benefits of This Approach
+
+1. **Type safety**: Controllers return actual types, not `Any`
+2. **Clean domain**: Domain layer has no HTTP knowledge
+3. **Explicit translation**: Error-to-HTTP mapping is in one place
+4. **Compiler help**: Adding a new error case forces handling
+5. **Automatic RFC 7807**: Spring Boot handles Problem Details
 
 ---
 
@@ -156,8 +164,9 @@ class GlobalExceptionHandler {
 
 ### Positive
 - Compile-time safety: all error cases must be handled
+- Type-safe controller return types improve API documentation
 - Domain layer stays pure (no HTTP concerns)
-- Consistent RFC 7807 responses with typed URNs
+- Consistent RFC 7807 responses from Spring Boot
 - No exception overhead in normal error paths
 - Explicit control flow with `fold`
 

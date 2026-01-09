@@ -1,8 +1,16 @@
 package com.wingedsheep.ecologique.common.country
 
-enum class Country(val iso2: String) {
-    NETHERLANDS("NL"),
-    GERMANY("DE"),
-    BELGIUM("BE"),
-    FRANCE("FR")
+/**
+ * ISO 3166-1 alpha-2 country codes.
+ */
+enum class Country(val displayName: String) {
+    NL("Netherlands"),
+    DE("Germany"),
+    BE("Belgium"),
+    FR("France");
+
+    companion object {
+        fun fromCode(code: String): Country? =
+            entries.find { it.name.equals(code, ignoreCase = true) }
+    }
 }

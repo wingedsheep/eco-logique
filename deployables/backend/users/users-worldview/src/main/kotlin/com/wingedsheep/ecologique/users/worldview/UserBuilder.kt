@@ -6,7 +6,7 @@ import com.wingedsheep.ecologique.users.api.dto.UserDto
 import java.util.UUID
 
 fun buildWorldviewUser(
-    id: String = "USER-${UUID.randomUUID().toString().take(8)}",
+    id: UUID = UUID.randomUUID(),
     name: String = "Worldview Test User",
     email: String = "worldview-${UUID.randomUUID().toString().take(8)}@example.com",
     defaultAddress: AddressDto? = buildWorldviewAddress()
@@ -22,7 +22,7 @@ fun buildWorldviewAddress(
     houseNumber: String = "1",
     postalCode: String = "1234 AB",
     city: String = "Amsterdam",
-    countryCode: String = "NETHERLANDS"
+    countryCode: String = "NL"
 ): AddressDto = AddressDto(
     street = street,
     houseNumber = houseNumber,

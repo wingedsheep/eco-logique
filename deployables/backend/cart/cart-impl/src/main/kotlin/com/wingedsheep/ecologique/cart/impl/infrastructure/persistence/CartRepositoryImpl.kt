@@ -1,16 +1,17 @@
 package com.wingedsheep.ecologique.cart.impl.infrastructure.persistence
 
 import com.wingedsheep.ecologique.cart.impl.domain.Cart
-import com.wingedsheep.ecologique.cart.impl.domain.CartItem
 import com.wingedsheep.ecologique.cart.impl.domain.CartRepository
 import org.springframework.data.repository.CrudRepository
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
 
 @Component
 internal class CartRepositoryImpl(
     private val cartJdbc: CartRepositoryJdbc,
-    private val cartItemJdbc: CartItemRepositoryJdbc
+    private val cartItemJdbc: CartItemRepositoryJdbc,
+    private val jdbcTemplate: JdbcTemplate
 ) : CartRepository {
 
     override fun findByUserId(userId: String): Cart? {
@@ -31,7 +32,8 @@ internal class CartRepositoryImpl(
             cartJdbc.save(CartEntity(cart.userId).markAsExisting())
         }
 
-        cartItemJdbc.deleteByUserId(cart.userId)
+        // Use native SQL to ensure delete executes immediately before inserts
+        jdbcTemplate.update("DELETE FROM cart.cart_items WHERE user_id = ?", cart.userId)
 
         cart.items.forEach { item ->
             cartItemJdbc.save(item.toEntity(cart.userId))
@@ -41,7 +43,7 @@ internal class CartRepositoryImpl(
     }
 
     override fun deleteByUserId(userId: String) {
-        cartItemJdbc.deleteByUserId(userId)
+        jdbcTemplate.update("DELETE FROM cart.cart_items WHERE user_id = ?", userId)
         cartJdbc.deleteById(userId)
     }
 }
@@ -52,5 +54,4 @@ internal interface CartRepositoryJdbc : CrudRepository<CartEntity, String>
 @Repository
 internal interface CartItemRepositoryJdbc : CrudRepository<CartItemEntity, Long> {
     fun findByUserId(userId: String): List<CartItemEntity>
-    fun deleteByUserId(userId: String)
 }

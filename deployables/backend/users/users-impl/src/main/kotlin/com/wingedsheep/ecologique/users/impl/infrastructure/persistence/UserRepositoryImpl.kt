@@ -7,6 +7,7 @@ import com.wingedsheep.ecologique.users.impl.domain.UserRepository
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
+import java.util.UUID
 
 @Component
 internal class UserRepositoryImpl(
@@ -45,7 +46,7 @@ internal class UserRepositoryImpl(
 }
 
 @Repository
-internal interface UserRepositoryJdbc : CrudRepository<UserEntity, String> {
+internal interface UserRepositoryJdbc : CrudRepository<UserEntity, UUID> {
     fun findByExternalSubject(externalSubject: String): UserEntity?
     fun findByEmail(email: String): UserEntity?
     fun existsByExternalSubject(externalSubject: String): Boolean

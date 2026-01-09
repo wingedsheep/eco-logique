@@ -6,11 +6,12 @@ import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Compan
 import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_KEYCLOAK_ID
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 
 object WorldviewOrder {
 
     val johnDoeCreatedOrder = OrderDto(
-        id = "ORD-WV-001",
+        id = UUID.fromString("00000000-0000-0000-0001-000000000001"),
         userId = JOHN_KEYCLOAK_ID,
         status = "CREATED",
         lines = listOf(
@@ -29,7 +30,7 @@ object WorldviewOrder {
     )
 
     val johnDoePaidOrder = OrderDto(
-        id = "ORD-WV-002",
+        id = UUID.fromString("00000000-0000-0000-0001-000000000002"),
         userId = JOHN_KEYCLOAK_ID,
         status = "PAID",
         lines = listOf(
@@ -55,7 +56,7 @@ object WorldviewOrder {
     )
 
     val janeSmithShippedOrder = OrderDto(
-        id = "ORD-WV-003",
+        id = UUID.fromString("00000000-0000-0000-0001-000000000003"),
         userId = JANE_KEYCLOAK_ID,
         status = "SHIPPED",
         lines = listOf(
@@ -74,7 +75,7 @@ object WorldviewOrder {
     )
 
     val janeSmithDeliveredOrder = OrderDto(
-        id = "ORD-WV-004",
+        id = UUID.fromString("00000000-0000-0000-0001-000000000004"),
         userId = JANE_KEYCLOAK_ID,
         status = "DELIVERED",
         lines = listOf(
@@ -109,6 +110,6 @@ object WorldviewOrder {
     fun findByUserId(userId: String): List<OrderDto> =
         allOrders.filter { it.userId == userId }
 
-    fun findById(orderId: String): OrderDto? =
+    fun findById(orderId: UUID): OrderDto? =
         allOrders.find { it.id == orderId }
 }

@@ -3,12 +3,8 @@ package com.wingedsheep.ecologique.orders.impl.domain
 import java.util.UUID
 
 @JvmInline
-internal value class OrderId(val value: String) {
-    init {
-        require(value.isNotBlank()) { "OrderId cannot be blank" }
-    }
-
+internal value class OrderId(val value: UUID) {
     companion object {
-        fun generate(): OrderId = OrderId("ORD-${UUID.randomUUID()}")
+        fun generate(): OrderId = OrderId(UUID.randomUUID())
     }
 }

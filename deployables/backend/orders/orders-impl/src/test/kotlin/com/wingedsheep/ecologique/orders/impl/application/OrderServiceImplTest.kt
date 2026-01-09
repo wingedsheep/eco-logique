@@ -28,6 +28,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.context.ApplicationEventPublisher
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class OrderServiceImplTest {
@@ -44,11 +45,15 @@ class OrderServiceImplTest {
     @InjectMocks
     private lateinit var orderService: OrderServiceImpl
 
+    private val testProductId = UUID.randomUUID()
+
     @Test
     fun `createOrder should return OrderDto when valid request`() {
         // Given
-        val request = buildOrderCreateRequest()
-        whenever(productService.getProduct("PROD-TEST-001")).thenReturn(Result.ok(buildProductDto(id = "PROD-TEST-001")))
+        val request = buildOrderCreateRequest(
+            lines = listOf(buildOrderLineCreateRequest(productId = testProductId.toString()))
+        )
+        whenever(productService.getProduct(testProductId)).thenReturn(Result.ok(buildProductDto(id = testProductId)))
         whenever(orderRepository.save(any())).thenAnswer { it.arguments[0] as Order }
 
         // When
@@ -89,11 +94,12 @@ class OrderServiceImplTest {
     @Test
     fun `createOrder should return ProductNotFound error when product does not exist`() {
         // Given
+        val nonExistentProductId = UUID.randomUUID()
         val request = buildOrderCreateRequest(
-            lines = listOf(buildOrderLineCreateRequest(productId = "PROD-NONEXISTENT"))
+            lines = listOf(buildOrderLineCreateRequest(productId = nonExistentProductId.toString()))
         )
-        whenever(productService.getProduct("PROD-NONEXISTENT"))
-            .thenReturn(Result.err(ProductError.NotFound("PROD-NONEXISTENT")))
+        whenever(productService.getProduct(nonExistentProductId))
+            .thenReturn(Result.err(ProductError.NotFound(nonExistentProductId)))
 
         // When
         val result = orderService.createOrder("USER-001", request)
@@ -104,7 +110,7 @@ class OrderServiceImplTest {
             onSuccess = { },
             onFailure = { error ->
                 assertThat(error).isInstanceOf(OrderError.ProductNotFound::class.java)
-                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo("PROD-NONEXISTENT")
+                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(nonExistentProductId.toString())
             }
         )
     }
@@ -112,14 +118,16 @@ class OrderServiceImplTest {
     @Test
     fun `createOrder should validate all products in order`() {
         // Given
+        val productId1 = UUID.randomUUID()
+        val productId2 = UUID.randomUUID()
         val request = buildOrderCreateRequest(
             lines = listOf(
-                buildOrderLineCreateRequest(productId = "PROD-001"),
-                buildOrderLineCreateRequest(productId = "PROD-002")
+                buildOrderLineCreateRequest(productId = productId1.toString()),
+                buildOrderLineCreateRequest(productId = productId2.toString())
             )
         )
-        whenever(productService.getProduct("PROD-001")).thenReturn(Result.ok(buildProductDto(id = "PROD-001")))
-        whenever(productService.getProduct("PROD-002")).thenReturn(Result.err(ProductError.NotFound("PROD-002")))
+        whenever(productService.getProduct(productId1)).thenReturn(Result.ok(buildProductDto(id = productId1)))
+        whenever(productService.getProduct(productId2)).thenReturn(Result.err(ProductError.NotFound(productId2)))
 
         // When
         val result = orderService.createOrder("USER-001", request)
@@ -130,7 +138,7 @@ class OrderServiceImplTest {
             onSuccess = { },
             onFailure = { error ->
                 assertThat(error).isInstanceOf(OrderError.ProductNotFound::class.java)
-                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo("PROD-002")
+                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(productId2.toString())
             }
         )
     }
@@ -138,18 +146,19 @@ class OrderServiceImplTest {
     @Test
     fun `getOrder should return OrderDto when order exists and user owns it`() {
         // Given
-        val orderId = OrderId("ORD-001")
+        val orderUuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val orderId = OrderId(orderUuid)
         val order = buildOrder(id = orderId, userId = "USER-001")
         whenever(orderRepository.findById(orderId)).thenReturn(order)
 
         // When
-        val result = orderService.getOrder("ORD-001", "USER-001")
+        val result = orderService.getOrder(orderUuid, "USER-001")
 
         // Then
         assertThat(result.isOk).isTrue()
         result.fold(
             onSuccess = { dto ->
-                assertThat(dto.id).isEqualTo("ORD-001")
+                assertThat(dto.id).isEqualTo(orderUuid)
             },
             onFailure = { }
         )
@@ -158,10 +167,11 @@ class OrderServiceImplTest {
     @Test
     fun `getOrder should return NotFound error when order does not exist`() {
         // Given
-        whenever(orderRepository.findById(OrderId("ORD-999"))).thenReturn(null)
+        val orderUuid = UUID.fromString("00000000-0000-0000-0000-000000000999")
+        whenever(orderRepository.findById(OrderId(orderUuid))).thenReturn(null)
 
         // When
-        val result = orderService.getOrder("ORD-999", "USER-001")
+        val result = orderService.getOrder(orderUuid, "USER-001")
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -176,12 +186,13 @@ class OrderServiceImplTest {
     @Test
     fun `getOrder should return AccessDenied error when user does not own order`() {
         // Given
-        val orderId = OrderId("ORD-001")
+        val orderUuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val orderId = OrderId(orderUuid)
         val order = buildOrder(id = orderId, userId = "USER-001")
         whenever(orderRepository.findById(orderId)).thenReturn(order)
 
         // When
-        val result = orderService.getOrder("ORD-001", "USER-002")
+        val result = orderService.getOrder(orderUuid, "USER-002")
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -196,7 +207,10 @@ class OrderServiceImplTest {
     @Test
     fun `findOrdersForUser should return list of OrderDto`() {
         // Given
-        val orders = listOf(buildOrder(), buildOrder(id = OrderId("ORD-002")))
+        val orders = listOf(
+            buildOrder(),
+            buildOrder(id = OrderId(UUID.fromString("00000000-0000-0000-0000-000000000002")))
+        )
         whenever(orderRepository.findByUserId("USER-001")).thenReturn(orders)
 
         // When
@@ -215,13 +229,14 @@ class OrderServiceImplTest {
     @Test
     fun `updateStatus should return updated OrderDto`() {
         // Given
-        val orderId = OrderId("ORD-001")
+        val orderUuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val orderId = OrderId(orderUuid)
         val order = buildOrder(id = orderId, status = OrderStatus.CREATED)
         whenever(orderRepository.findById(orderId)).thenReturn(order)
         whenever(orderRepository.save(any())).thenAnswer { it.arguments[0] as Order }
 
         // When
-        val result = orderService.updateStatus("ORD-001", "RESERVED")
+        val result = orderService.updateStatus(orderUuid, "RESERVED")
 
         // Then
         assertThat(result.isOk).isTrue()
@@ -236,12 +251,13 @@ class OrderServiceImplTest {
     @Test
     fun `updateStatus should return InvalidStatus error for invalid transition`() {
         // Given
-        val orderId = OrderId("ORD-001")
+        val orderUuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val orderId = OrderId(orderUuid)
         val order = buildOrder(id = orderId, status = OrderStatus.DELIVERED)
         whenever(orderRepository.findById(orderId)).thenReturn(order)
 
         // When
-        val result = orderService.updateStatus("ORD-001", "CREATED")
+        val result = orderService.updateStatus(orderUuid, "CREATED")
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -254,7 +270,7 @@ class OrderServiceImplTest {
     }
 
     private fun buildOrder(
-        id: OrderId = OrderId("ORD-001"),
+        id: OrderId = OrderId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
         userId: String = "USER-001",
         status: OrderStatus = OrderStatus.CREATED
     ): Order = Order(

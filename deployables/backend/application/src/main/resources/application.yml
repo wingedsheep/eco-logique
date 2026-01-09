@@ -1,6 +1,9 @@
 spring:
   application:
     name: ecologique
+  mvc:
+    problemdetails:
+      enabled: true
   datasource:
     url: jdbc:postgresql://localhost:5432/ecologique
     username: user

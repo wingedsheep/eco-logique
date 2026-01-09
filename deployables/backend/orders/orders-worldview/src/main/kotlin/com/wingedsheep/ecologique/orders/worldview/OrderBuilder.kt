@@ -9,7 +9,7 @@ import java.time.Instant
 import java.util.UUID
 
 fun buildWorldviewOrder(
-    id: String = "ORD-${UUID.randomUUID().toString().take(8)}",
+    id: UUID = UUID.randomUUID(),
     userId: String = "worldview-user",
     status: String = "CREATED",
     lines: List<OrderLineDto> = listOf(buildWorldviewOrderLine()),

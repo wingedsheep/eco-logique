@@ -22,7 +22,7 @@ Feature: Module Level User Management
       | houseNumber | 42              |
       | postalCode  | 1012 NX         |
       | city        | Amsterdam       |
-      | countryCode | NETHERLANDS     |
+      | countryCode | NL     |
     Then the profile should be created successfully
     And the profile should have an address in "Amsterdam"
 
@@ -41,7 +41,7 @@ Feature: Module Level User Management
       | houseNumber | 1              |
       | postalCode  | 10178          |
       | city        | Berlin         |
-      | countryCode | GERMANY        |
+      | countryCode | DE        |
     Then the address should be updated successfully
     And the profile should have an address in "Berlin"
 
@@ -80,5 +80,5 @@ Feature: Module Level User Management
       | houseNumber | 1           |
       | postalCode  | 12345       |
       | city        | Test City   |
-      | countryCode | NETHERLANDS |
+      | countryCode | NL |
     Then I should receive a not found error

@@ -12,6 +12,7 @@ import com.wingedsheep.ecologique.common.result.Result
 import com.wingedsheep.ecologique.products.api.ProductService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 internal class CartServiceImpl(
@@ -27,7 +28,13 @@ internal class CartServiceImpl(
 
     @Transactional
     override fun addItem(userId: String, request: AddCartItemRequest): Result<CartDto, CartError> {
-        val productResult = productService.getProduct(request.productId)
+        val productUuid = try {
+            UUID.fromString(request.productId)
+        } catch (e: IllegalArgumentException) {
+            return Result.err(CartError.ProductNotFound(request.productId))
+        }
+
+        val productResult = productService.getProduct(productUuid)
         if (productResult.isErr) {
             return Result.err(CartError.ProductNotFound(request.productId))
         }
@@ -37,7 +44,7 @@ internal class CartServiceImpl(
 
         val cartItem = try {
             CartItem.create(
-                productId = product.id,
+                productId = product.id.toString(),
                 productName = product.name,
                 unitPrice = product.priceAmount,
                 quantity = request.quantity

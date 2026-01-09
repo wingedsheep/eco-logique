@@ -6,22 +6,23 @@ import org.springframework.data.domain.Persistable
 import org.springframework.data.relational.core.mapping.Table
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 
 @Table("orders", schema = "orders")
 internal class OrderEntity(
-    @Id private val id: String,
+    @Id private val id: UUID,
     val userId: String,
     val status: String,
     val subtotal: BigDecimal,
     val grandTotal: BigDecimal,
     val currency: String,
     val createdAt: Instant
-) : Persistable<String> {
+) : Persistable<UUID> {
 
     @Transient
     private var isNewEntity: Boolean = true
 
-    override fun getId(): String = id
+    override fun getId(): UUID = id
 
     override fun isNew(): Boolean = isNewEntity
 
@@ -34,7 +35,7 @@ internal class OrderEntity(
 @Table("order_lines", schema = "orders")
 internal class OrderLineEntity(
     @Id val id: Long?,
-    val orderId: String,
+    val orderId: UUID,
     val productId: String,
     val productName: String,
     val unitPrice: BigDecimal,

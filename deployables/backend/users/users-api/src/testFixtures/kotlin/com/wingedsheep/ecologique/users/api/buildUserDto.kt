@@ -4,9 +4,10 @@ import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import com.wingedsheep.ecologique.users.api.dto.UserDto
 import com.wingedsheep.ecologique.users.api.dto.UserUpdateAddressRequest
+import java.util.UUID
 
 fun buildUserDto(
-    id: String = "USER-TEST-001",
+    id: UUID = UUID.randomUUID(),
     name: String = "Test User",
     email: String = "test@example.com",
     defaultAddress: AddressDto? = buildAddressDto()
@@ -22,7 +23,7 @@ fun buildAddressDto(
     houseNumber: String = "1",
     postalCode: String = "1234 AB",
     city: String = "Amsterdam",
-    countryCode: String = "NETHERLANDS"
+    countryCode: String = "NL"
 ): AddressDto = AddressDto(
     street = street,
     houseNumber = houseNumber,
@@ -46,7 +47,7 @@ fun buildUserUpdateAddressRequest(
     houseNumber: String = "42",
     postalCode: String = "5678 CD",
     city: String = "Rotterdam",
-    countryCode: String = "NETHERLANDS"
+    countryCode: String = "NL"
 ): UserUpdateAddressRequest = UserUpdateAddressRequest(
     street = street,
     houseNumber = houseNumber,

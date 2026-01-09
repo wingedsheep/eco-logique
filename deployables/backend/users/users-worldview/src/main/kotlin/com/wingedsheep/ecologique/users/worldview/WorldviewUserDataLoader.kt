@@ -73,7 +73,7 @@ class WorldviewUserDataLoader(
                     houseNumber = "1",
                     postalCode = "1012 NX",
                     city = "Amsterdam",
-                    countryCode = "NETHERLANDS"
+                    countryCode = "NL"
                 )
             ),
             JANE_KEYCLOAK_ID to WorldviewUserData(
@@ -84,7 +84,7 @@ class WorldviewUserDataLoader(
                     houseNumber = "1",
                     postalCode = "10178",
                     city = "Berlin",
-                    countryCode = "GERMANY"
+                    countryCode = "DE"
                 )
             )
         )

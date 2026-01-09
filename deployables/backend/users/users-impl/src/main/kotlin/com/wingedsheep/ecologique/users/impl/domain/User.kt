@@ -34,13 +34,9 @@ internal data class User(
 }
 
 @JvmInline
-internal value class UserId(val value: String) {
-    init {
-        require(value.isNotBlank()) { "UserId cannot be blank" }
-    }
-
+internal value class UserId(val value: UUID) {
     companion object {
-        fun generate(): UserId = UserId("USER-${UUID.randomUUID()}")
+        fun generate(): UserId = UserId(UUID.randomUUID())
     }
 }
 

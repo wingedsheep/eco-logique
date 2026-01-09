@@ -5,10 +5,11 @@ import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.Persistable
 import org.springframework.data.relational.core.mapping.Table
 import java.math.BigDecimal
+import java.util.UUID
 
 @Table("products", schema = "products")
 internal class ProductEntity(
-    @Id private val id: String,
+    @Id private val id: UUID,
     val name: String,
     val description: String,
     val categoryCode: String,
@@ -17,12 +18,12 @@ internal class ProductEntity(
     val weightGrams: Int,
     val sustainabilityRating: String,
     val carbonFootprintKg: BigDecimal
-) : Persistable<String> {
+) : Persistable<UUID> {
 
     @Transient
     private var isNewEntity: Boolean = true
 
-    override fun getId(): String = id
+    override fun getId(): UUID = id
 
     override fun isNew(): Boolean = isNewEntity
 

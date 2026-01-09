@@ -4,24 +4,87 @@
 
 **Date**: 2024-12-13
 
-**Updated**: 2025-01-09
+**Updated**: 2026-01-09
 
 ---
 
 ## Decision
 
-We validate using Kotlin `require`/`check` instead of JSR-303 annotations. Validation happens at two levels:
+We validate using Kotlin `require`/`check` instead of JSR-303 annotations. Validation happens at multiple levels:
 
-1. **Domain objects** (in `-impl`): Enforce business invariants via `init` blocks
-2. **Service layer** (in `-impl`): Validate inputs and convert exceptions to `Result` errors
+1. **Request DTOs** (in `-api`): Validate format and range constraints
+2. **Domain objects** (in `-impl`): Enforce business invariants
+3. **Service layer** (in `-impl`): Validate business rules (duplicates, cross-entity)
 
-Request DTOs remain plain data classes for JSON serialization compatibility.
+---
+
+## Request DTO Validation
+
+Request DTOs in API modules validate **what callers can enter**:
+
+```kotlin
+// products-api/dto/ProductCreateRequest.kt
+data class ProductCreateRequest(
+    val name: String,
+    val description: String,
+    val category: ProductCategory,  // Use enum, not String
+    val priceAmount: BigDecimal,
+    val priceCurrency: Currency,
+    val weightGrams: Int,
+    val carbonFootprintKg: BigDecimal,
+) {
+    init {
+        require(name.isNotBlank()) { "Name cannot be blank" }
+        require(name.length <= 255) { "Name cannot exceed 255 characters" }
+        require(description.length <= 2000) { "Description cannot exceed 2000 characters" }
+        require(priceAmount > BigDecimal.ZERO) { "Price must be positive" }
+        require(weightGrams > 0) { "Weight must be positive" }
+        require(carbonFootprintKg >= BigDecimal.ZERO) { "Carbon footprint cannot be negative" }
+    }
+}
+```
+
+**What to validate in request DTOs:**
+- Not blank / not empty
+- String length limits
+- Numeric ranges (positive, min/max)
+- Format patterns (email, phone)
+
+**What NOT to validate in request DTOs:**
+- Business rules (duplicates, permissions)
+- Cross-field validation requiring domain knowledge
+- Database lookups
+
+---
+
+## Using Typed Values in Requests
+
+Prefer enums and typed IDs over plain strings:
+
+```kotlin
+// Instead of this:
+data class OrderCreateRequest(
+    val productId: String,        // Easy to pass wrong ID type
+    val category: String,         // What values are valid?
+)
+
+// Do this:
+data class OrderCreateRequest(
+    val productId: ProductId,     // Type-safe, self-validating
+    val category: ProductCategory, // Compiler-checked values
+)
+```
+
+Benefits:
+- Compile-time type checking
+- Self-documenting API
+- Validation happens automatically on deserialization
 
 ---
 
 ## Domain Object Validation
 
-Domain objects enforce business invariants in `init` blocks:
+Domain objects in impl enforce **business invariants**:
 
 ```kotlin
 // products-impl/domain/Product.kt
@@ -36,8 +99,8 @@ internal data class Product(
     }
 }
 
-// products-impl/domain/Money.kt
-internal data class Money(
+// common-money/Money.kt
+data class Money(
     val amount: BigDecimal,
     val currency: Currency,
 ) {
@@ -47,34 +110,32 @@ internal data class Money(
 }
 ```
 
+Domain validation may duplicate some request validation—this is intentional. Domain objects must be valid regardless of how they're created.
+
 ---
 
 ## Service Layer Validation
 
-Services validate inputs and catch domain exceptions, converting them to typed errors:
+Services validate **business rules** that require lookups or cross-entity checks:
 
 ```kotlin
 @Service
 internal class ProductServiceImpl(
     private val repository: ProductRepository,
-) : ProductServiceApi {
+) : ProductService {
 
-    override fun createProduct(request: CreateProductRequest): Result<ProductDto, ProductError> {
-        // Validate enum/lookup values
-        val category = ProductCategory.fromString(request.category)
-            ?: return Result.err(ProductError.InvalidCategory(request.category))
-
-        // Check business rules
+    override fun createProduct(request: ProductCreateRequest): Result<ProductDto, ProductError> {
+        // Business rule: no duplicate names
         repository.findByName(request.name)?.let {
             return Result.err(ProductError.DuplicateName(request.name))
         }
 
-        // Domain object creation may throw - catch and convert
+        // Domain object creation validates invariants
         val product = try {
             Product.create(
                 name = request.name,
                 priceAmount = request.priceAmount,
-                // ...
+                priceCurrency = request.priceCurrency,
             )
         } catch (e: IllegalArgumentException) {
             return Result.err(ProductError.ValidationFailed(e.message ?: "Validation failed"))
@@ -87,42 +148,20 @@ internal class ProductServiceImpl(
 
 ---
 
-## Request DTOs: Plain Data
-
-Request DTOs are plain data classes without validation. This keeps them serialization-friendly:
-
-```kotlin
-// products-api/dto/ProductCreateRequest.kt
-data class ProductCreateRequest(
-    val name: String,
-    val description: String,
-    val category: String,
-    val priceAmount: BigDecimal,
-    val priceCurrency: String,
-    val weightGrams: Int,
-    val carbonFootprintKg: BigDecimal,
-)
-```
-
-**Why no init blocks in DTOs?**
-- JSON deserialization creates objects directly—init block failures produce poor error messages
-- Validation often requires domain knowledge (valid categories, duplicate checks)
-- Service layer can return typed `Result` errors instead of throwing exceptions
-
----
-
 ## Response DTOs: No Validation
 
 Response DTOs are plain data carriers constructed from validated domain objects:
 
 ```kotlin
 data class ProductDto(
-    val id: String,
+    val id: ProductId,
     val name: String,
     val priceAmount: BigDecimal,
-    val priceCurrency: String,
+    val priceCurrency: Currency,
 )
 ```
+
+No `init` block needed—the domain object was already valid.
 
 ---
 
@@ -131,37 +170,36 @@ data class ProductDto(
 JSR-303 requires `@Valid` annotations at call sites—easy to forget:
 
 ```kotlin
-fun createProduct(@Valid request: ProductRequest)  // Easy to forget
+fun createProduct(@Valid request: ProductRequest)  // Easy to forget @Valid
 ```
 
-Domain `init` blocks are **always enforced**:
+Kotlin `init` blocks are **always enforced**:
 ```kotlin
-val product = Product(name = "", price = money)  // Throws immediately
+val request = ProductCreateRequest(name = "", ...)  // Throws immediately
 ```
 
 ---
 
-## Guidelines
+## Validation Summary
 
-| Location | Mechanism | Purpose |
-|----------|-----------|---------|
-| Domain objects | `require` in `init` | Business invariants |
-| Value objects | `require` in `init` | Type constraints |
-| Service layer | Explicit checks → `Result.err` | Input validation, lookups |
-| Request DTOs | None | Serialization-friendly |
-| Response DTOs | None | Constructed from valid domain |
+| Location | What to Validate | Mechanism |
+|----------|------------------|-----------|
+| Request DTOs | Format, range, required | `init` with `require` |
+| Domain objects | Business invariants | `init` with `require` |
+| Service layer | Business rules, lookups | Explicit checks → `Result.err` |
+| Response DTOs | Nothing | Constructed from valid domain |
 
 ---
 
 ## Consequences
 
 ### Positive
+- Early feedback: Request validation catches issues before service layer
+- Type safety: Enums and typed IDs in requests prevent string mistakes
 - Domain invariants cannot be bypassed
 - Typed errors via `Result` instead of exceptions
-- Request DTOs work cleanly with JSON serialization
-- Validation logic centralized in service layer
 - No annotation processing required
 
 ### Negative
-- Service layer has validation responsibility
-- Must remember to catch domain exceptions
+- Some validation duplicated between request and domain
+- Must catch domain exceptions in service layer

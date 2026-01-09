@@ -9,7 +9,7 @@ import java.time.Instant
 import java.util.UUID
 
 fun buildOrderDto(
-    id: String = "ORD-${UUID.randomUUID().toString().take(8)}",
+    id: UUID = UUID.randomUUID(),
     userId: String = "USER-TEST-001",
     status: String = "CREATED",
     lines: List<OrderLineDto> = listOf(buildOrderLineDto()),

@@ -5,10 +5,18 @@ import org.junit.jupiter.api.Test
 
 class CountryTest {
     @Test
-    fun `should have correct iso2 codes`() {
-        assertEquals("NL", Country.NETHERLANDS.iso2)
-        assertEquals("DE", Country.GERMANY.iso2)
-        assertEquals("BE", Country.BELGIUM.iso2)
-        assertEquals("FR", Country.FRANCE.iso2)
+    fun `should have correct display names`() {
+        assertEquals("Netherlands", Country.NL.displayName)
+        assertEquals("Germany", Country.DE.displayName)
+        assertEquals("Belgium", Country.BE.displayName)
+        assertEquals("France", Country.FR.displayName)
+    }
+
+    @Test
+    fun `should find country from code`() {
+        assertEquals(Country.NL, Country.fromCode("NL"))
+        assertEquals(Country.NL, Country.fromCode("nl"))
+        assertEquals(Country.DE, Country.fromCode("DE"))
+        assertNull(Country.fromCode("INVALID"))
     }
 }

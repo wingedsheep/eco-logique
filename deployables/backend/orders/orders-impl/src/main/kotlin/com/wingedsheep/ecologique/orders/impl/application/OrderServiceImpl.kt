@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 
 @Service
 internal class OrderServiceImpl(
@@ -65,7 +66,7 @@ internal class OrderServiceImpl(
 
         eventPublisher.publishEvent(
             OrderCreated(
-                orderId = savedOrder.id.value,
+                orderId = savedOrder.id.value.toString(),
                 userId = savedOrder.userId,
                 grandTotal = savedOrder.totals.grandTotal,
                 currency = savedOrder.totals.currency.name,
@@ -77,12 +78,8 @@ internal class OrderServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getOrder(orderId: String, userId: String): Result<OrderDto, OrderError> {
-        val id = try {
-            OrderId(orderId)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(OrderError.ValidationFailed("Invalid order ID"))
-        }
+    override fun getOrder(orderId: UUID, userId: String): Result<OrderDto, OrderError> {
+        val id = OrderId(orderId)
 
         val order = orderRepository.findById(id)
             ?: return Result.err(OrderError.NotFound(orderId))
@@ -101,12 +98,8 @@ internal class OrderServiceImpl(
     }
 
     @Transactional
-    override fun updateStatus(orderId: String, newStatus: String): Result<OrderDto, OrderError> {
-        val id = try {
-            OrderId(orderId)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(OrderError.ValidationFailed("Invalid order ID"))
-        }
+    override fun updateStatus(orderId: UUID, newStatus: String): Result<OrderDto, OrderError> {
+        val id = OrderId(orderId)
 
         val targetStatus = OrderStatus.fromString(newStatus)
             ?: return Result.err(OrderError.ValidationFailed("Invalid status: $newStatus"))
@@ -126,7 +119,12 @@ internal class OrderServiceImpl(
 
     private fun validateProductsExist(request: OrderCreateRequest): OrderError? {
         for (line in request.lines) {
-            val productResult = productService.getProduct(line.productId)
+            val productId = try {
+                UUID.fromString(line.productId)
+            } catch (e: IllegalArgumentException) {
+                return OrderError.ProductNotFound(line.productId)
+            }
+            val productResult = productService.getProduct(productId)
             if (productResult.isErr) {
                 return OrderError.ProductNotFound(line.productId)
             }

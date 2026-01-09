@@ -7,11 +7,11 @@ Feature: Module Level Order Management
   Scenario: Create a new order
     Given I am authenticated as "order-user-subject"
     And the following products exist in the catalog:
-      | productId | productName          |
-      | PROD-001  | Organic Cotton Shirt |
+      | productId                            | productName          |
+      | 00000000-0000-0000-0000-000000000001 | Organic Cotton Shirt |
     When I create an order with the following items:
-      | productId | productName          | unitPrice | quantity |
-      | PROD-001  | Organic Cotton Shirt | 29.99     | 2        |
+      | productId                            | productName          | unitPrice | quantity |
+      | 00000000-0000-0000-0000-000000000001 | Organic Cotton Shirt | 29.99     | 2        |
     Then the order should be created successfully
     And the order status should be "CREATED"
     And the order grand total should be 59.98 EUR
@@ -19,21 +19,21 @@ Feature: Module Level Order Management
   Scenario: Create order with multiple items
     Given I am authenticated as "multi-item-user"
     And the following products exist in the catalog:
-      | productId | productName |
-      | PROD-001  | Product One |
-      | PROD-002  | Product Two |
+      | productId                            | productName |
+      | 00000000-0000-0000-0000-000000000001 | Product One |
+      | 00000000-0000-0000-0000-000000000002 | Product Two |
     When I create an order with the following items:
-      | productId | productName    | unitPrice | quantity |
-      | PROD-001  | Product One    | 10.00     | 2        |
-      | PROD-002  | Product Two    | 15.50     | 3        |
+      | productId                            | productName    | unitPrice | quantity |
+      | 00000000-0000-0000-0000-000000000001 | Product One    | 10.00     | 2        |
+      | 00000000-0000-0000-0000-000000000002 | Product Two    | 15.50     | 3        |
     Then the order should be created successfully
     And the order should have 2 lines
 
   Scenario: Retrieve order by ID
     Given I am authenticated as "retrieve-order-user"
     And the following products exist in the catalog:
-      | productId | productName  |
-      | PROD-TEST | Test Product |
+      | productId                            | productName  |
+      | 00000000-0000-0000-0000-000000000099 | Test Product |
     And an order exists for the current user
     When I retrieve the order by ID
     Then I should receive the order details
@@ -42,8 +42,8 @@ Feature: Module Level Order Management
   Scenario: List orders for user
     Given I am authenticated as "list-orders-user"
     And the following products exist in the catalog:
-      | productId | productName  |
-      | PROD-TEST | Test Product |
+      | productId                            | productName  |
+      | 00000000-0000-0000-0000-000000000099 | Test Product |
     And an order exists for the current user
     And another order exists for the current user
     When I list my orders
@@ -52,8 +52,8 @@ Feature: Module Level Order Management
   Scenario: Cannot access another user's order
     Given I am authenticated as "owner-user"
     And the following products exist in the catalog:
-      | productId | productName  |
-      | PROD-TEST | Test Product |
+      | productId                            | productName  |
+      | 00000000-0000-0000-0000-000000000099 | Test Product |
     And an order exists for the current user
     When I am authenticated as "other-user"
     And I try to retrieve the order by ID
@@ -68,20 +68,20 @@ Feature: Module Level Order Management
     Given I am authenticated as "invalid-product-user"
     And no products exist in the catalog
     When I create an order with the following items:
-      | productId       | productName     | unitPrice | quantity |
-      | PROD-NONEXISTENT | Unknown Product | 10.00     | 1        |
+      | productId                            | productName     | unitPrice | quantity |
+      | 00000000-0000-0000-0000-000000000999 | Unknown Product | 10.00     | 1        |
     Then I should receive a product not found error
 
   Scenario: Order not found
     Given I am authenticated as "not-found-user"
-    When I retrieve order with ID "ORD-nonexistent"
+    When I retrieve order with ID "00000000-0000-0000-0000-999999999999"
     Then I should receive a not found error
 
   Scenario: Status transition from CREATED to RESERVED
     Given I am authenticated as "status-user"
     And the following products exist in the catalog:
-      | productId | productName  |
-      | PROD-TEST | Test Product |
+      | productId                            | productName  |
+      | 00000000-0000-0000-0000-000000000099 | Test Product |
     And an order exists for the current user with status "CREATED"
     When the order status is updated to "RESERVED"
     Then the order status should be "RESERVED"
@@ -89,8 +89,8 @@ Feature: Module Level Order Management
   Scenario: Invalid status transition
     Given I am authenticated as "invalid-status-user"
     And the following products exist in the catalog:
-      | productId | productName  |
-      | PROD-TEST | Test Product |
+      | productId                            | productName  |
+      | 00000000-0000-0000-0000-000000000099 | Test Product |
     And an order exists for the current user with status "DELIVERED"
     When the order status is updated to "CREATED"
     Then I should receive an invalid status error
@@ -98,24 +98,24 @@ Feature: Module Level Order Management
   Scenario: Order totals are computed from line items
     Given I am authenticated as "totals-user"
     And the following products exist in the catalog:
-      | productId | productName  |
-      | PROD-001  | Product One  |
-      | PROD-002  | Product Two  |
+      | productId                            | productName  |
+      | 00000000-0000-0000-0000-000000000001 | Product One  |
+      | 00000000-0000-0000-0000-000000000002 | Product Two  |
     When I create an order with the following items:
-      | productId | productName  | unitPrice | quantity |
-      | PROD-001  | Product One  | 10.00     | 2        |
-      | PROD-002  | Product Two  | 15.00     | 3        |
+      | productId                            | productName  | unitPrice | quantity |
+      | 00000000-0000-0000-0000-000000000001 | Product One  | 10.00     | 2        |
+      | 00000000-0000-0000-0000-000000000002 | Product Two  | 15.00     | 3        |
     Then the order should be created successfully
     And the order grand total should be 65.00 EUR
 
   Scenario: Order stores unit price snapshot at purchase time
     Given I am authenticated as "snapshot-user"
     And the following products exist in the catalog:
-      | productId | productName      |
-      | PROD-001  | Snapshot Product |
+      | productId                            | productName      |
+      | 00000000-0000-0000-0000-000000000001 | Snapshot Product |
     When I create an order with the following items:
-      | productId | productName      | unitPrice | quantity |
-      | PROD-001  | Snapshot Product | 29.99     | 2        |
+      | productId                            | productName      | unitPrice | quantity |
+      | 00000000-0000-0000-0000-000000000001 | Snapshot Product | 29.99     | 2        |
     Then the order should be created successfully
     And the order grand total should be 59.98 EUR
     When I retrieve the order by ID

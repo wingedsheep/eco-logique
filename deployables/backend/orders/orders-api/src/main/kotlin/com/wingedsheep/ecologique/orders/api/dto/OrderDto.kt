@@ -2,9 +2,10 @@ package com.wingedsheep.ecologique.orders.api.dto
 
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 
 data class OrderDto(
-    val id: String,
+    val id: UUID,
     val userId: String,
     val status: String,
     val lines: List<OrderLineDto>,

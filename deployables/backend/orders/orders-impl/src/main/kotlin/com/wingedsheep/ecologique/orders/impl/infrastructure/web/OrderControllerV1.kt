@@ -2,6 +2,7 @@ package com.wingedsheep.ecologique.orders.impl.infrastructure.web
 
 import com.wingedsheep.ecologique.orders.api.OrderService
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
+import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.error.OrderError
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -10,13 +11,14 @@ import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.web.ErrorResponseException
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.net.URI
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -30,13 +32,13 @@ class OrderControllerV1(
     fun createOrder(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestBody request: OrderCreateRequest
-    ): ResponseEntity<Any> {
+    ): ResponseEntity<OrderDto> {
         return orderService.createOrder(jwt.subject, request).fold(
             onSuccess = { order ->
                 ResponseEntity.status(HttpStatus.CREATED).body(order)
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
@@ -45,82 +47,66 @@ class OrderControllerV1(
     @Operation(summary = "Get order by ID", description = "Retrieves an order by its ID (ownership check applies)")
     fun getOrder(
         @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable id: String
-    ): ResponseEntity<Any> {
+        @PathVariable id: UUID
+    ): ResponseEntity<OrderDto> {
         return orderService.getOrder(id, jwt.subject).fold(
             onSuccess = { order ->
                 ResponseEntity.ok(order)
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
 
     @GetMapping
     @Operation(summary = "List orders", description = "Lists all orders for the authenticated user")
-    fun getOrders(@AuthenticationPrincipal jwt: Jwt): ResponseEntity<Any> {
+    fun getOrders(@AuthenticationPrincipal jwt: Jwt): ResponseEntity<List<OrderDto>> {
         return orderService.findOrdersForUser(jwt.subject).fold(
             onSuccess = { orders ->
                 ResponseEntity.ok(orders)
             },
             onFailure = { error ->
-                ResponseEntity.status(error.toHttpStatus()).body(error.toProblemDetail())
+                throw error.toErrorResponseException()
             }
         )
     }
+}
 
-    private fun OrderError.toHttpStatus(): HttpStatus = when (this) {
-        is OrderError.NotFound -> HttpStatus.NOT_FOUND
-        is OrderError.AccessDenied -> HttpStatus.FORBIDDEN
-        is OrderError.InvalidStatus -> HttpStatus.BAD_REQUEST
-        is OrderError.ProductNotFound -> HttpStatus.BAD_REQUEST
-        is OrderError.ValidationFailed -> HttpStatus.BAD_REQUEST
-        is OrderError.Unexpected -> HttpStatus.INTERNAL_SERVER_ERROR
-    }
-
-    private fun OrderError.toProblemDetail(): ProblemDetail = when (this) {
-        is OrderError.NotFound -> ProblemDetail.forStatusAndDetail(
+private fun OrderError.toErrorResponseException(): ErrorResponseException {
+    val (status, title, detail) = when (this) {
+        is OrderError.NotFound -> Triple(
             HttpStatus.NOT_FOUND,
-            "Order not found with id: $id"
-        ).apply {
-            type = URI.create("urn:problem:order:not-found")
-            title = "Order Not Found"
-        }
-        is OrderError.AccessDenied -> ProblemDetail.forStatusAndDetail(
+            "Order Not Found",
+            "Order not found: $id"
+        )
+        is OrderError.AccessDenied -> Triple(
             HttpStatus.FORBIDDEN,
+            "Access Denied",
             "Access denied to order: $orderId"
-        ).apply {
-            type = URI.create("urn:problem:order:access-denied")
-            title = "Access Denied"
-        }
-        is OrderError.InvalidStatus -> ProblemDetail.forStatusAndDetail(
+        )
+        is OrderError.InvalidStatus -> Triple(
             HttpStatus.BAD_REQUEST,
+            "Invalid Status",
             "Cannot transition from '$currentStatus' to '$requestedStatus'"
-        ).apply {
-            type = URI.create("urn:problem:order:invalid-status-transition")
-            title = "Invalid Status Transition"
-        }
-        is OrderError.ProductNotFound -> ProblemDetail.forStatusAndDetail(
+        )
+        is OrderError.ProductNotFound -> Triple(
             HttpStatus.BAD_REQUEST,
+            "Product Not Found",
             "Product not found: $productId"
-        ).apply {
-            type = URI.create("urn:problem:order:product-not-found")
-            title = "Product Not Found"
-        }
-        is OrderError.ValidationFailed -> ProblemDetail.forStatusAndDetail(
+        )
+        is OrderError.ValidationFailed -> Triple(
             HttpStatus.BAD_REQUEST,
+            "Validation Failed",
             reason
-        ).apply {
-            type = URI.create("urn:problem:order:validation-failed")
-            title = "Validation Failed"
-        }
-        is OrderError.Unexpected -> ProblemDetail.forStatusAndDetail(
+        )
+        is OrderError.Unexpected -> Triple(
             HttpStatus.INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
             message
-        ).apply {
-            type = URI.create("urn:problem:order:unexpected")
-            title = "Unexpected Error"
-        }
+        )
     }
+    val problemDetail = ProblemDetail.forStatusAndDetail(status, detail)
+    problemDetail.title = title
+    return ErrorResponseException(status, problemDetail, null)
 }

@@ -13,6 +13,7 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
+import java.util.UUID
 
 @Component
 @Order(3)
@@ -91,7 +92,7 @@ class WorldviewOrderDataLoader(
                 null
             } else {
                 OrderLineCreateRequest(
-                    productId = product.id,
+                    productId = product.id.toString(),
                     productName = line.productName,
                     unitPrice = line.unitPrice,
                     quantity = line.quantity
@@ -100,7 +101,7 @@ class WorldviewOrderDataLoader(
         }
     }
 
-    private fun updateStatusIfNeeded(orderId: String, targetStatus: String) {
+    private fun updateStatusIfNeeded(orderId: UUID, targetStatus: String) {
         val statusPath = getStatusPath(targetStatus)
         statusPath.forEach { status ->
             orderService.updateStatus(orderId, status)

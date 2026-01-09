@@ -21,7 +21,7 @@ class UserTest {
         assertThat(user.name).isEqualTo("John Doe")
         assertThat(user.email.value).isEqualTo("john@example.com")
         assertThat(user.externalSubject).isEqualTo("auth0|123456")
-        assertThat(user.id.value).startsWith("USER-")
+        assertThat(user.id.value).isNotNull()
     }
 
     @Test
@@ -32,7 +32,7 @@ class UserTest {
             houseNumber = "123",
             postalCode = "12345",
             city = "Amsterdam",
-            country = Country.NETHERLANDS
+            country = Country.NL
         )
 
         // When
@@ -108,7 +108,7 @@ class UserTest {
             houseNumber = "456",
             postalCode = "54321",
             city = "Rotterdam",
-            country = Country.NETHERLANDS
+            country = Country.NL
         )
 
         // When

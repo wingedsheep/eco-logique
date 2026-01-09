@@ -4,11 +4,12 @@ import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserDto
 import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_KEYCLOAK_ID
 import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_KEYCLOAK_ID
+import java.util.UUID
 
 object WorldviewUser {
 
     val johnDoe = UserDto(
-        id = "USER-001",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
         name = "John Doe",
         email = "john@demo.com",
         defaultAddress = AddressDto(
@@ -16,12 +17,12 @@ object WorldviewUser {
             houseNumber = "1",
             postalCode = "1012 NX",
             city = "Amsterdam",
-            countryCode = "NETHERLANDS"
+            countryCode = "NL"
         )
     )
 
     val janeSmith = UserDto(
-        id = "USER-002",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
         name = "Jane Smith",
         email = "jane@demo.com",
         defaultAddress = AddressDto(
@@ -29,7 +30,7 @@ object WorldviewUser {
             houseNumber = "1",
             postalCode = "10178",
             city = "Berlin",
-            countryCode = "GERMANY"
+            countryCode = "DE"
         )
     )
 

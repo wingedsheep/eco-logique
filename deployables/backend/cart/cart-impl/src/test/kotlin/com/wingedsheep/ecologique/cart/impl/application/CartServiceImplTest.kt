@@ -20,6 +20,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.math.BigDecimal
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class CartServiceImplTest {
@@ -32,6 +33,8 @@ class CartServiceImplTest {
 
     @InjectMocks
     private lateinit var cartService: CartServiceImpl
+
+    private val testProductUuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `getCart should return empty cart when no cart exists`() {
@@ -75,9 +78,28 @@ class CartServiceImplTest {
     @Test
     fun `addItem should return ProductNotFound when product does not exist`() {
         // Given
-        val request = buildAddCartItemRequest(productId = "PROD-NONEXISTENT")
-        whenever(productService.getProduct("PROD-NONEXISTENT"))
-            .thenReturn(Result.err(ProductError.NotFound("PROD-NONEXISTENT")))
+        val nonExistentUuid = UUID.fromString("00000000-0000-0000-0000-000000000999")
+        val request = buildAddCartItemRequest(productId = nonExistentUuid.toString())
+        whenever(productService.getProduct(nonExistentUuid))
+            .thenReturn(Result.err(ProductError.NotFound(nonExistentUuid)))
+
+        // When
+        val result = cartService.addItem("USER-001", request)
+
+        // Then
+        assertThat(result.isErr).isTrue()
+        result.fold(
+            onSuccess = { },
+            onFailure = { error ->
+                assertThat(error).isInstanceOf(CartError.ProductNotFound::class.java)
+            }
+        )
+    }
+
+    @Test
+    fun `addItem should return ProductNotFound when productId is not a valid UUID`() {
+        // Given
+        val request = buildAddCartItemRequest(productId = "INVALID-UUID")
 
         // When
         val result = cartService.addItem("USER-001", request)
@@ -95,10 +117,10 @@ class CartServiceImplTest {
     @Test
     fun `addItem should add item to cart`() {
         // Given
-        val request = buildAddCartItemRequest(productId = "PROD-001", quantity = 2)
-        val product = buildProductDto(id = "PROD-001", name = "Test Product", priceAmount = BigDecimal("29.99"))
+        val request = buildAddCartItemRequest(productId = testProductUuid.toString(), quantity = 2)
+        val product = buildProductDto(id = testProductUuid, name = "Test Product", priceAmount = BigDecimal("29.99"))
 
-        whenever(productService.getProduct("PROD-001")).thenReturn(Result.ok(product))
+        whenever(productService.getProduct(testProductUuid)).thenReturn(Result.ok(product))
         whenever(cartRepository.findByUserId("USER-001")).thenReturn(null)
         whenever(cartRepository.save(any())).thenAnswer { it.arguments[0] as Cart }
 
@@ -110,7 +132,7 @@ class CartServiceImplTest {
         result.fold(
             onSuccess = { cart ->
                 assertThat(cart.items).hasSize(1)
-                assertThat(cart.items[0].productId).isEqualTo("PROD-001")
+                assertThat(cart.items[0].productId).isEqualTo(testProductUuid.toString())
                 assertThat(cart.items[0].quantity).isEqualTo(2)
             },
             onFailure = { }
@@ -147,7 +169,7 @@ class CartServiceImplTest {
         whenever(cartRepository.save(any())).thenAnswer { it.arguments[0] as Cart }
 
         // When
-        val result = cartService.updateItem("USER-001", "PROD-001", request)
+        val result = cartService.updateItem("USER-001", testProductUuid.toString(), request)
 
         // Then
         assertThat(result.isOk).isTrue()
@@ -185,7 +207,7 @@ class CartServiceImplTest {
         whenever(cartRepository.save(any())).thenAnswer { it.arguments[0] as Cart }
 
         // When
-        val result = cartService.removeItem("USER-001", "PROD-001")
+        val result = cartService.removeItem("USER-001", testProductUuid.toString())
 
         // Then
         assertThat(result.isOk).isTrue()
@@ -211,7 +233,7 @@ class CartServiceImplTest {
         userId = userId,
         items = listOf(
             CartItem.create(
-                productId = "PROD-001",
+                productId = testProductUuid.toString(),
                 productName = "Test Product",
                 unitPrice = BigDecimal("29.99"),
                 quantity = 2

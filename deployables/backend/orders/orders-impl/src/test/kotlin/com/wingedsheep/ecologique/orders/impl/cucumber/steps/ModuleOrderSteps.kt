@@ -26,6 +26,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import java.math.BigDecimal
+import java.util.UUID
 
 class ModuleOrderSteps {
 
@@ -43,7 +44,7 @@ class ModuleOrderSteps {
 
     private var response: Response? = null
     private var currentSubject: String = ""
-    private var createdOrderId: String? = null
+    private var createdOrderId: UUID? = null
     private var lastServiceResult: Result<*, *>? = null
     private lateinit var authenticatedRequest: RequestSpecification
 
@@ -79,7 +80,7 @@ class ModuleOrderSteps {
     @Given("the following products exist in the catalog:")
     fun productsExistInCatalog(dataTable: DataTable) {
         dataTable.asMaps().forEach { row ->
-            val productId = row["productId"]!!
+            val productId = UUID.fromString(row["productId"]!!)
             val productName = row["productName"]!!
             whenever(productService.getProduct(productId))
                 .thenReturn(Result.ok(buildProductDto(id = productId, name = productName)))
@@ -89,7 +90,7 @@ class ModuleOrderSteps {
     @Given("no products exist in the catalog")
     fun noProductsExist() {
         whenever(productService.getProduct(any()))
-            .thenReturn(Result.err(ProductError.NotFound("unknown")))
+            .thenReturn(Result.err(ProductError.NotFound(UUID.randomUUID())))
     }
 
     @Given("an order exists for the current user")
@@ -131,7 +132,7 @@ class ModuleOrderSteps {
             .post()
 
         if (response!!.statusCode == 201) {
-            createdOrderId = response!!.jsonPath().getString("id")
+            createdOrderId = UUID.fromString(response!!.jsonPath().getString("id"))
         }
     }
 
@@ -171,7 +172,7 @@ class ModuleOrderSteps {
     fun updateOrderStatus(newStatus: String) {
         lastServiceResult = orderService.updateStatus(createdOrderId!!, newStatus)
         lastServiceResult?.onSuccess {
-            response = authenticatedRequest.get("/$createdOrderId")
+            response = authenticatedRequest.get("/${createdOrderId.toString()}")
         }
     }
 
@@ -202,7 +203,7 @@ class ModuleOrderSteps {
     @Then("I should receive the order details")
     fun receiveOrderDetails() {
         assertThat(response!!.statusCode).isEqualTo(200)
-        assertThat(response!!.jsonPath().getString("id")).isEqualTo(createdOrderId)
+        assertThat(response!!.jsonPath().getString("id")).isEqualTo(createdOrderId.toString())
     }
 
     @Then("the order user should match")
@@ -257,13 +258,14 @@ class ModuleOrderSteps {
     }
 
     private fun createOrderForUser(userId: String) {
-        whenever(productService.getProduct("PROD-TEST"))
-            .thenReturn(Result.ok(buildProductDto(id = "PROD-TEST", name = "Test Product")))
+        // Use the same fixed UUID that's set up in the feature file's product catalog
+        val testProductId = UUID.fromString("00000000-0000-0000-0000-000000000099")
+        // Note: productService mock is already set up by the @Given step for products
 
         val request = OrderCreateRequest(
             lines = listOf(
                 OrderLineCreateRequest(
-                    productId = "PROD-TEST",
+                    productId = testProductId.toString(),
                     productName = "Test Product",
                     unitPrice = BigDecimal("19.99"),
                     quantity = 1

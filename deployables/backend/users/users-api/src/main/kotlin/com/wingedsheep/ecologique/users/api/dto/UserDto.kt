@@ -1,7 +1,9 @@
 package com.wingedsheep.ecologique.users.api.dto
 
+import java.util.UUID
+
 data class UserDto(
-    val id: String,
+    val id: UUID,
     val name: String,
     val email: String,
     val defaultAddress: AddressDto?

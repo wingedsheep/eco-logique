@@ -7,6 +7,7 @@ import com.wingedsheep.ecologique.products.impl.domain.ProductRepository
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
+import java.util.UUID
 
 @Component
 internal class ProductRepositoryImpl(
@@ -54,7 +55,7 @@ internal class ProductRepositoryImpl(
 }
 
 @Repository
-internal interface ProductRepositoryJdbc : CrudRepository<ProductEntity, String> {
+internal interface ProductRepositoryJdbc : CrudRepository<ProductEntity, UUID> {
     fun findByName(name: String): ProductEntity?
     fun findByCategoryCode(categoryCode: String): List<ProductEntity>
 }

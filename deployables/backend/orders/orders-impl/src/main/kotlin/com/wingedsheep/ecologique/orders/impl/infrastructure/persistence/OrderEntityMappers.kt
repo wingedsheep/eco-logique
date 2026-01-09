@@ -6,6 +6,7 @@ import com.wingedsheep.ecologique.orders.impl.domain.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.TotalsSnapshot
+import java.util.UUID
 
 internal fun OrderEntity.toOrder(lines: List<OrderLineEntity>): Order = Order(
     id = OrderId(id),
@@ -38,7 +39,7 @@ internal fun Order.toEntity(): OrderEntity = OrderEntity(
     createdAt = createdAt
 )
 
-internal fun OrderLine.toEntity(orderId: String): OrderLineEntity = OrderLineEntity(
+internal fun OrderLine.toEntity(orderId: UUID): OrderLineEntity = OrderLineEntity(
     id = null,
     orderId = orderId,
     productId = productId,

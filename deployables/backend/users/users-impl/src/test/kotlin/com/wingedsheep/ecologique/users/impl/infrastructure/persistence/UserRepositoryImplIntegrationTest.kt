@@ -8,6 +8,7 @@ import com.wingedsheep.ecologique.users.impl.domain.UserId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.UUID
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
@@ -101,7 +102,7 @@ class UserRepositoryImplIntegrationTest {
     @Test
     fun `findById should return null when not exists`() {
         // Given & When
-        val found = userRepository.findById(UserId("NON-EXISTENT"))
+        val found = userRepository.findById(UserId(UUID.fromString("00000000-0000-0000-0000-000000000000")))
 
         // Then
         assertThat(found).isNull()
@@ -205,7 +206,7 @@ class UserRepositoryImplIntegrationTest {
             houseNumber = "123",
             postalCode = "12345",
             city = "Amsterdam",
-            country = Country.NETHERLANDS
+            country = Country.NL
         )
         val user = buildUser(address = address)
 
@@ -217,7 +218,7 @@ class UserRepositoryImplIntegrationTest {
         assertThat(found?.defaultAddress).isNotNull
         assertThat(found?.defaultAddress?.street).isEqualTo("Main Street")
         assertThat(found?.defaultAddress?.city).isEqualTo("Amsterdam")
-        assertThat(found?.defaultAddress?.country).isEqualTo(Country.NETHERLANDS)
+        assertThat(found?.defaultAddress?.country).isEqualTo(Country.NL)
     }
 
     @Test

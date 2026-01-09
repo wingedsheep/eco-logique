@@ -15,7 +15,7 @@ class AddressTest {
             houseNumber = "123",
             postalCode = "12345",
             city = "Amsterdam",
-            country = Country.NETHERLANDS
+            country = Country.NL
         )
 
         // Then
@@ -23,7 +23,7 @@ class AddressTest {
         assertThat(address.houseNumber).isEqualTo("123")
         assertThat(address.postalCode).isEqualTo("12345")
         assertThat(address.city).isEqualTo("Amsterdam")
-        assertThat(address.country).isEqualTo(Country.NETHERLANDS)
+        assertThat(address.country).isEqualTo(Country.NL)
     }
 
     @Test
@@ -35,7 +35,7 @@ class AddressTest {
                 houseNumber = "123",
                 postalCode = "12345",
                 city = "Amsterdam",
-                country = Country.NETHERLANDS
+                country = Country.NL
             )
         }
             .isInstanceOf(IllegalArgumentException::class.java)
@@ -51,7 +51,7 @@ class AddressTest {
                 houseNumber = "",
                 postalCode = "12345",
                 city = "Amsterdam",
-                country = Country.NETHERLANDS
+                country = Country.NL
             )
         }
             .isInstanceOf(IllegalArgumentException::class.java)
@@ -67,7 +67,7 @@ class AddressTest {
                 houseNumber = "123",
                 postalCode = "",
                 city = "Amsterdam",
-                country = Country.NETHERLANDS
+                country = Country.NL
             )
         }
             .isInstanceOf(IllegalArgumentException::class.java)
@@ -83,7 +83,7 @@ class AddressTest {
                 houseNumber = "123",
                 postalCode = "12345",
                 city = "",
-                country = Country.NETHERLANDS
+                country = Country.NL
             )
         }
             .isInstanceOf(IllegalArgumentException::class.java)
@@ -99,7 +99,7 @@ class AddressTest {
                 houseNumber = "123",
                 postalCode = "12345",
                 city = "Amsterdam",
-                country = Country.NETHERLANDS
+                country = Country.NL
             )
         }
             .isInstanceOf(IllegalArgumentException::class.java)

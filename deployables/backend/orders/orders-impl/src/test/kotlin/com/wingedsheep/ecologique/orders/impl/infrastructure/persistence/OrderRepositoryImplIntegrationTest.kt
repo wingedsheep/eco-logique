@@ -20,6 +20,7 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 import org.springframework.context.annotation.Import
 
 @DataJdbcTest
@@ -90,7 +91,7 @@ class OrderRepositoryImplIntegrationTest {
     @Test
     fun `findById should return null when not exists`() {
         // Given & When
-        val found = orderRepository.findById(OrderId("ORD-NONEXISTENT"))
+        val found = orderRepository.findById(OrderId(UUID.fromString("00000000-0000-0000-0000-000000000000")))
 
         // Then
         assertThat(found).isNull()
