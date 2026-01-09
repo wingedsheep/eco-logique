@@ -4,6 +4,8 @@
 
 **Date**: 2024-12-13
 
+**Updated**: 2025-01-09
+
 ---
 
 ## Decision
@@ -16,7 +18,7 @@ We enforce architectural boundaries using a custom Gradle plugin that verifies m
 
 ### 1. The "Contract" Rule
 
-**An `-api` module must never depend on an `-impl` module.**
+**An `-api` module must never depend on an `-impl` or `-worldview` module.**
 
 The API defines the contract. Depending on implementation creates circular conceptual dependency.
 
@@ -26,13 +28,19 @@ The API defines the contract. Depending on implementation creates circular conce
 
 Cross-module interaction happens through APIs only.
 
-### 3. The "Whitelist" Rule (Optional)
+### 3. The "Worldview" Rule
+
+**A `-worldview` module may depend on other `-worldview` modules.**
+
+Worldview modules often need cross-domain data for realistic seeding scenarios (e.g., orders worldview needs users and products).
+
+### 4. The "Whitelist" Rule (Optional)
 
 If configured, a module can only depend on explicitly allowed modules.
 
 ### Exception: Test Fixtures
 
-Tests in `-impl` may depend on `testFixtures` of another `-impl` for integration test setup.
+Tests in `-impl` may depend on `testFixtures` of another `-api` for integration test setup.
 
 ---
 

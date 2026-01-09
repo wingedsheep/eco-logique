@@ -4,15 +4,17 @@
 
 **Date**: 2024-11-04
 
+**Updated**: 2025-01-09
+
 ---
 
 ## Decision
 
 We implement structured error handling using:
 1. **Sealed classes** for domain errors returned as `Result<T, E>`
-2. **Controller-level mapping** to HTTP responses
-3. **Global exception handler** for unexpected errors
-4. **RFC 7807 Problem Details** via Spring Boot 3's native support
+2. **Controller-level mapping** to HTTP responses via `fold`
+3. **RFC 7807 Problem Details** with URN type identifiers
+4. **Global exception handler** for unexpected errors
 
 ---
 
@@ -24,8 +26,8 @@ Service methods return `Result<T, E>` where `E` is a sealed class:
 // products-api/error/ProductError.kt
 sealed class ProductError {
     data class NotFound(val id: String) : ProductError()
-    data class InvalidData(val reason: String) : ProductError()
-    data object DuplicateName : ProductError()
+    data class ValidationFailed(val reason: String) : ProductError()
+    data class DuplicateName(val name: String) : ProductError()
 }
 
 // products-api/ProductServiceApi.kt
@@ -57,31 +59,67 @@ internal class ProductServiceImpl(
 
 ## Controller Mapping
 
-Controllers translate domain errors to HTTP using `ResponseStatusException`:
+Controllers use `fold` to map results to `ResponseEntity` with `ProblemDetail`:
 
 ```kotlin
 @RestController
-internal class ProductController(
+class ProductController(
     private val productService: ProductServiceApi,
 ) {
     @GetMapping("/products/{id}")
-    fun getProduct(@PathVariable id: String): ResponseEntity<ProductDto> {
+    fun getProduct(@PathVariable id: String): ResponseEntity<Any> {
         return productService.getProduct(id).fold(
-            ifOk = { ResponseEntity.ok(it) },
-            ifErr = { throw it.toResponseStatusException() }
+            onSuccess = { ResponseEntity.ok(it) },
+            onFailure = { ResponseEntity.status(it.toHttpStatus()).body(it.toProblemDetail()) }
         )
     }
 }
+```
 
-// Error mapper (in REST layer)
-fun ProductError.toResponseStatusException() = when (this) {
-    is ProductError.NotFound -> ResponseStatusException(NOT_FOUND, "Product not found: $id")
-    is ProductError.InvalidData -> ResponseStatusException(BAD_REQUEST, reason)
-    is ProductError.DuplicateName -> ResponseStatusException(CONFLICT, "Product name already exists")
+### Error Mappers
+
+Define mappers in the REST layer:
+
+```kotlin
+private fun ProductError.toHttpStatus(): HttpStatus = when (this) {
+    is ProductError.NotFound -> HttpStatus.NOT_FOUND
+    is ProductError.ValidationFailed -> HttpStatus.BAD_REQUEST
+    is ProductError.DuplicateName -> HttpStatus.CONFLICT
+}
+
+private fun ProductError.toProblemDetail(): ProblemDetail = when (this) {
+    is ProductError.NotFound -> ProblemDetail.forStatusAndDetail(
+        HttpStatus.NOT_FOUND,
+        "Product not found with id: $id"
+    ).apply {
+        type = URI.create("urn:problem:product:not-found")
+        title = "Product Not Found"
+    }
+    is ProductError.ValidationFailed -> ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST,
+        reason
+    ).apply {
+        type = URI.create("urn:problem:product:validation-failed")
+        title = "Validation Failed"
+    }
+    is ProductError.DuplicateName -> ProblemDetail.forStatusAndDetail(
+        HttpStatus.CONFLICT,
+        "Product with name '$name' already exists"
+    ).apply {
+        type = URI.create("urn:problem:product:duplicate-name")
+        title = "Duplicate Product Name"
+    }
 }
 ```
 
-Spring Boot 3 automatically converts `ResponseStatusException` to RFC 7807 Problem Details.
+### URN Type Convention
+
+Use URN format for problem types: `urn:problem:<domain>:<error-type>`
+
+Examples:
+- `urn:problem:product:not-found`
+- `urn:problem:order:access-denied`
+- `urn:problem:user:validation-failed`
 
 ---
 
@@ -119,8 +157,9 @@ class GlobalExceptionHandler {
 ### Positive
 - Compile-time safety: all error cases must be handled
 - Domain layer stays pure (no HTTP concerns)
-- Consistent RFC 7807 responses
-- No hidden exceptions
+- Consistent RFC 7807 responses with typed URNs
+- No exception overhead in normal error paths
+- Explicit control flow with `fold`
 
 ### Negative
 - Error hierarchy maintenance
