@@ -3,6 +3,7 @@
 interface ModuleDependencyValidationExtension {
     val allowedDependencies: MapProperty<String, Set<String>>
     val excludedModules: SetProperty<String>
+    val compositionRoots: SetProperty<String>  // Modules no other module may depend on (e.g., :application)
     val failOnViolation: Property<Boolean>
     val reportFile: RegularFileProperty
 }
@@ -44,7 +45,8 @@ fun normalizeConfigName(configName: String): String {
 fun buildMarkdownReport(violations: List<String>): String {
     val implToImplViolations = violations.filter { it.contains("use '") }
     val apiToImplViolations = violations.filter { it.contains("api modules cannot") }
-    val moduleWhitelistViolations = violations.filter { it.contains("must not depend on") }
+    val compositionRootViolations = violations.filter { it.contains("composition root") }
+    val moduleWhitelistViolations = violations.filter { it.contains("must not depend on") && !it.contains("composition root") }
 
     return buildString {
         appendLine("## ❌ Module Dependency Validation Failed")
@@ -90,6 +92,25 @@ fun buildMarkdownReport(violations: List<String>): String {
             appendLine()
         }
 
+        if (compositionRootViolations.isNotEmpty()) {
+            appendLine("### Composition Root Dependencies")
+            appendLine()
+            appendLine("No module may depend on a composition root (e.g., application). These are leaf nodes in the dependency graph.")
+            appendLine()
+            appendLine("| Source | Configuration | Target |")
+            appendLine("|--------|---------------|--------|")
+            compositionRootViolations.forEach { violation ->
+                val match = Regex("'([^']+)' \\[([^]]+)] .* '([^']+)'").find(violation)
+                if (match != null) {
+                    val (source, config, target) = match.destructured
+                    appendLine("| `$source` | `$config` | `$target` |")
+                } else {
+                    appendLine("- $violation")
+                }
+            }
+            appendLine()
+        }
+
         if (moduleWhitelistViolations.isNotEmpty()) {
             appendLine("### Module Whitelist Violations")
             appendLine()
@@ -124,6 +145,7 @@ tasks.register("validateModuleDependencies") {
 
         val allowedDeps = moduleDependencyValidation.allowedDependencies.getOrElse(emptyMap())
         val excludedModules = moduleDependencyValidation.excludedModules.getOrElse(emptySet())
+        val compositionRoots = moduleDependencyValidation.compositionRoots.getOrElse(emptySet())
         val configuredModules = allowedDeps.keys
 
         rootProject.allprojects.forEach { proj ->
@@ -159,20 +181,38 @@ tasks.register("validateModuleDependencies") {
 
                     if (depPath == projectPath) return@depLoop
 
+                    // Rule: No module may depend on a composition root
+                    if (compositionRoots.any { depPath.startsWith(it) }) {
+                        violations.add("'$projectPath' [$normalizedConfig] depends on '$depPath' - cannot depend on composition root")
+                    }
+
+                    // Rule: API modules cannot depend on impl/worldview
                     if (isApiModule && depIsConcrete) {
                         violations.add("'$projectPath' [$normalizedConfig] depends on '$depPath' - api modules cannot depend on impl/worldview modules")
                     }
 
-                    val isWorldviewToWorldview = isWorldviewModule && depIsWorldview
-                    if (isConcreteModule && depIsConcrete && sourceModule != targetModule && !isTestAllowedDep && !isWorldviewToWorldview) {
+                    // Rule: impl cannot depend on worldview (any domain)
+                    if (isImplModule && depIsWorldview && !isTestAllowedDep) {
                         val apiPath = depPath
-                            .replace("-impl", "-api")
-                            .replace(":impl", ":api")
                             .replace("-worldview", "-api")
                             .replace(":worldview", ":api")
                         violations.add("'$projectPath' [$normalizedConfig] depends on '$depPath' - use '$apiPath' instead")
                     }
 
+                    // Rule: impl/worldview cannot depend on other impl (cross-domain or same-domain for worldview)
+                    // worldview → impl is always forbidden
+                    // impl → impl is forbidden cross-domain
+                    if (depIsImpl && !isTestAllowedDep) {
+                        val isCrossDomain = sourceModule != targetModule
+                        if (isWorldviewModule || (isImplModule && isCrossDomain)) {
+                            val apiPath = depPath
+                                .replace("-impl", "-api")
+                                .replace(":impl", ":api")
+                            violations.add("'$projectPath' [$normalizedConfig] depends on '$depPath' - use '$apiPath' instead")
+                        }
+                    }
+
+                    // Rule: Cross-domain whitelist
                     if (sourceModule != null && targetModule != null &&
                         sourceModule != targetModule &&
                         configuredModules.isNotEmpty() &&

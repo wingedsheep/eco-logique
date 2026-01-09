@@ -32,22 +32,26 @@ Each domain (products, users, orders) is split into three submodules:
 - **`-impl`**: Implementation with domain model (internal), application services, infrastructure (persistence, web controllers).
 - **`-worldview`**: Predefined domain objects for local dev seeding and application-level tests.
 
+The **`application`** module is a composition root that wires all impl and worldview modules into a deployable Spring Boot app. It contains configuration (Flyway, Security, OpenAPI) and application-level tests, but no domain logic. No module may depend on it.
+
 ### Module Dependency Rules
 
-Enforced by `validateModuleDependencies` task:
-- **impl modules must depend on API modules**, not other impl modules
-- **worldview modules may depend on other worldview modules** (for cross-domain seeding)
-- **API modules cannot depend on impl/worldview modules**
-- Cross-domain dependencies are whitelisted in root `build.gradle.kts`:
-  ```kotlin
-  allowedDependencies.set(
-      mapOf(
-          "products" to emptySet(),
-          "users" to emptySet(),
-          "orders" to setOf("products", "users"),
-      )
-  )
-  ```
+Enforced by `validateModuleDependencies` task. Key rules:
+- **impl → api only**: impl modules depend on api modules, never other impl
+- **worldview → api + worldview**: worldview can depend on api and other worldview modules
+- **api → api only**: api modules cannot depend on impl or worldview
+- **testFixtures in api**: Shared test builders live in `-api/src/testFixtures/kotlin`
+
+Cross-domain dependencies must be whitelisted in root `build.gradle.kts`:
+```kotlin
+allowedDependencies.set(mapOf(
+    "products" to emptySet(),
+    "users" to emptySet(),
+    "orders" to setOf("products", "users"),
+))
+```
+
+See [ADR-016](../docs/architecture/decisions/ADR-016-module-dependency-direction-validation.md) for the complete dependency matrix.
 
 ### Common Modules
 

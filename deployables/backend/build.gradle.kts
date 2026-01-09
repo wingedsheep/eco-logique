@@ -10,6 +10,7 @@ plugins {
 moduleDependencyValidation {
     failOnViolation.set(true)
     excludedModules.set(setOf(":application"))
+    compositionRoots.set(setOf(":application"))  // No module may depend on these
     reportFile.set(layout.buildDirectory.file("reports/module-validation/report.md"))
     allowedDependencies.set(
         mapOf(
