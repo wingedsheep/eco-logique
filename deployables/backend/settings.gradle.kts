@@ -33,6 +33,9 @@ include(":users:users-worldview")
 include(":orders:orders-api")
 include(":orders:orders-impl")
 include(":orders:orders-worldview")
+include(":cart:cart-api")
+include(":cart:cart-impl")
+include(":cart:cart-worldview")
 
 // Map common modules to the actual location
 project(":common:common-time").projectDir = file("../../common/common-time")

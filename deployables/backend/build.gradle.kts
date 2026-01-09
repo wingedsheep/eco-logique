@@ -17,6 +17,7 @@ moduleDependencyValidation {
             "products" to emptySet(),
             "users" to emptySet(),
             "orders" to setOf("products", "users"),
+            "cart" to setOf("products", "users"),
         )
     )
 }

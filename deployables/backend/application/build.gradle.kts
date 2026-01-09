@@ -19,6 +19,8 @@ dependencies {
     implementation(project(":users:users-worldview"))
     implementation(project(":orders:orders-impl"))
     implementation(project(":orders:orders-worldview"))
+    implementation(project(":cart:cart-impl"))
+    implementation(project(":cart:cart-worldview"))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
@@ -44,6 +46,7 @@ dependencies {
     testImplementation(libs.rest.assured)
     testImplementation(testFixtures(project(":products:products-api")))
     testImplementation(testFixtures(project(":orders:orders-api")))
+    testImplementation(testFixtures(project(":cart:cart-api")))
     testImplementation(libs.mockito.kotlin)
 }
 

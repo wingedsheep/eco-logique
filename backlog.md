@@ -3,7 +3,7 @@
 ## Progress Overview
 
 * **Foundation & Products**: ✅ Complete
-* **Upcoming Features**: **8 Items Remaining**
+* **Upcoming Features**: **7 Items Remaining**
 
 ---
 
@@ -130,25 +130,25 @@
 * **Description**: Manage a user cart with add/remove/update operations.
 * **Deliverables**:
 
-  * [ ] Entities:
+  * [x] Entities:
 
-    * [ ] `Cart` (userId)
-    * [ ] `CartItem` (sku/productId, quantity)
-  * [ ] `CartService`:
+    * [x] `Cart` (userId)
+    * [x] `CartItem` (sku/productId, quantity)
+  * [x] `CartService`:
 
-    * [ ] `addItem(userId, sku, qty)`
-    * [ ] `updateItem(userId, sku, qty)`
-    * [ ] `removeItem(userId, sku)`
-    * [ ] `getCart(userId)`
-  * [ ] REST API:
+    * [x] `addItem(userId, sku, qty)`
+    * [x] `updateItem(userId, sku, qty)`
+    * [x] `removeItem(userId, sku)`
+    * [x] `getCart(userId)`
+  * [x] REST API:
 
-    * [ ] `GET /cart`
-    * [ ] `POST /cart/items` (add)
-    * [ ] `PUT /cart/items/{sku}` (update qty)
-    * [ ] `DELETE /cart/items/{sku}`
-  * [ ] Error handling: `CartError` sealed hierarchy in `cart-api`; controllers map errors to RFC7807 Problem Details.
-  * [ ] **DB**: add `cart` schema + Flyway migrations for cart tables.
-  * [ ] **Worldview**: Pre-filled carts for demo users.
+    * [x] `GET /cart`
+    * [x] `POST /cart/items` (add)
+    * [x] `PUT /cart/items/{sku}` (update qty)
+    * [x] `DELETE /cart/items/{sku}`
+  * [x] Error handling: `CartError` sealed hierarchy in `cart-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] **DB**: add `cart` schema + Flyway migrations for cart tables.
+  * [x] **Worldview**: Pre-filled carts for demo users.
 
 ---
 
