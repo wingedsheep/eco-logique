@@ -116,9 +116,7 @@ class OrderServiceImplTest {
             lines = listOf(
                 buildOrderLineCreateRequest(productId = "PROD-001"),
                 buildOrderLineCreateRequest(productId = "PROD-002")
-            ),
-            subtotal = BigDecimal("59.98"),
-            grandTotal = BigDecimal("59.98")
+            )
         )
         whenever(productService.getProduct("PROD-001")).thenReturn(Result.ok(buildProductDto(id = "PROD-001")))
         whenever(productService.getProduct("PROD-002")).thenReturn(Result.err(ProductError.NotFound("PROD-002")))

@@ -44,13 +44,9 @@ fun buildWorldviewOrderLine(
 
 fun buildWorldviewOrderCreateRequest(
     lines: List<OrderLineCreateRequest> = listOf(buildWorldviewOrderLineCreateRequest()),
-    subtotal: BigDecimal = BigDecimal("29.99"),
-    grandTotal: BigDecimal = BigDecimal("29.99"),
     currency: String = "EUR"
 ): OrderCreateRequest = OrderCreateRequest(
     lines = lines,
-    subtotal = subtotal,
-    grandTotal = grandTotal,
     currency = currency
 )
 

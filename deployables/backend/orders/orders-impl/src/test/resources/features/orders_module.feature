@@ -94,3 +94,29 @@ Feature: Module Level Order Management
     And an order exists for the current user with status "DELIVERED"
     When the order status is updated to "CREATED"
     Then I should receive an invalid status error
+
+  Scenario: Order totals are computed from line items
+    Given I am authenticated as "totals-user"
+    And the following products exist in the catalog:
+      | productId | productName  |
+      | PROD-001  | Product One  |
+      | PROD-002  | Product Two  |
+    When I create an order with the following items:
+      | productId | productName  | unitPrice | quantity |
+      | PROD-001  | Product One  | 10.00     | 2        |
+      | PROD-002  | Product Two  | 15.00     | 3        |
+    Then the order should be created successfully
+    And the order grand total should be 65.00 EUR
+
+  Scenario: Order stores unit price snapshot at purchase time
+    Given I am authenticated as "snapshot-user"
+    And the following products exist in the catalog:
+      | productId | productName      |
+      | PROD-001  | Snapshot Product |
+    When I create an order with the following items:
+      | productId | productName      | unitPrice | quantity |
+      | PROD-001  | Snapshot Product | 29.99     | 2        |
+    Then the order should be created successfully
+    And the order grand total should be 59.98 EUR
+    When I retrieve the order by ID
+    Then the order line should have unit price 29.99

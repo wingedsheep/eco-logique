@@ -12,4 +12,15 @@ internal data class TotalsSnapshot(
         require(subtotal >= BigDecimal.ZERO) { "Subtotal must be non-negative" }
         require(grandTotal >= BigDecimal.ZERO) { "Grand total must be non-negative" }
     }
+
+    companion object {
+        fun fromOrderLines(lines: List<OrderLine>, currency: Currency): TotalsSnapshot {
+            val subtotal = lines.fold(BigDecimal.ZERO) { acc, line -> acc.add(line.lineTotal) }
+            return TotalsSnapshot(
+                subtotal = subtotal,
+                grandTotal = subtotal,
+                currency = currency
+            )
+        }
+    }
 }

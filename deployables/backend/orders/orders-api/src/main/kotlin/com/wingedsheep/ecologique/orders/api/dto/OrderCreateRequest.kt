@@ -4,14 +4,10 @@ import java.math.BigDecimal
 
 data class OrderCreateRequest(
     val lines: List<OrderLineCreateRequest>,
-    val subtotal: BigDecimal,
-    val grandTotal: BigDecimal,
     val currency: String
 ) {
     init {
         require(lines.isNotEmpty()) { "Order must have at least one line" }
-        require(subtotal >= BigDecimal.ZERO) { "Subtotal must be non-negative" }
-        require(grandTotal >= BigDecimal.ZERO) { "Grand total must be non-negative" }
         require(currency.isNotBlank()) { "Currency is required" }
     }
 }

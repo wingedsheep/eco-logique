@@ -3,7 +3,7 @@
 ## Progress Overview
 
 * **Foundation & Products**: ✅ Complete
-* **Upcoming Features**: **9 Items Remaining**
+* **Upcoming Features**: **8 Items Remaining**
 
 ---
 
@@ -105,20 +105,20 @@
 
 ### 6. Pricing Totals Snapshot
 
-**Context**: Demo pricing, but orders must store a snapshot (totals shouldn’t change if product price changes).
+**Context**: Demo pricing, but orders must store a snapshot (totals shouldn't change if product price changes).
 **Module**: `orders-impl` (domain + application)
 
 * **Description**: Compute and persist order totals snapshot at checkout time.
 * **Deliverables**:
 
-  * [ ] Totals snapshot value object on `Order`:
+  * [x] Totals snapshot value object on `Order`:
 
-    * [ ] `subtotal`, `grandTotal` (demo: same value), `currency`
-  * [ ] Calculation rule (demo):
+    * [x] `subtotal`, `grandTotal` (demo: same value), `currency`
+  * [x] Calculation rule (demo):
 
-    * [ ] `subtotal = sum(orderLine.unitPriceSnapshot * quantity)`
-  * [ ] Ensure snapshots stored on `OrderLine` too (name + unit price at purchase time).
-  * [ ] Tests verifying snapshot consistency if product price changes later.
+    * [x] `subtotal = sum(orderLine.unitPriceSnapshot * quantity)`
+  * [x] Ensure snapshots stored on `OrderLine` too (name + unit price at purchase time).
+  * [x] Tests verifying snapshot consistency if product price changes later.
 
 ---
 

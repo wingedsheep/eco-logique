@@ -35,11 +35,8 @@ class OrderJourneySteps(
             )
         }
 
-        val subtotal = lines.sumOf { it.unitPrice.multiply(BigDecimal(it.quantity)) }
         val request = OrderCreateRequest(
             lines = lines,
-            subtotal = subtotal,
-            grandTotal = subtotal,
             currency = "EUR"
         )
 

@@ -55,8 +55,6 @@ internal class OrderServiceImpl(
             Order.create(
                 userId = userId,
                 lines = lines,
-                subtotal = request.subtotal,
-                grandTotal = request.grandTotal,
                 currency = currency
             )
         } catch (e: IllegalArgumentException) {

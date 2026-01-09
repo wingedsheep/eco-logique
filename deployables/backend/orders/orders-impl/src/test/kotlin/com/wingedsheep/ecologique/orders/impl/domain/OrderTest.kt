@@ -14,8 +14,6 @@ class OrderTest {
         val order = Order.create(
             userId = "USER-001",
             lines = listOf(buildOrderLine()),
-            subtotal = BigDecimal("29.99"),
-            grandTotal = BigDecimal("29.99"),
             currency = Currency.EUR
         )
 
@@ -27,14 +25,33 @@ class OrderTest {
     }
 
     @Test
+    fun `should compute totals from order lines`() {
+        // Given
+        val lines = listOf(
+            OrderLine.create("PROD-001", "Product 1", BigDecimal("10.00"), 2),
+            OrderLine.create("PROD-002", "Product 2", BigDecimal("15.50"), 3)
+        )
+
+        // When
+        val order = Order.create(
+            userId = "USER-001",
+            lines = lines,
+            currency = Currency.EUR
+        )
+
+        // Then
+        assertThat(order.totals.subtotal).isEqualByComparingTo(BigDecimal("66.50"))
+        assertThat(order.totals.grandTotal).isEqualByComparingTo(BigDecimal("66.50"))
+        assertThat(order.totals.currency).isEqualTo(Currency.EUR)
+    }
+
+    @Test
     fun `should throw exception when user ID is blank`() {
         // Given & When & Then
         assertThatThrownBy {
             Order.create(
                 userId = "",
                 lines = listOf(buildOrderLine()),
-                subtotal = BigDecimal("29.99"),
-                grandTotal = BigDecimal("29.99"),
                 currency = Currency.EUR
             )
         }
@@ -49,8 +66,6 @@ class OrderTest {
             Order.create(
                 userId = "USER-001",
                 lines = emptyList(),
-                subtotal = BigDecimal("29.99"),
-                grandTotal = BigDecimal("29.99"),
                 currency = Currency.EUR
             )
         }
@@ -89,6 +104,71 @@ class OrderTest {
         // When & Then
         assertThat(order.isOwnedBy("USER-001")).isTrue()
         assertThat(order.isOwnedBy("USER-002")).isFalse()
+    }
+
+    @Test
+    fun `order snapshot should preserve totals even if product price changes later`() {
+        // Given - Original product price is 25.00
+        val originalPrice = BigDecimal("25.00")
+        val orderLine = OrderLine.create(
+            productId = "PROD-001",
+            productName = "Product A",
+            unitPrice = originalPrice,
+            quantity = 2
+        )
+        val order = Order.create(
+            userId = "USER-001",
+            lines = listOf(orderLine),
+            currency = Currency.EUR
+        )
+        val originalTotals = order.totals
+
+        // When - Product price changes to 35.00 (simulated by creating new order line)
+        val newPrice = BigDecimal("35.00")
+        val newOrderLine = OrderLine.create(
+            productId = "PROD-001",
+            productName = "Product A",
+            unitPrice = newPrice,
+            quantity = 2
+        )
+
+        // Then - Original order snapshot should be unchanged
+        assertThat(order.totals.subtotal).isEqualByComparingTo(BigDecimal("50.00"))
+        assertThat(order.totals.grandTotal).isEqualByComparingTo(BigDecimal("50.00"))
+        assertThat(order.lines[0].unitPrice).isEqualByComparingTo(originalPrice)
+        assertThat(order.lines[0].lineTotal).isEqualByComparingTo(BigDecimal("50.00"))
+
+        // And - New order with new price would have different totals
+        val newOrder = Order.create(
+            userId = "USER-001",
+            lines = listOf(newOrderLine),
+            currency = Currency.EUR
+        )
+        assertThat(newOrder.totals.subtotal).isEqualByComparingTo(BigDecimal("70.00"))
+        assertThat(newOrder.totals.grandTotal).isEqualByComparingTo(BigDecimal("70.00"))
+
+        // Original order totals remain unchanged (snapshot consistency)
+        assertThat(order.totals).isEqualTo(originalTotals)
+    }
+
+    @Test
+    fun `order line should store product name snapshot at purchase time`() {
+        // Given
+        val orderLine = OrderLine.create(
+            productId = "PROD-001",
+            productName = "Original Product Name",
+            unitPrice = BigDecimal("10.00"),
+            quantity = 1
+        )
+
+        val order = Order.create(
+            userId = "USER-001",
+            lines = listOf(orderLine),
+            currency = Currency.EUR
+        )
+
+        // Then - Product name is snapshotted
+        assertThat(order.lines[0].productName).isEqualTo("Original Product Name")
     }
 
     private fun buildOrder(

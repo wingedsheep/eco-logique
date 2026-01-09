@@ -44,13 +44,9 @@ fun buildOrderLineDto(
 
 fun buildOrderCreateRequest(
     lines: List<OrderLineCreateRequest> = listOf(buildOrderLineCreateRequest()),
-    subtotal: BigDecimal = BigDecimal("29.99"),
-    grandTotal: BigDecimal = BigDecimal("29.99"),
     currency: String = "EUR"
 ): OrderCreateRequest = OrderCreateRequest(
     lines = lines,
-    subtotal = subtotal,
-    grandTotal = grandTotal,
     currency = currency
 )
 

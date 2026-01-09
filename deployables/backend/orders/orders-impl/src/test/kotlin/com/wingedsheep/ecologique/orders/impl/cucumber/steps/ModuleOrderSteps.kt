@@ -121,12 +121,8 @@ class ModuleOrderSteps {
             )
         }
 
-        val lineTotal = lines.sumOf { it.unitPrice.multiply(BigDecimal(it.quantity)) }
-
         val request = OrderCreateRequest(
             lines = lines,
-            subtotal = lineTotal,
-            grandTotal = lineTotal,
             currency = "EUR"
         )
 
@@ -143,8 +139,6 @@ class ModuleOrderSteps {
     fun tryCreateOrderWithNoItems() {
         val request = mapOf(
             "lines" to emptyList<Any>(),
-            "subtotal" to 0,
-            "grandTotal" to 0,
             "currency" to "EUR"
         )
 
@@ -254,6 +248,14 @@ class ModuleOrderSteps {
         }
     }
 
+    @Then("the order line should have unit price {double}")
+    fun orderLineShouldHaveUnitPrice(expectedUnitPrice: Double) {
+        val lines = response!!.jsonPath().getList<Map<String, Any>>("lines")
+        assertThat(lines).isNotEmpty()
+        val firstLineUnitPrice = response!!.jsonPath().getDouble("lines[0].unitPrice")
+        assertThat(firstLineUnitPrice).isEqualTo(expectedUnitPrice)
+    }
+
     private fun createOrderForUser(userId: String) {
         whenever(productService.getProduct("PROD-TEST"))
             .thenReturn(Result.ok(buildProductDto(id = "PROD-TEST", name = "Test Product")))
@@ -267,8 +269,6 @@ class ModuleOrderSteps {
                     quantity = 1
                 )
             ),
-            subtotal = BigDecimal("19.99"),
-            grandTotal = BigDecimal("19.99"),
             currency = "EUR"
         )
 

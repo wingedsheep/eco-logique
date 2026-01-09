@@ -66,8 +66,6 @@ class WorldviewOrderDataLoader(
 
             val request = OrderCreateRequest(
                 lines = resolvedLines,
-                subtotal = dto.subtotal,
-                grandTotal = dto.grandTotal,
                 currency = dto.currency
             )
 

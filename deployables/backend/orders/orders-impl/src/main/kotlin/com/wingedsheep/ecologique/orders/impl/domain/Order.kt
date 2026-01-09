@@ -1,7 +1,6 @@
 package com.wingedsheep.ecologique.orders.impl.domain
 
 import com.wingedsheep.ecologique.common.money.Currency
-import java.math.BigDecimal
 import java.time.Instant
 
 internal data class Order(
@@ -30,19 +29,13 @@ internal data class Order(
         fun create(
             userId: String,
             lines: List<OrderLine>,
-            subtotal: BigDecimal,
-            grandTotal: BigDecimal,
             currency: Currency
         ): Order = Order(
             id = OrderId.generate(),
             userId = userId,
             status = OrderStatus.CREATED,
             lines = lines,
-            totals = TotalsSnapshot(
-                subtotal = subtotal,
-                grandTotal = grandTotal,
-                currency = currency
-            ),
+            totals = TotalsSnapshot.fromOrderLines(lines, currency),
             createdAt = Instant.now()
         )
     }

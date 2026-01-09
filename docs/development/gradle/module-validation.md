@@ -22,63 +22,51 @@ The task also runs as part of `./gradlew check`.
 
 ## Rules
 
-The plugin enforces two levels of validation:
+The plugin enforces the following rules:
 
-### Default Rules (always enforced)
+### Module Type Rules
 
-1. **API modules cannot depend on impl modules** - Modules ending in `-api` or `:api` cannot depend on modules ending in
-   `-impl` or `:impl`
-2. **Impl modules cannot depend on other impl modules** - Use the corresponding `-api` module instead
+| From | To | Allowed? |
+|------|-----|:--------:|
+| api | api | ✓ |
+| api | impl | ✗ |
+| api | worldview | ✗ |
+| impl | api | ✓ |
+| impl | impl (cross-domain) | ✗ |
+| impl | worldview | ✗ |
+| worldview | api | ✓ |
+| worldview | impl | ✗ |
+| worldview | worldview | ✓ |
 
-### Module Whitelist (when configured)
+### Composition Roots
 
-When `allowedDependencies` is configured, modules can only depend on explicitly listed modules.
+Modules in `compositionRoots` (e.g., `:application`) cannot be depended upon by any other module. They are leaf nodes in the dependency graph that wire everything together.
+
+### Module Whitelist
+
+When `allowedDependencies` is configured, modules can only depend on explicitly listed domains.
 
 ### Excluded Modules
 
-Modules matching `excludedModules` prefixes (e.g., `:application`, `:test`) are completely excluded from all validation
-rules. This is typically used for composition roots that need to wire everything together.
-
-### Validation Matrix
-
-The following table shows which dependencies are allowed for each configuration type:
-
-| Configuration                | Target                            | Impl→Impl Rule | Whitelist Rule    |
-|------------------------------|-----------------------------------|----------------|-------------------|
-| `api`                        | `:other:other-api`                | ✅ Allowed      | ✅ If in whitelist |
-| `api`                        | `:other:other-impl`               | ❌ Blocked      | ❌ Blocked         |
-| `implementation`             | `:other:other-api`                | ✅ Allowed      | ✅ If in whitelist |
-| `implementation`             | `:other:other-impl`               | ❌ Blocked      | ❌ Blocked         |
-| `testImplementation`         | `:other:other-api`                | ✅ Allowed      | ✅ If in whitelist |
-| `testImplementation`         | `:other:other-impl`               | ❌ Blocked      | ❌ Blocked         |
-| `testImplementation`         | `testFixtures(:other:other-impl)` | ✅ Allowed      | ✅ If in whitelist |
-| `testFixturesImplementation` | `:other:other-api`                | ✅ Allowed      | ✅ If in whitelist |
-| `testFixturesImplementation` | `:other:other-impl`               | ❌ Blocked      | ❌ Blocked         |
-| `testFixturesImplementation` | `testFixtures(:other:other-impl)` | ❌ Blocked      | ❌ Blocked         |
-
-**Key points:**
-
-- Only `testImplementation` can depend on `testFixtures` of other impl modules
-- `testFixturesImplementation` must follow the same rules as production code
-- Whitelist rules apply to all configurations including test configurations
-- If whitelist is not configured, only the impl→impl rule is enforced
+Modules matching `excludedModules` prefixes are completely excluded from all validation rules. Use this for composition roots that need to depend on impl modules.
 
 ### Test Exception
 
-Test code (`testImplementation`) may depend on `testFixtures` of impl modules without violating the impl→impl rule.
-However, the module must still be in the `allowedDependencies` whitelist if configured.
+Test code (`testImplementation`) may depend on `testFixtures` of api modules without violating cross-domain rules. The module must still be in the `allowedDependencies` whitelist if configured.
 
 ## Configuration
 
 ```kotlin
 moduleDependencyValidation {
     failOnViolation.set(true)
-    excludedModules.set(setOf(":application", ":test"))
+    excludedModules.set(setOf(":application"))
+    compositionRoots.set(setOf(":application"))
+    reportFile.set(layout.buildDirectory.file("reports/module-validation/report.md"))
     allowedDependencies.set(
         mapOf(
-            "module-a" to setOf("module-b", "module-c"),
-            "module-b" to setOf("module-c"),
-            "module-c" to emptySet(),
+            "products" to emptySet(),
+            "users" to emptySet(),
+            "orders" to setOf("products", "users"),
         )
     )
 }
@@ -86,24 +74,21 @@ moduleDependencyValidation {
 
 ### Options
 
-| Option                | Type                       | Default      | Description                                                                                   |
-|-----------------------|----------------------------|--------------|-----------------------------------------------------------------------------------------------|
-| `failOnViolation`     | `Boolean`                  | `true`       | Fail build on violations. Set to `false` to log warnings only.                                |
-| `excludedModules`     | `Set<String>`              | `emptySet()` | Project paths to exclude (e.g., composition roots like `:application`). Uses prefix matching. |
-| `reportFile`          | `RegularFile`              | not set      | Path to write a Markdown report file. Useful for CI integration.                              |
-| `allowedDependencies` | `Map<String, Set<String>>` | `emptyMap()` | Defines which modules a module may depend on. Dependencies are always on the api module only. |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `failOnViolation` | `Boolean` | `true` | Fail build on violations. Set to `false` to log warnings only. |
+| `excludedModules` | `Set<String>` | `emptySet()` | Project paths to exclude from validation. Uses prefix matching. |
+| `compositionRoots` | `Set<String>` | `emptySet()` | Modules that no other module may depend on (e.g., `:application`). |
+| `reportFile` | `RegularFile` | not set | Path to write a Markdown report file. |
+| `allowedDependencies` | `Map<String, Set<String>>` | `emptyMap()` | Cross-domain dependency whitelist. |
 
 ### Module Names
 
-Module names are extracted from project paths by removing the `-api` or `-impl` suffix:
+Module names are extracted from project paths by removing the suffix:
 
 - `:orders:orders-impl` → `orders`
-- `:products:impl` → `products`
-
-### Unconfigured Modules
-
-Modules not present in `allowedDependencies` are not validated for dependency direction. The default api/impl rules
-still apply.
+- `:products:products-api` → `products`
+- `:users:users-worldview` → `users`
 
 ## CI Integration
 
@@ -126,3 +111,7 @@ Add this step to your workflow to display the report in the GitHub Actions summa
       cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
     fi
 ```
+
+## See Also
+
+- [ADR-016: Module Dependency Strategy](../../architecture/decisions/ADR-016-module-dependency-direction-validation.md)
