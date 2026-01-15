@@ -1,21 +1,21 @@
 [versions]
-kotlin = "1.9.22"
-spring-boot = "3.2.0"
-dependency-management = "1.1.4"
-jib = "3.4.0"
-sonarqube = "4.4.1.3373"
-jacoco = "0.8.11"
+kotlin = "2.1.20"
+spring-boot = "3.5.9"
+dependency-management = "1.1.7"
+jib = "3.5.2"
+sonarqube = "7.2.2.6593"
+jacoco = "0.8.15"
 
 # Test dependencies
-cucumber = "7.14.0"
-testcontainers = "1.19.1"
-junit-platform = "1.10.1"
-assertj = "3.24.2"
-mockito-kotlin = "5.2.1"
-rest-assured = "5.4.0"
+cucumber = "7.22.1"
+testcontainers = "1.20.6"
+junit-platform = "1.12.0"
+assertj = "3.27.6"
+mockito-kotlin = "5.4.0"
+rest-assured = "5.5.6"
 
 # Other
-springdoc = "2.3.0"
+springdoc = "2.8.15"
 
 [libraries]
 # Spring Boot starters (managed by BOM, no version needed in usage)
@@ -32,6 +32,7 @@ spring-context = { module = "org.springframework:spring-context" }
 # Database
 postgresql = { module = "org.postgresql:postgresql" }
 flyway-core = { module = "org.flywaydb:flyway-core" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 
 # Jackson
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }

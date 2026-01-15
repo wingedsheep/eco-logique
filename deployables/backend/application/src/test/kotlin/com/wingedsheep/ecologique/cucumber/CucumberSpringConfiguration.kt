@@ -3,11 +3,11 @@ package com.wingedsheep.ecologique.cucumber
 import com.wingedsheep.ecologique.EcologiqueApplication
 import io.cucumber.spring.CucumberContextConfiguration
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 
@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @Testcontainers
 class CucumberSpringConfiguration {
 
-    @MockBean
+    @MockitoBean
     lateinit var jwtDecoder: JwtDecoder
 
     companion object {

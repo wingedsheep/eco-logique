@@ -12,6 +12,7 @@ import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
 import com.wingedsheep.ecologique.orders.impl.domain.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.TotalsSnapshot
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.buildProductDto
 import com.wingedsheep.ecologique.products.api.error.ProductError
@@ -45,13 +46,14 @@ class OrderServiceImplTest {
     @InjectMocks
     private lateinit var orderService: OrderServiceImpl
 
-    private val testProductId = UUID.randomUUID()
+    private val testProductUuid = UUID.randomUUID()
+    private val testProductId = ProductId(testProductUuid)
 
     @Test
     fun `createOrder should return OrderDto when valid request`() {
         // Given
         val request = buildOrderCreateRequest(
-            lines = listOf(buildOrderLineCreateRequest(productId = testProductId.toString()))
+            lines = listOf(buildOrderLineCreateRequest(productId = testProductUuid.toString()))
         )
         whenever(productService.getProduct(testProductId)).thenReturn(Result.ok(buildProductDto(id = testProductId)))
         whenever(orderRepository.save(any())).thenAnswer { it.arguments[0] as Order }
@@ -94,9 +96,10 @@ class OrderServiceImplTest {
     @Test
     fun `createOrder should return ProductNotFound error when product does not exist`() {
         // Given
-        val nonExistentProductId = UUID.randomUUID()
+        val nonExistentUuid = UUID.randomUUID()
+        val nonExistentProductId = ProductId(nonExistentUuid)
         val request = buildOrderCreateRequest(
-            lines = listOf(buildOrderLineCreateRequest(productId = nonExistentProductId.toString()))
+            lines = listOf(buildOrderLineCreateRequest(productId = nonExistentUuid.toString()))
         )
         whenever(productService.getProduct(nonExistentProductId))
             .thenReturn(Result.err(ProductError.NotFound(nonExistentProductId)))
@@ -110,7 +113,7 @@ class OrderServiceImplTest {
             onSuccess = { },
             onFailure = { error ->
                 assertThat(error).isInstanceOf(OrderError.ProductNotFound::class.java)
-                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(nonExistentProductId.toString())
+                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(nonExistentProductId.value.toString())
             }
         )
     }
@@ -118,12 +121,14 @@ class OrderServiceImplTest {
     @Test
     fun `createOrder should validate all products in order`() {
         // Given
-        val productId1 = UUID.randomUUID()
-        val productId2 = UUID.randomUUID()
+        val productUuid1 = UUID.randomUUID()
+        val productUuid2 = UUID.randomUUID()
+        val productId1 = ProductId(productUuid1)
+        val productId2 = ProductId(productUuid2)
         val request = buildOrderCreateRequest(
             lines = listOf(
-                buildOrderLineCreateRequest(productId = productId1.toString()),
-                buildOrderLineCreateRequest(productId = productId2.toString())
+                buildOrderLineCreateRequest(productId = productUuid1.toString()),
+                buildOrderLineCreateRequest(productId = productUuid2.toString())
             )
         )
         whenever(productService.getProduct(productId1)).thenReturn(Result.ok(buildProductDto(id = productId1)))
@@ -138,7 +143,7 @@ class OrderServiceImplTest {
             onSuccess = { },
             onFailure = { error ->
                 assertThat(error).isInstanceOf(OrderError.ProductNotFound::class.java)
-                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(productId2.toString())
+                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(productUuid2.toString())
             }
         )
     }

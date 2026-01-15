@@ -1,5 +1,7 @@
 package com.wingedsheep.ecologique.cucumber.steps
 
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.products.api.ProductCategory
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.Before
@@ -64,9 +66,9 @@ class ProductSteps {
         val request = ProductCreateRequest(
             name = data["name"]!!,
             description = data["description"]!!,
-            category = data["category"]!!,
+            category = ProductCategory.valueOf(data["category"]!!),
             priceAmount = BigDecimal(priceInfo[0]),
-            priceCurrency = priceInfo[1],
+            priceCurrency = Currency.valueOf(priceInfo[1]),
             weightGrams = weightInfo[0].toInt(),
             carbonFootprintKg = BigDecimal(carbonInfo[0])
         )

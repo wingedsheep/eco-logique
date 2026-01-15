@@ -1,5 +1,8 @@
 package com.wingedsheep.ecologique.products.impl.domain
 
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
+
 internal interface ProductRepository {
     fun save(product: Product): Product
     fun findById(id: ProductId): Product?

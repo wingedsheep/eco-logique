@@ -1,19 +1,22 @@
 package com.wingedsheep.ecologique.products.worldview
 
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.products.api.SustainabilityRating
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import java.math.BigDecimal
-import java.util.UUID
 
 fun buildWorldviewProduct(
-    id: UUID = UUID.randomUUID(),
+    id: ProductId = ProductId.generate(),
     name: String = "Test Eco Product",
     description: String = "A sustainable test product",
-    category: String = "HOUSEHOLD",
+    category: ProductCategory = ProductCategory.HOUSEHOLD,
     priceAmount: BigDecimal = BigDecimal("19.99"),
-    priceCurrency: String = "EUR",
+    priceCurrency: Currency = Currency.EUR,
     weightGrams: Int = 100,
-    sustainabilityRating: String = "B",
+    sustainabilityRating: SustainabilityRating = SustainabilityRating.B,
     carbonFootprintKg: BigDecimal = BigDecimal("1.5")
 ): ProductDto = ProductDto(
     id = id,
@@ -30,9 +33,9 @@ fun buildWorldviewProduct(
 fun buildWorldviewProductCreateRequest(
     name: String = "Test Eco Product",
     description: String = "A sustainable test product",
-    category: String = "HOUSEHOLD",
+    category: ProductCategory = ProductCategory.HOUSEHOLD,
     priceAmount: BigDecimal = BigDecimal("19.99"),
-    priceCurrency: String = "EUR",
+    priceCurrency: Currency = Currency.EUR,
     weightGrams: Int = 100,
     carbonFootprintKg: BigDecimal = BigDecimal("1.5")
 ): ProductCreateRequest = ProductCreateRequest(

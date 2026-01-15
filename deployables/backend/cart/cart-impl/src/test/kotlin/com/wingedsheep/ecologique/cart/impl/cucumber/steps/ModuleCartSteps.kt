@@ -4,6 +4,7 @@ import com.wingedsheep.ecologique.cart.api.CartService
 import com.wingedsheep.ecologique.cart.api.dto.AddCartItemRequest
 import com.wingedsheep.ecologique.cart.api.dto.UpdateCartItemRequest
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.buildProductDto
 import com.wingedsheep.ecologique.products.api.error.ProductError
@@ -76,7 +77,7 @@ class ModuleCartSteps {
     @Given("the following products are available for cart:")
     fun productsAvailableForCart(dataTable: DataTable) {
         dataTable.asMaps().forEach { row ->
-            val productId = UUID.fromString(row["productId"]!!)
+            val productId = ProductId(UUID.fromString(row["productId"]!!))
             val productName = row["productName"]!!
             val price = BigDecimal(row["price"]!!)
             whenever(productService.getProduct(productId))
@@ -87,7 +88,7 @@ class ModuleCartSteps {
     @Given("no products are available")
     fun noProductsAvailable() {
         whenever(productService.getProduct(any()))
-            .thenReturn(Result.err(ProductError.NotFound(UUID.randomUUID())))
+            .thenReturn(Result.err(ProductError.NotFound(ProductId.generate())))
     }
 
     @Given("my cart is empty")
@@ -99,7 +100,8 @@ class ModuleCartSteps {
     fun cartHasItems(dataTable: DataTable) {
         cartService.clearCart(currentSubject)
         dataTable.asMaps().forEach { row ->
-            val productId = UUID.fromString(row["productId"]!!)
+            val productUuid = UUID.fromString(row["productId"]!!)
+            val productId = ProductId(productUuid)
             val productName = row["productName"]!!
             val price = BigDecimal(row["price"]!!)
             val quantity = row["quantity"]!!.toInt()
@@ -107,7 +109,7 @@ class ModuleCartSteps {
             whenever(productService.getProduct(productId))
                 .thenReturn(Result.ok(buildProductDto(id = productId, name = productName, priceAmount = price)))
 
-            cartService.addItem(currentSubject, AddCartItemRequest(productId.toString(), quantity))
+            cartService.addItem(currentSubject, AddCartItemRequest(productUuid.toString(), quantity))
         }
     }
 

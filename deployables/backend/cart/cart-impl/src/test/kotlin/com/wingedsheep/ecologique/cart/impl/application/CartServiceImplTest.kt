@@ -7,6 +7,7 @@ import com.wingedsheep.ecologique.cart.impl.domain.Cart
 import com.wingedsheep.ecologique.cart.impl.domain.CartItem
 import com.wingedsheep.ecologique.cart.impl.domain.CartRepository
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.buildProductDto
 import com.wingedsheep.ecologique.products.api.error.ProductError
@@ -79,9 +80,10 @@ class CartServiceImplTest {
     fun `addItem should return ProductNotFound when product does not exist`() {
         // Given
         val nonExistentUuid = UUID.fromString("00000000-0000-0000-0000-000000000999")
+        val nonExistentProductId = ProductId(nonExistentUuid)
         val request = buildAddCartItemRequest(productId = nonExistentUuid.toString())
-        whenever(productService.getProduct(nonExistentUuid))
-            .thenReturn(Result.err(ProductError.NotFound(nonExistentUuid)))
+        whenever(productService.getProduct(nonExistentProductId))
+            .thenReturn(Result.err(ProductError.NotFound(nonExistentProductId)))
 
         // When
         val result = cartService.addItem("USER-001", request)
@@ -117,10 +119,11 @@ class CartServiceImplTest {
     @Test
     fun `addItem should add item to cart`() {
         // Given
+        val testProductId = ProductId(testProductUuid)
         val request = buildAddCartItemRequest(productId = testProductUuid.toString(), quantity = 2)
-        val product = buildProductDto(id = testProductUuid, name = "Test Product", priceAmount = BigDecimal("29.99"))
+        val product = buildProductDto(id = testProductId, name = "Test Product", priceAmount = BigDecimal("29.99"))
 
-        whenever(productService.getProduct(testProductUuid)).thenReturn(Result.ok(product))
+        whenever(productService.getProduct(testProductId)).thenReturn(Result.ok(product))
         whenever(cartRepository.findByUserId("USER-001")).thenReturn(null)
         whenever(cartRepository.save(any())).thenAnswer { it.arguments[0] as Cart }
 

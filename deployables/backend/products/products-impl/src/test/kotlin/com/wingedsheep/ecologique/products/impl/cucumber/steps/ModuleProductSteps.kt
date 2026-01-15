@@ -1,5 +1,7 @@
 package com.wingedsheep.ecologique.products.impl.cucumber.steps
 
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.products.api.ProductCategory
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import com.wingedsheep.ecologique.products.api.dto.ProductUpdatePriceRequest
 import io.cucumber.datatable.DataTable
@@ -52,9 +54,9 @@ class ModuleProductSteps {
         val request = ProductCreateRequest(
             name = data["name"]!!,
             description = data["description"]!!,
-            category = data["category"]!!,
+            category = ProductCategory.valueOf(data["category"]!!),
             priceAmount = BigDecimal(priceInfo[0]),
-            priceCurrency = priceInfo[1],
+            priceCurrency = Currency.valueOf(priceInfo[1]),
             weightGrams = weightInfo[0].toInt(),
             carbonFootprintKg = BigDecimal(carbonInfo[0])
         )
@@ -87,9 +89,9 @@ class ModuleProductSteps {
         val request = ProductCreateRequest(
             name = name,
             description = "Test product description",
-            category = "HOUSEHOLD",
+            category = ProductCategory.HOUSEHOLD,
             priceAmount = BigDecimal("19.99"),
-            priceCurrency = "EUR",
+            priceCurrency = Currency.EUR,
             weightGrams = 100,
             carbonFootprintKg = BigDecimal("1.5")
         )
@@ -107,9 +109,9 @@ class ModuleProductSteps {
         val request = ProductCreateRequest(
             name = name,
             description = "Test product description",
-            category = "ELECTRONICS",
+            category = ProductCategory.ELECTRONICS,
             priceAmount = BigDecimal.valueOf(price),
-            priceCurrency = "EUR",
+            priceCurrency = Currency.EUR,
             weightGrams = 300,
             carbonFootprintKg = BigDecimal("3.0")
         )
@@ -142,7 +144,7 @@ class ModuleProductSteps {
     fun updateProductPrice(newPrice: Double) {
         val request = ProductUpdatePriceRequest(
             priceAmount = BigDecimal.valueOf(newPrice),
-            priceCurrency = "EUR"
+            priceCurrency = Currency.EUR
         )
 
         response = RestAssured.given()
@@ -163,9 +165,9 @@ class ModuleProductSteps {
             val request = ProductCreateRequest(
                 name = row["name"]!!,
                 description = "Test description",
-                category = row["category"]!!,
+                category = ProductCategory.valueOf(row["category"]!!),
                 priceAmount = BigDecimal("19.99"),
-                priceCurrency = "EUR",
+                priceCurrency = Currency.EUR,
                 weightGrams = 100,
                 carbonFootprintKg = BigDecimal("1.5")
             )
@@ -214,9 +216,9 @@ class ModuleProductSteps {
         val request = ProductCreateRequest(
             name = name,
             description = "Duplicate product",
-            category = "HOUSEHOLD",
+            category = ProductCategory.HOUSEHOLD,
             priceAmount = BigDecimal("29.99"),
-            priceCurrency = "EUR",
+            priceCurrency = Currency.EUR,
             weightGrams = 200,
             carbonFootprintKg = BigDecimal("2.0")
         )

@@ -54,7 +54,7 @@ class OrderRepositoryImplIntegrationTest {
 
     @BeforeEach
     fun cleanup() {
-        orderRepository.findByUserId("TEST-USER").forEach { order ->
+        orderRepository.findByUserId("TEST-USER").forEach { _ ->
             // Cannot delete directly, so we skip cleanup for now
         }
     }

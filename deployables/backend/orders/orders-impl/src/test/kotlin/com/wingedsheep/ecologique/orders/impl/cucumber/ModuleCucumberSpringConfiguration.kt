@@ -4,10 +4,10 @@ import com.wingedsheep.ecologique.orders.impl.TestApplication
 import com.wingedsheep.ecologique.products.api.ProductService
 import io.cucumber.spring.CucumberContextConfiguration
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 
@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @Import(JwtTestConfig::class)
 class ModuleCucumberSpringConfiguration {
 
-    @MockBean
+    @MockitoBean
     lateinit var productService: ProductService
 
     companion object {

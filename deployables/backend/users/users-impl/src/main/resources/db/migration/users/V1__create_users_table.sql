@@ -1,6 +1,6 @@
 CREATE TABLE users
 (
-    id               VARCHAR(255) PRIMARY KEY,
+    id               UUID PRIMARY KEY,
     external_subject VARCHAR(255) NOT NULL UNIQUE,
     name             VARCHAR(255) NOT NULL,
     email            VARCHAR(255) NOT NULL UNIQUE,

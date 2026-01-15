@@ -2,17 +2,17 @@ package com.wingedsheep.ecologique.products.impl.application
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.products.api.SustainabilityRating
 import com.wingedsheep.ecologique.products.api.buildProductCreateRequest
 import com.wingedsheep.ecologique.products.api.buildProductUpdatePriceRequest
 import com.wingedsheep.ecologique.products.api.error.ProductError
 import com.wingedsheep.ecologique.products.api.event.ProductCreated
 import com.wingedsheep.ecologique.products.impl.domain.CarbonFootprint
 import com.wingedsheep.ecologique.products.impl.domain.Product
-import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.ProductId
-import com.wingedsheep.ecologique.products.impl.domain.SustainabilityRating
-import com.wingedsheep.ecologique.products.impl.domain.Weight
 import com.wingedsheep.ecologique.products.impl.domain.ProductRepository
+import com.wingedsheep.ecologique.products.impl.domain.Weight
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -25,7 +25,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.context.ApplicationEventPublisher
 import java.math.BigDecimal
-import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class ProductServiceImplTest {
@@ -44,7 +43,7 @@ class ProductServiceImplTest {
         // Given
         val request = buildProductCreateRequest(
             name = "Test Product",
-            category = "HOUSEHOLD"
+            category = ProductCategory.HOUSEHOLD
         )
         whenever(productRepository.findByName("Test Product")).thenReturn(null)
         whenever(productRepository.save(any())).thenAnswer { it.arguments[0] as Product }
@@ -57,7 +56,7 @@ class ProductServiceImplTest {
         result.fold(
             onSuccess = { dto ->
                 assertThat(dto.name).isEqualTo("Test Product")
-                assertThat(dto.category).isEqualTo("HOUSEHOLD")
+                assertThat(dto.category).isEqualTo(ProductCategory.HOUSEHOLD)
             },
             onFailure = { }
         )
@@ -87,39 +86,20 @@ class ProductServiceImplTest {
     }
 
     @Test
-    fun `createProduct should return InvalidCategory error for unknown category`() {
-        // Given
-        val request = buildProductCreateRequest(category = "INVALID_CATEGORY")
-
-        // When
-        val result = productService.createProduct(request)
-
-        // Then
-        assertThat(result.isErr).isTrue()
-        result.fold(
-            onSuccess = { },
-            onFailure = { error ->
-                assertThat(error).isInstanceOf(ProductError.InvalidCategory::class.java)
-            }
-        )
-    }
-
-    @Test
     fun `getProduct should return ProductDto when product exists`() {
         // Given
-        val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
-        val productId = ProductId(uuid)
+        val productId = ProductId.generate()
         val product = buildProduct(id = productId)
         whenever(productRepository.findById(productId)).thenReturn(product)
 
         // When
-        val result = productService.getProduct(uuid)
+        val result = productService.getProduct(productId)
 
         // Then
         assertThat(result.isOk).isTrue()
         result.fold(
             onSuccess = { dto ->
-                assertThat(dto.id).isEqualTo(uuid)
+                assertThat(dto.id).isEqualTo(productId)
             },
             onFailure = { }
         )
@@ -128,11 +108,11 @@ class ProductServiceImplTest {
     @Test
     fun `getProduct should return NotFound error when product does not exist`() {
         // Given
-        val uuid = UUID.fromString("00000000-0000-0000-0000-000000000999")
-        whenever(productRepository.findById(ProductId(uuid))).thenReturn(null)
+        val productId = ProductId.generate()
+        whenever(productRepository.findById(productId)).thenReturn(null)
 
         // When
-        val result = productService.getProduct(uuid)
+        val result = productService.getProduct(productId)
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -140,7 +120,7 @@ class ProductServiceImplTest {
             onSuccess = { },
             onFailure = { error ->
                 assertThat(error).isInstanceOf(ProductError.NotFound::class.java)
-                assertThat((error as ProductError.NotFound).id).isEqualTo(uuid)
+                assertThat((error as ProductError.NotFound).id).isEqualTo(productId)
             }
         )
     }
@@ -150,7 +130,7 @@ class ProductServiceImplTest {
         // Given
         val products = listOf(
             buildProduct(),
-            buildProduct(id = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000002")))
+            buildProduct(id = ProductId.generate())
         )
         whenever(productRepository.findAll()).thenReturn(products)
 
@@ -170,15 +150,14 @@ class ProductServiceImplTest {
     @Test
     fun `updateProductPrice should return updated ProductDto`() {
         // Given
-        val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
-        val productId = ProductId(uuid)
+        val productId = ProductId.generate()
         val product = buildProduct(id = productId)
         val request = buildProductUpdatePriceRequest(priceAmount = BigDecimal("35.00"))
         whenever(productRepository.findById(productId)).thenReturn(product)
         whenever(productRepository.save(any())).thenAnswer { it.arguments[0] as Product }
 
         // When
-        val result = productService.updateProductPrice(uuid, request)
+        val result = productService.updateProductPrice(productId, request)
 
         // Then
         assertThat(result.isOk).isTrue()
@@ -193,13 +172,12 @@ class ProductServiceImplTest {
     @Test
     fun `deleteProduct should return Unit when product exists`() {
         // Given
-        val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
-        val productId = ProductId(uuid)
+        val productId = ProductId.generate()
         whenever(productRepository.existsById(productId)).thenReturn(true)
         whenever(productRepository.deleteById(productId)).thenReturn(true)
 
         // When
-        val result = productService.deleteProduct(uuid)
+        val result = productService.deleteProduct(productId)
 
         // Then
         assertThat(result.isOk).isTrue()
@@ -208,11 +186,11 @@ class ProductServiceImplTest {
     @Test
     fun `deleteProduct should return NotFound error when product does not exist`() {
         // Given
-        val uuid = UUID.fromString("00000000-0000-0000-0000-000000000999")
-        whenever(productRepository.existsById(ProductId(uuid))).thenReturn(false)
+        val productId = ProductId.generate()
+        whenever(productRepository.existsById(productId)).thenReturn(false)
 
         // When
-        val result = productService.deleteProduct(uuid)
+        val result = productService.deleteProduct(productId)
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -225,7 +203,7 @@ class ProductServiceImplTest {
     }
 
     private fun buildProduct(
-        id: ProductId = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
+        id: ProductId = ProductId.generate(),
         name: String = "Test Product"
     ): Product = Product(
         id = id,

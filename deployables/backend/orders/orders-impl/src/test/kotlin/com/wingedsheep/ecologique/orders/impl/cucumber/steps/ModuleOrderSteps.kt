@@ -5,6 +5,7 @@ import com.wingedsheep.ecologique.orders.api.OrderService
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineCreateRequest
 import com.wingedsheep.ecologique.orders.api.error.OrderError
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.buildProductDto
 import com.wingedsheep.ecologique.products.api.error.ProductError
@@ -80,7 +81,7 @@ class ModuleOrderSteps {
     @Given("the following products exist in the catalog:")
     fun productsExistInCatalog(dataTable: DataTable) {
         dataTable.asMaps().forEach { row ->
-            val productId = UUID.fromString(row["productId"]!!)
+            val productId = ProductId(UUID.fromString(row["productId"]!!))
             val productName = row["productName"]!!
             whenever(productService.getProduct(productId))
                 .thenReturn(Result.ok(buildProductDto(id = productId, name = productName)))
@@ -90,7 +91,7 @@ class ModuleOrderSteps {
     @Given("no products exist in the catalog")
     fun noProductsExist() {
         whenever(productService.getProduct(any()))
-            .thenReturn(Result.err(ProductError.NotFound(UUID.randomUUID())))
+            .thenReturn(Result.err(ProductError.NotFound(ProductId.generate())))
     }
 
     @Given("an order exists for the current user")

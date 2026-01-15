@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.products.impl.infrastructure.web.v1
 
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
@@ -30,76 +31,65 @@ class ProductControllerV1(
 ) {
 
     @PostMapping
-    @Operation(summary = "Create a new product", description = "Creates a new eco-friendly product with sustainability rating")
+    @Operation(summary = "Create a new product")
     fun createProduct(@RequestBody request: ProductCreateRequest): ResponseEntity<ProductDto> {
         return productService.createProduct(request).fold(
-            onSuccess = { product ->
-                ResponseEntity.status(HttpStatus.CREATED).body(product)
-            },
-            onFailure = { error ->
-                throw error.toErrorResponseException()
-            }
+            onSuccess = { ResponseEntity.status(HttpStatus.CREATED).body(it) },
+            onFailure = { throw it.toErrorResponseException() }
         )
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get product by ID", description = "Retrieves a single product by its unique identifier")
+    @Operation(summary = "Get product by ID")
     fun getProduct(@PathVariable id: UUID): ResponseEntity<ProductDto> {
-        return productService.getProduct(id).fold(
-            onSuccess = { product ->
-                ResponseEntity.ok(product)
-            },
-            onFailure = { error ->
-                throw error.toErrorResponseException()
-            }
+        return productService.getProduct(ProductId(id)).fold(
+            onSuccess = { ResponseEntity.ok(it) },
+            onFailure = { throw it.toErrorResponseException() }
         )
     }
 
     @GetMapping
-    @Operation(summary = "List products", description = "Lists all products, optionally filtered by category")
+    @Operation(summary = "List products")
     fun getAllProducts(@RequestParam(required = false) category: String?): ResponseEntity<List<ProductDto>> {
         val result = if (category != null) {
-            productService.findProductsByCategory(category)
+            val productCategory = com.wingedsheep.ecologique.products.api.ProductCategory
+                .entries.find { it.name.equals(category, ignoreCase = true) }
+                ?: throw ErrorResponseException(
+                    HttpStatus.BAD_REQUEST,
+                    ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid category: $category").apply {
+                        title = "Invalid Category"
+                    },
+                    null
+                )
+            productService.findProductsByCategory(productCategory)
         } else {
             productService.findAllProducts()
         }
 
         return result.fold(
-            onSuccess = { products ->
-                ResponseEntity.ok(products)
-            },
-            onFailure = { error ->
-                throw error.toErrorResponseException()
-            }
+            onSuccess = { ResponseEntity.ok(it) },
+            onFailure = { throw it.toErrorResponseException() }
         )
     }
 
     @PutMapping("/{id}/price")
-    @Operation(summary = "Update product price", description = "Updates the price of an existing product")
+    @Operation(summary = "Update product price")
     fun updateProductPrice(
         @PathVariable id: UUID,
         @RequestBody request: ProductUpdatePriceRequest
     ): ResponseEntity<ProductDto> {
-        return productService.updateProductPrice(id, request).fold(
-            onSuccess = { product ->
-                ResponseEntity.ok(product)
-            },
-            onFailure = { error ->
-                throw error.toErrorResponseException()
-            }
+        return productService.updateProductPrice(ProductId(id), request).fold(
+            onSuccess = { ResponseEntity.ok(it) },
+            onFailure = { throw it.toErrorResponseException() }
         )
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a product", description = "Removes a product from the catalog")
+    @Operation(summary = "Delete a product")
     fun deleteProduct(@PathVariable id: UUID): ResponseEntity<Unit> {
-        return productService.deleteProduct(id).fold(
-            onSuccess = {
-                ResponseEntity.noContent().build()
-            },
-            onFailure = { error ->
-                throw error.toErrorResponseException()
-            }
+        return productService.deleteProduct(ProductId(id)).fold(
+            onSuccess = { ResponseEntity.noContent().build() },
+            onFailure = { throw it.toErrorResponseException() }
         )
     }
 }
@@ -109,7 +99,7 @@ private fun ProductError.toErrorResponseException(): ErrorResponseException {
         is ProductError.NotFound -> Triple(
             HttpStatus.NOT_FOUND,
             "Product Not Found",
-            "Product not found: $id"
+            "Product not found: ${id.value}"
         )
         is ProductError.ValidationFailed -> Triple(
             HttpStatus.BAD_REQUEST,
@@ -120,11 +110,6 @@ private fun ProductError.toErrorResponseException(): ErrorResponseException {
             HttpStatus.CONFLICT,
             "Duplicate Product Name",
             "Product name already exists: $name"
-        )
-        is ProductError.InvalidCategory -> Triple(
-            HttpStatus.BAD_REQUEST,
-            "Invalid Category",
-            "Invalid category: $category"
         )
         is ProductError.Unexpected -> Triple(
             HttpStatus.INTERNAL_SERVER_ERROR,

@@ -1,20 +1,20 @@
 package com.wingedsheep.ecologique.products.api
 
+import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import com.wingedsheep.ecologique.products.api.dto.ProductUpdatePriceRequest
 import java.math.BigDecimal
-import java.util.UUID
 
 fun buildProductDto(
-    id: UUID = UUID.randomUUID(),
+    id: ProductId = ProductId.generate(),
     name: String = "Test Product",
     description: String = "A test product description",
-    category: String = "HOUSEHOLD",
+    category: ProductCategory = ProductCategory.HOUSEHOLD,
     priceAmount: BigDecimal = BigDecimal("19.99"),
-    priceCurrency: String = "EUR",
+    priceCurrency: Currency = Currency.EUR,
     weightGrams: Int = 100,
-    sustainabilityRating: String = "B",
+    sustainabilityRating: SustainabilityRating = SustainabilityRating.B,
     carbonFootprintKg: BigDecimal = BigDecimal("1.5")
 ): ProductDto = ProductDto(
     id = id,
@@ -31,9 +31,9 @@ fun buildProductDto(
 fun buildProductCreateRequest(
     name: String = "Test Product",
     description: String = "A test product description",
-    category: String = "HOUSEHOLD",
+    category: ProductCategory = ProductCategory.HOUSEHOLD,
     priceAmount: BigDecimal = BigDecimal("19.99"),
-    priceCurrency: String = "EUR",
+    priceCurrency: Currency = Currency.EUR,
     weightGrams: Int = 100,
     carbonFootprintKg: BigDecimal = BigDecimal("1.5")
 ): ProductCreateRequest = ProductCreateRequest(
@@ -48,7 +48,7 @@ fun buildProductCreateRequest(
 
 fun buildProductUpdatePriceRequest(
     priceAmount: BigDecimal = BigDecimal("24.99"),
-    priceCurrency: String = "EUR"
+    priceCurrency: Currency = Currency.EUR
 ): ProductUpdatePriceRequest = ProductUpdatePriceRequest(
     priceAmount = priceAmount,
     priceCurrency = priceCurrency

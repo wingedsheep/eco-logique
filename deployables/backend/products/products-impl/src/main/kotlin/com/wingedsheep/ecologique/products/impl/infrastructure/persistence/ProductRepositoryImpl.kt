@@ -1,8 +1,8 @@
 package com.wingedsheep.ecologique.products.impl.infrastructure.persistence
 
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.impl.domain.Product
-import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.ProductId
 import com.wingedsheep.ecologique.products.impl.domain.ProductRepository
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Component

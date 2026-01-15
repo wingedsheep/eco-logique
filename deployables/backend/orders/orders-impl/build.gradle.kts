@@ -27,7 +27,6 @@ dependencies {
 
     testImplementation(testFixtures(project(":orders:orders-api")))
     testImplementation(testFixtures(project(":products:products-api")))
-    testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.assertj.core)
     testImplementation(libs.testcontainers.postgresql)
@@ -38,5 +37,6 @@ dependencies {
     testImplementation(libs.junit.platform.suite)
     testImplementation(libs.rest.assured)
     testImplementation(libs.flyway.core)
+    testImplementation(libs.flyway.database.postgresql)
     testRuntimeOnly(libs.postgresql)
 }

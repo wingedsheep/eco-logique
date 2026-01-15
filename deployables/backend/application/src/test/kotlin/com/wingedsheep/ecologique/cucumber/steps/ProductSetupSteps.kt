@@ -1,8 +1,11 @@
 package com.wingedsheep.ecologique.cucumber.steps
 
+import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.cucumber.ScenarioContext
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.ProductRef
 import com.wingedsheep.ecologique.cucumber.TestApiClient
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.Given
@@ -17,7 +20,7 @@ class ProductSetupSteps(
         dataTable.asMaps().forEach { row ->
             val name = row["name"]!!
             val price = BigDecimal(row["price"]!!)
-            val category = row["category"]!!
+            val category = ProductCategory.valueOf(row["category"]!!)
 
             ensureProductExists(name, price, category)
         }
@@ -25,10 +28,10 @@ class ProductSetupSteps(
 
     @Given("a product {string} exists with price {double} EUR")
     fun productExistsWithPrice(name: String, price: Double) {
-        ensureProductExists(name, BigDecimal.valueOf(price), "HOUSEHOLD")
+        ensureProductExists(name, BigDecimal.valueOf(price), ProductCategory.HOUSEHOLD)
     }
 
-    private fun ensureProductExists(name: String, price: BigDecimal, category: String) {
+    private fun ensureProductExists(name: String, price: BigDecimal, category: ProductCategory) {
         findExistingProduct(name)?.let { existing ->
             context.storeProduct(name, ProductRef(existing.id, existing.name, price))
             return
@@ -39,7 +42,7 @@ class ProductSetupSteps(
             description = "Test product",
             category = category,
             priceAmount = price,
-            priceCurrency = "EUR",
+            priceCurrency = Currency.EUR,
             weightGrams = 100,
             carbonFootprintKg = BigDecimal("1.0")
         )

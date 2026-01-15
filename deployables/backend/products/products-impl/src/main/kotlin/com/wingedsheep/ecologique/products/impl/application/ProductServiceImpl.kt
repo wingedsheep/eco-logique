@@ -1,23 +1,24 @@
 package com.wingedsheep.ecologique.products.impl.application
 
-import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import com.wingedsheep.ecologique.products.api.dto.ProductUpdatePriceRequest
 import com.wingedsheep.ecologique.products.api.error.ProductError
 import com.wingedsheep.ecologique.products.api.event.ProductCreated
+import com.wingedsheep.ecologique.products.impl.domain.CarbonFootprint
 import com.wingedsheep.ecologique.products.impl.domain.Product
-import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.ProductId
 import com.wingedsheep.ecologique.products.impl.domain.ProductRepository
+import com.wingedsheep.ecologique.products.impl.domain.SustainabilityRatingCalculator
+import com.wingedsheep.ecologique.products.impl.domain.Weight
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.util.UUID
 
 @Service
 internal class ProductServiceImpl(
@@ -27,28 +28,21 @@ internal class ProductServiceImpl(
 
     @Transactional
     override fun createProduct(request: ProductCreateRequest): Result<ProductDto, ProductError> {
-        val category = ProductCategory.fromString(request.category)
-            ?: return Result.err(ProductError.InvalidCategory(request.category))
-
-        val currency = try {
-            Currency.valueOf(request.priceCurrency)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(ProductError.ValidationFailed("Invalid currency: ${request.priceCurrency}"))
-        }
-
         productRepository.findByName(request.name)?.let {
             return Result.err(ProductError.DuplicateName(request.name))
         }
 
+        val carbonFootprint = CarbonFootprint(request.carbonFootprintKg)
         val product = try {
-            Product.create(
+            Product(
+                id = ProductId.generate(),
                 name = request.name,
                 description = request.description,
-                category = category,
-                priceAmount = request.priceAmount,
-                priceCurrency = currency,
-                weightGrams = request.weightGrams,
-                carbonFootprintKg = request.carbonFootprintKg
+                category = request.category,
+                price = Money(request.priceAmount, request.priceCurrency),
+                weight = Weight(request.weightGrams),
+                sustainabilityRating = SustainabilityRatingCalculator.calculate(request.category, carbonFootprint),
+                carbonFootprint = carbonFootprint
             )
         } catch (e: IllegalArgumentException) {
             return Result.err(ProductError.ValidationFailed(e.message ?: "Validation failed"))
@@ -58,11 +52,11 @@ internal class ProductServiceImpl(
 
         eventPublisher.publishEvent(
             ProductCreated(
-                productId = savedProduct.id.value.toString(),
+                productId = savedProduct.id,
                 name = savedProduct.name,
-                category = savedProduct.category.name,
+                category = savedProduct.category,
                 priceAmount = savedProduct.price.amount,
-                priceCurrency = savedProduct.price.currency.name,
+                priceCurrency = savedProduct.price.currency,
                 timestamp = Instant.now()
             )
         )
@@ -71,62 +65,42 @@ internal class ProductServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getProduct(id: UUID): Result<ProductDto, ProductError> {
-        val productId = ProductId(id)
-
-        val product = productRepository.findById(productId)
+    override fun getProduct(id: ProductId): Result<ProductDto, ProductError> {
+        val product = productRepository.findById(id)
             ?: return Result.err(ProductError.NotFound(id))
-
         return Result.ok(product.toDto())
     }
 
     @Transactional(readOnly = true)
     override fun findAllProducts(): Result<List<ProductDto>, ProductError> {
-        val products = productRepository.findAll()
-        return Result.ok(products.map { it.toDto() })
+        return Result.ok(productRepository.findAll().map { it.toDto() })
     }
 
     @Transactional(readOnly = true)
-    override fun findProductsByCategory(category: String): Result<List<ProductDto>, ProductError> {
-        val productCategory = ProductCategory.fromString(category)
-            ?: return Result.err(ProductError.InvalidCategory(category))
-
-        val products = productRepository.findByCategory(productCategory)
-        return Result.ok(products.map { it.toDto() })
+    override fun findProductsByCategory(category: ProductCategory): Result<List<ProductDto>, ProductError> {
+        return Result.ok(productRepository.findByCategory(category).map { it.toDto() })
     }
 
     @Transactional
-    override fun updateProductPrice(id: UUID, request: ProductUpdatePriceRequest): Result<ProductDto, ProductError> {
-        val productId = ProductId(id)
-
-        val currency = try {
-            Currency.valueOf(request.priceCurrency)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(ProductError.ValidationFailed("Invalid currency: ${request.priceCurrency}"))
-        }
-
-        val product = productRepository.findById(productId)
+    override fun updateProductPrice(id: ProductId, request: ProductUpdatePriceRequest): Result<ProductDto, ProductError> {
+        val product = productRepository.findById(id)
             ?: return Result.err(ProductError.NotFound(id))
 
         val updatedProduct = try {
-            product.updatePrice(Money(request.priceAmount, currency))
+            product.updatePrice(Money(request.priceAmount, request.priceCurrency))
         } catch (e: IllegalArgumentException) {
             return Result.err(ProductError.ValidationFailed(e.message ?: "Validation failed"))
         }
 
-        val savedProduct = productRepository.save(updatedProduct)
-        return Result.ok(savedProduct.toDto())
+        return Result.ok(productRepository.save(updatedProduct).toDto())
     }
 
     @Transactional
-    override fun deleteProduct(id: UUID): Result<Unit, ProductError> {
-        val productId = ProductId(id)
-
-        if (!productRepository.existsById(productId)) {
+    override fun deleteProduct(id: ProductId): Result<Unit, ProductError> {
+        if (!productRepository.existsById(id)) {
             return Result.err(ProductError.NotFound(id))
         }
-
-        productRepository.deleteById(productId)
+        productRepository.deleteById(id)
         return Result.ok(Unit)
     }
 }

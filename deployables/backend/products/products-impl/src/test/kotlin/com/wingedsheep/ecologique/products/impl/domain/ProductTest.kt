@@ -2,9 +2,8 @@ package com.wingedsheep.ecologique.products.impl.domain
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
-import com.wingedsheep.ecologique.products.impl.domain.Product
-import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.SustainabilityRating
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.SustainabilityRating
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test

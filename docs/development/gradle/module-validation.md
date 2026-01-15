@@ -1,62 +1,57 @@
 # Module Dependency Validation
 
-The `buildlogic.module-validation` plugin validates module dependencies in a modular monolith architecture.
+The `buildlogic.module-validation` plugin enforces module boundaries in a modular monolith.
 
 ## Usage
-
-Apply the plugin in your root `build.gradle.kts`:
-
-```kotlin
-plugins {
-    id("buildlogic.module-validation")
-}
-```
-
-Run validation with:
-
 ```bash
 ./gradlew validateModuleDependencies
 ```
 
-The task also runs as part of `./gradlew check`.
+Also runs as part of `./gradlew check`.
+
+## Core Principle
+
+**Depend on abstractions, not implementations.**
+
+- ✓ Depend on `api` modules
+- ✓ Depend on library modules (no suffix, e.g. `:common:common-money`)
+- ✗ Depend on `impl` or `worldview` modules across boundaries
 
 ## Rules
 
-The plugin enforces the following rules:
+### Production Code (main)
+```
+impl  ───►  api  ◄───  api
+             ▲
+             │
+worldview ───┘
+```
 
-### Module Type Rules
+Cross-module dependencies must go through `api` modules and be whitelisted in `allowedDependencies`.
 
-| From | To | Allowed? |
-|------|-----|:--------:|
-| api | api | ✓ |
-| api | impl | ✗ |
-| api | worldview | ✗ |
-| impl | api | ✓ |
-| impl | impl (cross-domain) | ✗ |
-| impl | worldview | ✗ |
-| worldview | api | ✓ |
-| worldview | impl | ✗ |
-| worldview | worldview | ✓ |
+The only exception: `worldview` modules may depend on other `worldview` modules for test data composition.
+
+### Test Code
+
+Tests and test fixtures follow the same principle with one addition: they may depend on `testFixtures` of allowed modules.
+```
+a:impl:test ────────►  a:impl:testFixtures
+                       a:api:testFixtures
+                       b:api:testFixtures   (if b is allowed)
+```
+
+This enables sharing test builders across modules without exposing implementation details.
 
 ### Composition Roots
 
-Modules in `compositionRoots` (e.g., `:application`) cannot be depended upon by any other module. They are leaf nodes in the dependency graph that wire everything together.
-
-### Module Whitelist
-
-When `allowedDependencies` is configured, modules can only depend on explicitly listed domains.
-
-### Excluded Modules
-
-Modules matching `excludedModules` prefixes are completely excluded from all validation rules. Use this for composition roots that need to depend on impl modules.
-
-### Test Exception
-
-Test code (`testImplementation`) may depend on `testFixtures` of api modules without violating cross-domain rules. The module must still be in the `allowedDependencies` whitelist if configured.
+Modules in `compositionRoots` (e.g., `:application`) are leaf nodes—no module may depend on them.
 
 ## Configuration
-
 ```kotlin
+plugins {
+    id("buildlogic.module-validation")
+}
+
 moduleDependencyValidation {
     failOnViolation.set(true)
     excludedModules.set(setOf(":application"))
@@ -67,41 +62,23 @@ moduleDependencyValidation {
             "products" to emptySet(),
             "users" to emptySet(),
             "orders" to setOf("products", "users"),
+            "cart" to setOf("products", "users"),
         )
     )
 }
 ```
 
-### Options
+| Option | Description |
+|--------|-------------|
+| `failOnViolation` | Fail build on violations (default: `true`) |
+| `excludedModules` | Project path prefixes to skip validation |
+| `compositionRoots` | Modules that nothing may depend on |
+| `reportFile` | Path for markdown report |
+| `allowedDependencies` | Cross-module dependency whitelist |
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `failOnViolation` | `Boolean` | `true` | Fail build on violations. Set to `false` to log warnings only. |
-| `excludedModules` | `Set<String>` | `emptySet()` | Project paths to exclude from validation. Uses prefix matching. |
-| `compositionRoots` | `Set<String>` | `emptySet()` | Modules that no other module may depend on (e.g., `:application`). |
-| `reportFile` | `RegularFile` | not set | Path to write a Markdown report file. |
-| `allowedDependencies` | `Map<String, Set<String>>` | `emptyMap()` | Cross-domain dependency whitelist. |
-
-### Module Names
-
-Module names are extracted from project paths by removing the suffix:
-
-- `:orders:orders-impl` → `orders`
-- `:products:products-api` → `products`
-- `:users:users-worldview` → `users`
+Module names are extracted from paths: `:orders:orders-impl` → `orders`
 
 ## CI Integration
-
-Configure `reportFile` to generate a Markdown report for GitHub Actions:
-
-```kotlin
-moduleDependencyValidation {
-    reportFile.set(layout.buildDirectory.file("reports/module-validation/report.md"))
-}
-```
-
-Add this step to your workflow to display the report in the GitHub Actions summary:
-
 ```yaml
 - name: Module Validation Report
   if: always()

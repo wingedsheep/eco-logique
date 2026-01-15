@@ -9,6 +9,7 @@ import com.wingedsheep.ecologique.cart.impl.domain.Cart
 import com.wingedsheep.ecologique.cart.impl.domain.CartItem
 import com.wingedsheep.ecologique.cart.impl.domain.CartRepository
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,13 +29,13 @@ internal class CartServiceImpl(
 
     @Transactional
     override fun addItem(userId: String, request: AddCartItemRequest): Result<CartDto, CartError> {
-        val productUuid = try {
-            UUID.fromString(request.productId)
+        val productId = try {
+            ProductId(UUID.fromString(request.productId))
         } catch (e: IllegalArgumentException) {
             return Result.err(CartError.ProductNotFound(request.productId))
         }
 
-        val productResult = productService.getProduct(productUuid)
+        val productResult = productService.getProduct(productId)
         if (productResult.isErr) {
             return Result.err(CartError.ProductNotFound(request.productId))
         }
@@ -44,7 +45,7 @@ internal class CartServiceImpl(
 
         val cartItem = try {
             CartItem.create(
-                productId = product.id.toString(),
+                productId = product.id.value.toString(),
                 productName = product.name,
                 unitPrice = product.priceAmount,
                 quantity = request.quantity

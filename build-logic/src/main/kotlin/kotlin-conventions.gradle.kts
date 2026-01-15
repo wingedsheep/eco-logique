@@ -38,7 +38,9 @@ tasks.jacocoTestReport {
 }
 
 dependencies {
+    // Modules using this convention import Spring Boot BOM via dependencyManagement,
+    // which provides version-managed test dependencies (no versions needed here).
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
-    testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.0")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

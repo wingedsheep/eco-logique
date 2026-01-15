@@ -2,6 +2,9 @@ package com.wingedsheep.ecologique.products.impl.domain
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.products.api.SustainabilityRating
 import java.math.BigDecimal
 
 internal data class Product(
@@ -37,8 +40,6 @@ internal data class Product(
             carbonFootprintKg: BigDecimal
         ): Product {
             val carbonFootprint = CarbonFootprint(carbonFootprintKg)
-            val sustainabilityRating = SustainabilityRating.calculate(category, carbonFootprint)
-
             return Product(
                 id = ProductId.generate(),
                 name = name,
@@ -46,7 +47,7 @@ internal data class Product(
                 category = category,
                 price = Money(priceAmount, priceCurrency),
                 weight = Weight(weightGrams),
-                sustainabilityRating = sustainabilityRating,
+                sustainabilityRating = SustainabilityRatingCalculator.calculate(category, carbonFootprint),
                 carbonFootprint = carbonFootprint
             )
         }

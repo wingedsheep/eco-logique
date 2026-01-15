@@ -37,7 +37,7 @@ tasks.jacocoTestReport {
 }
 
 dependencies {
+    // API modules typically don't have tests. Modules that need test
+    // dependencies should declare them explicitly in their build files.
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
-    testImplementation("org.assertj:assertj-core:3.24.2")
 }

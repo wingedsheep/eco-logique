@@ -1,9 +1,9 @@
-package com.wingedsheep.ecologique.products.impl.domain
+package com.wingedsheep.ecologique.products.api
 
 import java.util.UUID
 
 @JvmInline
-internal value class ProductId(val value: UUID) {
+value class ProductId(val value: UUID) {
     companion object {
         fun generate(): ProductId = ProductId(UUID.randomUUID())
     }

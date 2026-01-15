@@ -15,17 +15,17 @@ import io.restassured.specification.RequestSpecification
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 
 class ModuleUserSteps {
 
     @LocalServerPort
     private var port: Int = 0
 
-    @MockBean
+    @MockitoBean
     @Autowired
     private lateinit var jwtDecoder: JwtDecoder
 

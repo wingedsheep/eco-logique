@@ -12,6 +12,7 @@ import com.wingedsheep.ecologique.orders.impl.domain.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
 import com.wingedsheep.ecologique.orders.impl.domain.OrderStatus
+import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -120,7 +121,7 @@ internal class OrderServiceImpl(
     private fun validateProductsExist(request: OrderCreateRequest): OrderError? {
         for (line in request.lines) {
             val productId = try {
-                UUID.fromString(line.productId)
+                ProductId(UUID.fromString(line.productId))
             } catch (e: IllegalArgumentException) {
                 return OrderError.ProductNotFound(line.productId)
             }

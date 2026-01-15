@@ -2,11 +2,11 @@ package com.wingedsheep.ecologique.products.impl.infrastructure.persistence
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.money.Money
+import com.wingedsheep.ecologique.products.api.ProductCategory
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.products.api.SustainabilityRating
 import com.wingedsheep.ecologique.products.impl.domain.CarbonFootprint
 import com.wingedsheep.ecologique.products.impl.domain.Product
-import com.wingedsheep.ecologique.products.impl.domain.ProductCategory
-import com.wingedsheep.ecologique.products.impl.domain.ProductId
-import com.wingedsheep.ecologique.products.impl.domain.SustainabilityRating
 import com.wingedsheep.ecologique.products.impl.domain.Weight
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -21,7 +21,6 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.math.BigDecimal
-import java.util.UUID
 
 @DataJdbcTest
 @Testcontainers
@@ -89,7 +88,7 @@ class ProductRepositoryImplIntegrationTest {
     @Test
     fun `findById should return null when not exists`() {
         // Given & When
-        val found = productRepository.findById(ProductId(UUID.fromString("00000000-0000-0000-0000-000000000000")))
+        val found = productRepository.findById(ProductId.generate())
 
         // Then
         assertThat(found).isNull()

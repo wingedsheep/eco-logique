@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.springdoc.openapi)
 
     implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
     runtimeOnly(libs.postgresql)
 
     implementation(libs.jackson.module.kotlin)
