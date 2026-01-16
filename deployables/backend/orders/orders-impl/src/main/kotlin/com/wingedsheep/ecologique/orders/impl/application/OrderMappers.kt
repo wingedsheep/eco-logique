@@ -6,13 +6,13 @@ import com.wingedsheep.ecologique.orders.impl.domain.Order
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 
 internal fun Order.toDto(): OrderDto = OrderDto(
-    id = id.value,
+    id = id,
     userId = userId,
-    status = status.name,
+    status = status,
     lines = lines.map { it.toDto() },
     subtotal = totals.subtotal,
     grandTotal = totals.grandTotal,
-    currency = totals.currency.name,
+    currency = totals.currency,
     createdAt = createdAt
 )
 

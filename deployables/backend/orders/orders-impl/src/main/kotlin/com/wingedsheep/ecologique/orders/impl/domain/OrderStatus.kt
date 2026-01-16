@@ -1,26 +1,16 @@
 package com.wingedsheep.ecologique.orders.impl.domain
 
-internal enum class OrderStatus {
-    CREATED,
-    RESERVED,
-    PAYMENT_PENDING,
-    PAID,
-    CANCELLED,
-    SHIPPED,
-    DELIVERED;
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 
-    fun canTransitionTo(target: OrderStatus): Boolean = when (this) {
-        CREATED -> target in listOf(RESERVED, CANCELLED)
-        RESERVED -> target in listOf(PAYMENT_PENDING, CANCELLED)
-        PAYMENT_PENDING -> target in listOf(PAID, CANCELLED)
-        PAID -> target in listOf(SHIPPED, CANCELLED)
-        SHIPPED -> target == DELIVERED
-        CANCELLED -> false
-        DELIVERED -> false
-    }
-
-    companion object {
-        fun fromString(value: String): OrderStatus? =
-            entries.find { it.name.equals(value, ignoreCase = true) }
-    }
+internal fun OrderStatus.canTransitionTo(target: OrderStatus): Boolean = when (this) {
+    OrderStatus.CREATED -> target in listOf(OrderStatus.RESERVED, OrderStatus.CANCELLED)
+    OrderStatus.RESERVED -> target in listOf(OrderStatus.PAYMENT_PENDING, OrderStatus.CANCELLED)
+    OrderStatus.PAYMENT_PENDING -> target in listOf(OrderStatus.PAID, OrderStatus.CANCELLED)
+    OrderStatus.PAID -> target in listOf(OrderStatus.SHIPPED, OrderStatus.CANCELLED)
+    OrderStatus.SHIPPED -> target == OrderStatus.DELIVERED
+    OrderStatus.CANCELLED -> false
+    OrderStatus.DELIVERED -> false
 }
+
+internal fun orderStatusFromString(value: String): OrderStatus? =
+    OrderStatus.entries.find { it.name.equals(value, ignoreCase = true) }

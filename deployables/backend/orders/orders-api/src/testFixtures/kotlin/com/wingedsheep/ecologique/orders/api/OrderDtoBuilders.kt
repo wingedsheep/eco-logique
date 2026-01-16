@@ -1,21 +1,23 @@
 package com.wingedsheep.ecologique.orders.api
 
+import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineDto
+import com.wingedsheep.ecologique.products.api.ProductId
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
 
 fun buildOrderDto(
-    id: UUID = UUID.randomUUID(),
+    id: OrderId = OrderId.generate(),
     userId: String = "USER-TEST-001",
-    status: String = "CREATED",
+    status: OrderStatus = OrderStatus.CREATED,
     lines: List<OrderLineDto> = listOf(buildOrderLineDto()),
     subtotal: BigDecimal = BigDecimal("29.99"),
     grandTotal: BigDecimal = BigDecimal("29.99"),
-    currency: String = "EUR",
+    currency: Currency = Currency.EUR,
     createdAt: Instant = Instant.now()
 ): OrderDto = OrderDto(
     id = id,
@@ -29,7 +31,7 @@ fun buildOrderDto(
 )
 
 fun buildOrderLineDto(
-    productId: String = "PROD-TEST-001",
+    productId: ProductId = ProductId(UUID.randomUUID()),
     productName: String = "Test Product",
     unitPrice: BigDecimal = BigDecimal("29.99"),
     quantity: Int = 1,
@@ -44,14 +46,14 @@ fun buildOrderLineDto(
 
 fun buildOrderCreateRequest(
     lines: List<OrderLineCreateRequest> = listOf(buildOrderLineCreateRequest()),
-    currency: String = "EUR"
+    currency: Currency = Currency.EUR
 ): OrderCreateRequest = OrderCreateRequest(
     lines = lines,
     currency = currency
 )
 
 fun buildOrderLineCreateRequest(
-    productId: String = "PROD-TEST-001",
+    productId: ProductId = ProductId(UUID.randomUUID()),
     productName: String = "Test Product",
     unitPrice: BigDecimal = BigDecimal("29.99"),
     quantity: Int = 1

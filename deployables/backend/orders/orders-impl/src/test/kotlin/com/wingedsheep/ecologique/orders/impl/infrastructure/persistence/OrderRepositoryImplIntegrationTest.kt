@@ -1,18 +1,18 @@
 package com.wingedsheep.ecologique.orders.impl.infrastructure.persistence
 
 import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.Order
-import com.wingedsheep.ecologique.orders.impl.domain.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
-import com.wingedsheep.ecologique.orders.impl.domain.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.TotalsSnapshot
+import com.wingedsheep.ecologique.products.api.ProductId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
-import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
@@ -137,7 +137,7 @@ class OrderRepositoryImplIntegrationTest {
         status = OrderStatus.CREATED,
         lines = listOf(
             OrderLine.create(
-                productId = "PROD-001",
+                productId = ProductId(UUID.randomUUID()),
                 productName = "Test Product",
                 unitPrice = BigDecimal("29.99"),
                 quantity = 1

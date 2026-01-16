@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.orders.impl.domain
 
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -36,10 +37,10 @@ class OrderStatusTest {
     }
 
     @Test
-    fun `fromString should return matching status`() {
+    fun `orderStatusFromString should return matching status`() {
         // Given & When & Then
-        assertThat(OrderStatus.fromString("CREATED")).isEqualTo(OrderStatus.CREATED)
-        assertThat(OrderStatus.fromString("created")).isEqualTo(OrderStatus.CREATED)
-        assertThat(OrderStatus.fromString("INVALID")).isNull()
+        assertThat(orderStatusFromString("CREATED")).isEqualTo(OrderStatus.CREATED)
+        assertThat(orderStatusFromString("created")).isEqualTo(OrderStatus.CREATED)
+        assertThat(orderStatusFromString("INVALID")).isNull()
     }
 }

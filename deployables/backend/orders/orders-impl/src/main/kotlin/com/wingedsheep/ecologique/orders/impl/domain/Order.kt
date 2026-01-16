@@ -1,6 +1,8 @@
 package com.wingedsheep.ecologique.orders.impl.domain
 
 import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import java.time.Instant
 
 internal data class Order(

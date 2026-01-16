@@ -1,7 +1,7 @@
 package com.wingedsheep.ecologique.orders.impl.infrastructure.persistence
 
+import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.Order
-import com.wingedsheep.ecologique.orders.impl.domain.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
 import org.springframework.data.jdbc.repository.query.Modifying
 import org.springframework.data.jdbc.repository.query.Query

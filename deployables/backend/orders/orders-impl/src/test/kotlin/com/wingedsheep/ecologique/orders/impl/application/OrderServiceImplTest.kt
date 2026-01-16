@@ -2,15 +2,15 @@ package com.wingedsheep.ecologique.orders.impl.application
 
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.buildOrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.buildOrderLineCreateRequest
 import com.wingedsheep.ecologique.orders.api.error.OrderError
 import com.wingedsheep.ecologique.orders.api.event.OrderCreated
 import com.wingedsheep.ecologique.orders.impl.domain.Order
-import com.wingedsheep.ecologique.orders.impl.domain.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
-import com.wingedsheep.ecologique.orders.impl.domain.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.TotalsSnapshot
 import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
@@ -53,7 +53,7 @@ class OrderServiceImplTest {
     fun `createOrder should return OrderDto when valid request`() {
         // Given
         val request = buildOrderCreateRequest(
-            lines = listOf(buildOrderLineCreateRequest(productId = testProductUuid.toString()))
+            lines = listOf(buildOrderLineCreateRequest(productId = testProductId))
         )
         whenever(productService.getProduct(testProductId)).thenReturn(Result.ok(buildProductDto(id = testProductId)))
         whenever(orderRepository.save(any())).thenAnswer { it.arguments[0] as Order }
@@ -66,7 +66,7 @@ class OrderServiceImplTest {
         result.fold(
             onSuccess = { dto ->
                 assertThat(dto.userId).isEqualTo("USER-001")
-                assertThat(dto.status).isEqualTo("CREATED")
+                assertThat(dto.status).isEqualTo(OrderStatus.CREATED)
             },
             onFailure = { }
         )
@@ -76,30 +76,12 @@ class OrderServiceImplTest {
     }
 
     @Test
-    fun `createOrder should return ValidationFailed error for invalid currency`() {
-        // Given
-        val request = buildOrderCreateRequest(currency = "INVALID")
-
-        // When
-        val result = orderService.createOrder("USER-001", request)
-
-        // Then
-        assertThat(result.isErr).isTrue()
-        result.fold(
-            onSuccess = { },
-            onFailure = { error ->
-                assertThat(error).isInstanceOf(OrderError.ValidationFailed::class.java)
-            }
-        )
-    }
-
-    @Test
     fun `createOrder should return ProductNotFound error when product does not exist`() {
         // Given
         val nonExistentUuid = UUID.randomUUID()
         val nonExistentProductId = ProductId(nonExistentUuid)
         val request = buildOrderCreateRequest(
-            lines = listOf(buildOrderLineCreateRequest(productId = nonExistentUuid.toString()))
+            lines = listOf(buildOrderLineCreateRequest(productId = nonExistentProductId))
         )
         whenever(productService.getProduct(nonExistentProductId))
             .thenReturn(Result.err(ProductError.NotFound(nonExistentProductId)))
@@ -113,7 +95,7 @@ class OrderServiceImplTest {
             onSuccess = { },
             onFailure = { error ->
                 assertThat(error).isInstanceOf(OrderError.ProductNotFound::class.java)
-                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(nonExistentProductId.value.toString())
+                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(nonExistentProductId)
             }
         )
     }
@@ -127,8 +109,8 @@ class OrderServiceImplTest {
         val productId2 = ProductId(productUuid2)
         val request = buildOrderCreateRequest(
             lines = listOf(
-                buildOrderLineCreateRequest(productId = productUuid1.toString()),
-                buildOrderLineCreateRequest(productId = productUuid2.toString())
+                buildOrderLineCreateRequest(productId = productId1),
+                buildOrderLineCreateRequest(productId = productId2)
             )
         )
         whenever(productService.getProduct(productId1)).thenReturn(Result.ok(buildProductDto(id = productId1)))
@@ -143,7 +125,7 @@ class OrderServiceImplTest {
             onSuccess = { },
             onFailure = { error ->
                 assertThat(error).isInstanceOf(OrderError.ProductNotFound::class.java)
-                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(productUuid2.toString())
+                assertThat((error as OrderError.ProductNotFound).productId).isEqualTo(productId2)
             }
         )
     }
@@ -157,13 +139,13 @@ class OrderServiceImplTest {
         whenever(orderRepository.findById(orderId)).thenReturn(order)
 
         // When
-        val result = orderService.getOrder(orderUuid, "USER-001")
+        val result = orderService.getOrder(orderId, "USER-001")
 
         // Then
         assertThat(result.isOk).isTrue()
         result.fold(
             onSuccess = { dto ->
-                assertThat(dto.id).isEqualTo(orderUuid)
+                assertThat(dto.id).isEqualTo(orderId)
             },
             onFailure = { }
         )
@@ -173,10 +155,11 @@ class OrderServiceImplTest {
     fun `getOrder should return NotFound error when order does not exist`() {
         // Given
         val orderUuid = UUID.fromString("00000000-0000-0000-0000-000000000999")
-        whenever(orderRepository.findById(OrderId(orderUuid))).thenReturn(null)
+        val orderId = OrderId(orderUuid)
+        whenever(orderRepository.findById(orderId)).thenReturn(null)
 
         // When
-        val result = orderService.getOrder(orderUuid, "USER-001")
+        val result = orderService.getOrder(orderId, "USER-001")
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -197,7 +180,7 @@ class OrderServiceImplTest {
         whenever(orderRepository.findById(orderId)).thenReturn(order)
 
         // When
-        val result = orderService.getOrder(orderUuid, "USER-002")
+        val result = orderService.getOrder(orderId, "USER-002")
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -241,13 +224,13 @@ class OrderServiceImplTest {
         whenever(orderRepository.save(any())).thenAnswer { it.arguments[0] as Order }
 
         // When
-        val result = orderService.updateStatus(orderUuid, "RESERVED")
+        val result = orderService.updateStatus(orderId, OrderStatus.RESERVED)
 
         // Then
         assertThat(result.isOk).isTrue()
         result.fold(
             onSuccess = { dto ->
-                assertThat(dto.status).isEqualTo("RESERVED")
+                assertThat(dto.status).isEqualTo(OrderStatus.RESERVED)
             },
             onFailure = { }
         )
@@ -262,7 +245,7 @@ class OrderServiceImplTest {
         whenever(orderRepository.findById(orderId)).thenReturn(order)
 
         // When
-        val result = orderService.updateStatus(orderUuid, "CREATED")
+        val result = orderService.updateStatus(orderId, OrderStatus.CREATED)
 
         // Then
         assertThat(result.isErr).isTrue()
@@ -284,7 +267,7 @@ class OrderServiceImplTest {
         status = status,
         lines = listOf(
             OrderLine.create(
-                productId = "PROD-001",
+                productId = ProductId(UUID.randomUUID()),
                 productName = "Test Product",
                 unitPrice = BigDecimal("29.99"),
                 quantity = 1

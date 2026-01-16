@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.orders.impl.infrastructure.web
 
+import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderService
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
@@ -49,7 +50,7 @@ class OrderControllerV1(
         @AuthenticationPrincipal jwt: Jwt,
         @PathVariable id: UUID
     ): ResponseEntity<OrderDto> {
-        return orderService.getOrder(id, jwt.subject).fold(
+        return orderService.getOrder(OrderId(id), jwt.subject).fold(
             onSuccess = { order ->
                 ResponseEntity.ok(order)
             },

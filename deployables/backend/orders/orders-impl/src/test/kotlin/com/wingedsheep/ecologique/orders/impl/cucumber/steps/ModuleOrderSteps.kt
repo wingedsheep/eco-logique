@@ -1,7 +1,10 @@
 package com.wingedsheep.ecologique.orders.impl.cucumber.steps
 
+import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderService
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineCreateRequest
 import com.wingedsheep.ecologique.orders.api.error.OrderError
@@ -115,25 +118,26 @@ class ModuleOrderSteps {
     @When("I create an order with the following items:")
     fun createOrderWithItems(dataTable: DataTable) {
         val lines = dataTable.asMaps().map { row ->
-            OrderLineCreateRequest(
-                productId = row["productId"]!!,
-                productName = row["productName"]!!,
-                unitPrice = BigDecimal(row["unitPrice"]!!),
-                quantity = row["quantity"]!!.toInt()
+            mapOf(
+                "productId" to row["productId"],
+                "productName" to row["productName"],
+                "unitPrice" to row["unitPrice"],
+                "quantity" to row["quantity"]?.toInt()
             )
         }
 
-        val request = OrderCreateRequest(
-            lines = lines,
-            currency = "EUR"
+        val request = mapOf(
+            "lines" to lines,
+            "currency" to "EUR"
         )
 
         response = authenticatedRequest
             .body(request)
             .post()
 
-        if (response!!.statusCode == 201) {
-            createdOrderId = UUID.fromString(response!!.jsonPath().getString("id"))
+        val resp = response
+        if (resp != null && resp.statusCode == 201) {
+            createdOrderId = UUID.fromString(resp.jsonPath().getString("id"))
         }
     }
 
@@ -171,9 +175,10 @@ class ModuleOrderSteps {
 
     @When("the order status is updated to {string}")
     fun updateOrderStatus(newStatus: String) {
-        lastServiceResult = orderService.updateStatus(createdOrderId!!, newStatus)
+        val orderId = createdOrderId ?: error("No order created yet")
+        lastServiceResult = orderService.updateStatus(OrderId(orderId), OrderStatus.valueOf(newStatus))
         lastServiceResult?.onSuccess {
-            response = authenticatedRequest.get("/${createdOrderId.toString()}")
+            response = authenticatedRequest.get("/$orderId")
         }
     }
 
@@ -260,38 +265,39 @@ class ModuleOrderSteps {
 
     private fun createOrderForUser(userId: String) {
         // Use the same fixed UUID that's set up in the feature file's product catalog
-        val testProductId = UUID.fromString("00000000-0000-0000-0000-000000000099")
+        val testProductId = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000099"))
         // Note: productService mock is already set up by the @Given step for products
 
         val request = OrderCreateRequest(
             lines = listOf(
                 OrderLineCreateRequest(
-                    productId = testProductId.toString(),
+                    productId = testProductId,
                     productName = "Test Product",
                     unitPrice = BigDecimal("19.99"),
                     quantity = 1
                 )
             ),
-            currency = "EUR"
+            currency = Currency.EUR
         )
 
         orderService.createOrder(userId, request).fold(
-            onSuccess = { order -> createdOrderId = order.id },
+            onSuccess = { order -> createdOrderId = order.id.value },
             onFailure = { }
         )
     }
 
     private fun transitionToStatus(targetStatus: String) {
+        val orderId = createdOrderId ?: error("No order created yet")
         val statusPath = when (targetStatus) {
-            "RESERVED" -> listOf("RESERVED")
-            "PAYMENT_PENDING" -> listOf("RESERVED", "PAYMENT_PENDING")
-            "PAID" -> listOf("RESERVED", "PAYMENT_PENDING", "PAID")
-            "SHIPPED" -> listOf("RESERVED", "PAYMENT_PENDING", "PAID", "SHIPPED")
-            "DELIVERED" -> listOf("RESERVED", "PAYMENT_PENDING", "PAID", "SHIPPED", "DELIVERED")
+            "RESERVED" -> listOf(OrderStatus.RESERVED)
+            "PAYMENT_PENDING" -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING)
+            "PAID" -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID)
+            "SHIPPED" -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID, OrderStatus.SHIPPED)
+            "DELIVERED" -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED)
             else -> emptyList()
         }
         statusPath.forEach { status ->
-            orderService.updateStatus(createdOrderId!!, status)
+            orderService.updateStatus(OrderId(orderId), status)
         }
     }
 }

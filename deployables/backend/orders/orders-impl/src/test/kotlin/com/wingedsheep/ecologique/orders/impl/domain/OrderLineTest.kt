@@ -1,9 +1,11 @@
 package com.wingedsheep.ecologique.orders.impl.domain
 
+import com.wingedsheep.ecologique.products.api.ProductId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.util.UUID
 
 class OrderLineTest {
 
@@ -11,7 +13,7 @@ class OrderLineTest {
     fun `should create order line with calculated total`() {
         // Given & When
         val line = OrderLine.create(
-            productId = "PROD-001",
+            productId = ProductId(UUID.randomUUID()),
             productName = "Test Product",
             unitPrice = BigDecimal("10.00"),
             quantity = 3
@@ -22,26 +24,11 @@ class OrderLineTest {
     }
 
     @Test
-    fun `should throw exception when product ID is blank`() {
-        // Given & When & Then
-        assertThatThrownBy {
-            OrderLine.create(
-                productId = "",
-                productName = "Test",
-                unitPrice = BigDecimal("10.00"),
-                quantity = 1
-            )
-        }
-            .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage("Product ID cannot be blank")
-    }
-
-    @Test
     fun `should throw exception when unit price is zero`() {
         // Given & When & Then
         assertThatThrownBy {
             OrderLine.create(
-                productId = "PROD-001",
+                productId = ProductId(UUID.randomUUID()),
                 productName = "Test",
                 unitPrice = BigDecimal.ZERO,
                 quantity = 1
@@ -56,7 +43,7 @@ class OrderLineTest {
         // Given & When & Then
         assertThatThrownBy {
             OrderLine.create(
-                productId = "PROD-001",
+                productId = ProductId(UUID.randomUUID()),
                 productName = "Test",
                 unitPrice = BigDecimal("10.00"),
                 quantity = 0

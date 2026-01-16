@@ -1,24 +1,22 @@
 package com.wingedsheep.ecologique.orders.impl.application
 
-import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderService
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.error.OrderError
 import com.wingedsheep.ecologique.orders.api.event.OrderCreated
 import com.wingedsheep.ecologique.orders.impl.domain.Order
-import com.wingedsheep.ecologique.orders.impl.domain.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
-import com.wingedsheep.ecologique.orders.impl.domain.OrderStatus
-import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.orders.impl.domain.canTransitionTo
 import com.wingedsheep.ecologique.products.api.ProductService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.util.UUID
 
 @Service
 internal class OrderServiceImpl(
@@ -29,12 +27,6 @@ internal class OrderServiceImpl(
 
     @Transactional
     override fun createOrder(userId: String, request: OrderCreateRequest): Result<OrderDto, OrderError> {
-        val currency = try {
-            Currency.valueOf(request.currency)
-        } catch (e: IllegalArgumentException) {
-            return Result.err(OrderError.ValidationFailed("Invalid currency: ${request.currency}"))
-        }
-
         val productValidationError = validateProductsExist(request)
         if (productValidationError != null) {
             return Result.err(productValidationError)
@@ -57,7 +49,7 @@ internal class OrderServiceImpl(
             Order.create(
                 userId = userId,
                 lines = lines,
-                currency = currency
+                currency = request.currency
             )
         } catch (e: IllegalArgumentException) {
             return Result.err(OrderError.ValidationFailed(e.message ?: "Validation failed"))
@@ -67,10 +59,10 @@ internal class OrderServiceImpl(
 
         eventPublisher.publishEvent(
             OrderCreated(
-                orderId = savedOrder.id.value.toString(),
+                orderId = savedOrder.id,
                 userId = savedOrder.userId,
                 grandTotal = savedOrder.totals.grandTotal,
-                currency = savedOrder.totals.currency.name,
+                currency = savedOrder.totals.currency,
                 timestamp = Instant.now()
             )
         )
@@ -79,10 +71,8 @@ internal class OrderServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getOrder(orderId: UUID, userId: String): Result<OrderDto, OrderError> {
-        val id = OrderId(orderId)
-
-        val order = orderRepository.findById(id)
+    override fun getOrder(orderId: OrderId, userId: String): Result<OrderDto, OrderError> {
+        val order = orderRepository.findById(orderId)
             ?: return Result.err(OrderError.NotFound(orderId))
 
         if (!order.isOwnedBy(userId)) {
@@ -99,19 +89,14 @@ internal class OrderServiceImpl(
     }
 
     @Transactional
-    override fun updateStatus(orderId: UUID, newStatus: String): Result<OrderDto, OrderError> {
-        val id = OrderId(orderId)
-
-        val targetStatus = OrderStatus.fromString(newStatus)
-            ?: return Result.err(OrderError.ValidationFailed("Invalid status: $newStatus"))
-
-        val order = orderRepository.findById(id)
+    override fun updateStatus(orderId: OrderId, newStatus: OrderStatus): Result<OrderDto, OrderError> {
+        val order = orderRepository.findById(orderId)
             ?: return Result.err(OrderError.NotFound(orderId))
 
         val updatedOrder = try {
-            order.transitionTo(targetStatus)
+            order.transitionTo(newStatus)
         } catch (e: IllegalArgumentException) {
-            return Result.err(OrderError.InvalidStatus(order.status.name, newStatus))
+            return Result.err(OrderError.InvalidStatus(order.status, newStatus))
         }
 
         val savedOrder = orderRepository.save(updatedOrder)
@@ -120,12 +105,7 @@ internal class OrderServiceImpl(
 
     private fun validateProductsExist(request: OrderCreateRequest): OrderError? {
         for (line in request.lines) {
-            val productId = try {
-                ProductId(UUID.fromString(line.productId))
-            } catch (e: IllegalArgumentException) {
-                return OrderError.ProductNotFound(line.productId)
-            }
-            val productResult = productService.getProduct(productId)
+            val productResult = productService.getProduct(line.productId)
             if (productResult.isErr) {
                 return OrderError.ProductNotFound(line.productId)
             }

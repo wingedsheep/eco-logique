@@ -1,10 +1,14 @@
 package com.wingedsheep.ecologique.orders.impl.domain
 
 import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderStatus
+import com.wingedsheep.ecologique.products.api.ProductId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.util.UUID
 
 class OrderTest {
 
@@ -28,8 +32,8 @@ class OrderTest {
     fun `should compute totals from order lines`() {
         // Given
         val lines = listOf(
-            OrderLine.create("PROD-001", "Product 1", BigDecimal("10.00"), 2),
-            OrderLine.create("PROD-002", "Product 2", BigDecimal("15.50"), 3)
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 1", BigDecimal("10.00"), 2),
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 2", BigDecimal("15.50"), 3)
         )
 
         // When
@@ -109,9 +113,10 @@ class OrderTest {
     @Test
     fun `order snapshot should preserve totals even if product price changes later`() {
         // Given - Original product price is 25.00
+        val productId = ProductId(UUID.randomUUID())
         val originalPrice = BigDecimal("25.00")
         val orderLine = OrderLine.create(
-            productId = "PROD-001",
+            productId = productId,
             productName = "Product A",
             unitPrice = originalPrice,
             quantity = 2
@@ -126,7 +131,7 @@ class OrderTest {
         // When - Product price changes to 35.00 (simulated by creating new order line)
         val newPrice = BigDecimal("35.00")
         val newOrderLine = OrderLine.create(
-            productId = "PROD-001",
+            productId = productId,
             productName = "Product A",
             unitPrice = newPrice,
             quantity = 2
@@ -155,7 +160,7 @@ class OrderTest {
     fun `order line should store product name snapshot at purchase time`() {
         // Given
         val orderLine = OrderLine.create(
-            productId = "PROD-001",
+            productId = ProductId(UUID.randomUUID()),
             productName = "Original Product Name",
             unitPrice = BigDecimal("10.00"),
             quantity = 1
@@ -188,7 +193,7 @@ class OrderTest {
     )
 
     private fun buildOrderLine(): OrderLine = OrderLine.create(
-        productId = "PROD-001",
+        productId = ProductId(UUID.randomUUID()),
         productName = "Test Product",
         unitPrice = BigDecimal("29.99"),
         quantity = 1

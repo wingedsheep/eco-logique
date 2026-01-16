@@ -1,10 +1,12 @@
 package com.wingedsheep.ecologique.orders.impl.domain
 
 import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.products.api.ProductId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.util.UUID
 
 class TotalsSnapshotTest {
 
@@ -12,8 +14,8 @@ class TotalsSnapshotTest {
     fun `should compute subtotal from order lines`() {
         // Given
         val lines = listOf(
-            OrderLine.create("PROD-001", "Product 1", BigDecimal("10.00"), 2),
-            OrderLine.create("PROD-002", "Product 2", BigDecimal("15.50"), 3)
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 1", BigDecimal("10.00"), 2),
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 2", BigDecimal("15.50"), 3)
         )
 
         // When
@@ -27,7 +29,7 @@ class TotalsSnapshotTest {
     fun `should set grandTotal equal to subtotal for demo pricing`() {
         // Given
         val lines = listOf(
-            OrderLine.create("PROD-001", "Product 1", BigDecimal("25.00"), 4)
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 1", BigDecimal("25.00"), 4)
         )
 
         // When
@@ -42,7 +44,7 @@ class TotalsSnapshotTest {
     fun `should preserve currency`() {
         // Given
         val lines = listOf(
-            OrderLine.create("PROD-001", "Product 1", BigDecimal("10.00"), 1)
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 1", BigDecimal("10.00"), 1)
         )
 
         // When
@@ -55,15 +57,16 @@ class TotalsSnapshotTest {
     @Test
     fun `snapshot should preserve totals independently of original lines`() {
         // Given - create lines and compute snapshot
+        val productId = ProductId(UUID.randomUUID())
         val lines = listOf(
-            OrderLine.create("PROD-001", "Product 1", BigDecimal("20.00"), 2)
+            OrderLine.create(productId, "Product 1", BigDecimal("20.00"), 2)
         )
         val snapshot = TotalsSnapshot.fromOrderLines(lines, Currency.EUR)
         val originalSubtotal = snapshot.subtotal
 
         // When - create new lines with different prices (simulating price change)
         val newLinesWithDifferentPrices = listOf(
-            OrderLine.create("PROD-001", "Product 1", BigDecimal("30.00"), 2)
+            OrderLine.create(productId, "Product 1", BigDecimal("30.00"), 2)
         )
         val newSnapshot = TotalsSnapshot.fromOrderLines(newLinesWithDifferentPrices, Currency.EUR)
 

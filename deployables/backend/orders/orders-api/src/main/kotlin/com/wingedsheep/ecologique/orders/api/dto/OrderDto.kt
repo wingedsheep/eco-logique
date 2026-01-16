@@ -1,22 +1,25 @@
 package com.wingedsheep.ecologique.orders.api.dto
 
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderStatus
+import com.wingedsheep.ecologique.products.api.ProductId
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.UUID
 
 data class OrderDto(
-    val id: UUID,
+    val id: OrderId,
     val userId: String,
-    val status: String,
+    val status: OrderStatus,
     val lines: List<OrderLineDto>,
     val subtotal: BigDecimal,
     val grandTotal: BigDecimal,
-    val currency: String,
+    val currency: Currency,
     val createdAt: Instant
 )
 
 data class OrderLineDto(
-    val productId: String,
+    val productId: ProductId,
     val productName: String,
     val unitPrice: BigDecimal,
     val quantity: Int,

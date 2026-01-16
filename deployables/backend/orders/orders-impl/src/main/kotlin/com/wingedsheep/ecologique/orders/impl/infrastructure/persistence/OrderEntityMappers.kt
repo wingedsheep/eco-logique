@@ -1,11 +1,12 @@
 package com.wingedsheep.ecologique.orders.impl.infrastructure.persistence
 
 import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.Order
-import com.wingedsheep.ecologique.orders.impl.domain.OrderId
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
-import com.wingedsheep.ecologique.orders.impl.domain.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.TotalsSnapshot
+import com.wingedsheep.ecologique.products.api.ProductId
 import java.util.UUID
 
 internal fun OrderEntity.toOrder(lines: List<OrderLineEntity>): Order = Order(
@@ -22,7 +23,7 @@ internal fun OrderEntity.toOrder(lines: List<OrderLineEntity>): Order = Order(
 )
 
 internal fun OrderLineEntity.toOrderLine(): OrderLine = OrderLine(
-    productId = productId,
+    productId = ProductId(UUID.fromString(productId)),
     productName = productName,
     unitPrice = unitPrice,
     quantity = quantity,
@@ -42,7 +43,7 @@ internal fun Order.toEntity(): OrderEntity = OrderEntity(
 internal fun OrderLine.toEntity(orderId: UUID): OrderLineEntity = OrderLineEntity(
     id = null,
     orderId = orderId,
-    productId = productId,
+    productId = productId.value.toString(),
     productName = productName,
     unitPrice = unitPrice,
     quantity = quantity,
