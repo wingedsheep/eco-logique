@@ -8,13 +8,15 @@ import io.cucumber.java.Before
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.RestAssured
-import io.restassured.http.ContentType
-import io.restassured.response.Response
-import io.restassured.specification.RequestSpecification
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.returnResult
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
+import java.time.Duration
 
 class RegistrationSteps {
 
@@ -30,22 +32,22 @@ class RegistrationSteps {
     @Autowired
     private lateinit var mockEmailService: MockEmailService
 
-    private var response: Response? = null
+    private lateinit var client: WebTestClient
+    private val objectMapper = ObjectMapper()
+
+    private var response: TestResponse? = null
     private var currentEmail: String = ""
     private var verificationCode: String? = null
 
     @Before
     fun setupRegistration() {
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port")
+            .responseTimeout(Duration.ofSeconds(30))
+            .build()
         mockIdentityProvider.clearUsers()
         registrationService.clearPendingVerifications()
         mockEmailService.clearSentEmails()
-    }
-
-    private fun authRequest(): RequestSpecification {
-        return RestAssured.given()
-            .port(port)
-            .basePath("")
-            .contentType(ContentType.JSON)
     }
 
     // Given steps
@@ -54,9 +56,7 @@ class RegistrationSteps {
     fun registerWithEmailAndPassword(email: String, password: String) {
         currentEmail = email
         val request = RegistrationRequest(email = email, password = password)
-        response = authRequest()
-            .body(request)
-            .post("/api/v1/auth/register")
+        response = post("/api/v1/auth/register", request)
 
         // Store the verification code for later use
         val pending = registrationService.getPendingVerification(email)
@@ -68,9 +68,7 @@ class RegistrationSteps {
         val pending = registrationService.getPendingVerification(email)
         if (pending != null) {
             val request = VerifyEmailRequest(email = email, verificationCode = pending.verificationCode)
-            authRequest()
-                .body(request)
-                .post("/api/v1/auth/verify-email")
+            post("/api/v1/auth/verify-email", request)
         }
     }
 
@@ -81,9 +79,7 @@ class RegistrationSteps {
         currentEmail = email
         // Use raw JSON to allow testing edge cases where DTO validation would fail
         val rawJson = """{"email":"$email","password":"$password"}"""
-        response = authRequest()
-            .body(rawJson)
-            .post("/api/v1/auth/register")
+        response = postRaw("/api/v1/auth/register", rawJson)
 
         // Store the verification code for later use if registration succeeded
         if (response?.statusCode == 201) {
@@ -97,26 +93,20 @@ class RegistrationSteps {
         val pending = registrationService.getPendingVerification(currentEmail)
         val code = pending?.verificationCode ?: verificationCode ?: "000000"
         val request = VerifyEmailRequest(email = currentEmail, verificationCode = code)
-        response = authRequest()
-            .body(request)
-            .post("/api/v1/auth/verify-email")
+        response = post("/api/v1/auth/verify-email", request)
     }
 
     @When("I verify my email with an incorrect verification code for {string}")
     fun verifyWithIncorrectCode(email: String) {
         val request = VerifyEmailRequest(email = email, verificationCode = "000000")
-        response = authRequest()
-            .body(request)
-            .post("/api/v1/auth/verify-email")
+        response = post("/api/v1/auth/verify-email", request)
     }
 
     @When("I request to resend the verification email for {string}")
     fun requestResendVerification(email: String) {
         currentEmail = email
         mockEmailService.clearSentEmails()
-        response = authRequest()
-            .queryParam("email", email)
-            .post("/api/v1/auth/resend-verification")
+        response = postWithQueryParam("/api/v1/auth/resend-verification", "email", email)
     }
 
     // Then steps
@@ -124,7 +114,7 @@ class RegistrationSteps {
     @Then("the registration should be initiated successfully")
     fun registrationInitiatedSuccessfully() {
         assertThat(response?.statusCode).isEqualTo(201)
-        assertThat(response?.jsonPath()?.getString("email")).isEqualTo(currentEmail)
+        assertThat(response?.getString("email")).isEqualTo(currentEmail)
     }
 
     @Then("a verification email should be sent to {string}")
@@ -143,36 +133,94 @@ class RegistrationSteps {
     @Then("my account should be verified")
     fun accountVerified() {
         assertThat(response?.statusCode).isEqualTo(200)
-        assertThat(response?.jsonPath()?.getString("message")).contains("verified")
+        assertThat(response?.getString("message")).contains("verified")
     }
 
     @Then("the registration should fail with an invalid email error")
     fun registrationFailsWithInvalidEmail() {
         assertThat(response?.statusCode).isEqualTo(400)
-        assertThat(response?.jsonPath()?.getString("title")).isEqualTo("Invalid Email")
+        assertThat(response?.getString("title")).isEqualTo("Invalid Email")
     }
 
     @Then("the registration should fail with an invalid password error")
     fun registrationFailsWithInvalidPassword() {
         assertThat(response?.statusCode).isEqualTo(400)
-        assertThat(response?.jsonPath()?.getString("title")).isEqualTo("Invalid Password")
+        assertThat(response?.getString("title")).isEqualTo("Invalid Password")
     }
 
     @Then("the registration should fail with an email already exists error")
     fun registrationFailsWithEmailAlreadyExists() {
         assertThat(response?.statusCode).isEqualTo(409)
-        assertThat(response?.jsonPath()?.getString("title")).isEqualTo("Email Already Exists")
+        assertThat(response?.getString("title")).isEqualTo("Email Already Exists")
     }
 
     @Then("the verification should fail with an invalid code error")
     fun verificationFailsWithInvalidCode() {
         assertThat(response?.statusCode).isEqualTo(400)
-        assertThat(response?.jsonPath()?.getString("title")).isEqualTo("Invalid Verification Code")
+        assertThat(response?.getString("title")).isEqualTo("Invalid Verification Code")
     }
 
     @Then("the error should mention {string}")
     fun errorShouldMention(text: String) {
-        val detail = response?.jsonPath()?.getString("detail") ?: ""
+        val detail = response?.getString("detail") ?: ""
         assertThat(detail.lowercase()).contains(text.lowercase())
+    }
+
+    // Helper methods
+    private fun post(path: String, body: Any): TestResponse {
+        val result = client.post()
+            .uri(path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(body)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun postRaw(path: String, rawJson: String): TestResponse {
+        val result = client.post()
+            .uri(path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(rawJson)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun postWithQueryParam(path: String, paramName: String, paramValue: String): TestResponse {
+        val result = client.post()
+            .uri { builder -> builder.path(path).queryParam(paramName, paramValue).build() }
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    class TestResponse(
+        val statusCode: Int,
+        private val body: String,
+        private val objectMapper: ObjectMapper
+    ) {
+        fun getString(path: String): String? = getValueAtPath(path) as? String
+
+        private fun getValueAtPath(path: String): Any? {
+            if (body.isBlank()) return null
+            val parsed = parseBody() ?: return null
+            if (path.isEmpty()) return parsed
+            var current: Any? = parsed
+            for (segment in path.split(".")) {
+                current = when (current) {
+                    is Map<*, *> -> current[segment]
+                    is List<*> -> current.getOrNull(segment.toIntOrNull() ?: return null)
+                    else -> return null
+                }
+            }
+            return current
+        }
+
+        private fun parseBody(): Any? {
+            if (body.isBlank()) return null
+            return try { objectMapper.readValue<Any>(body) } catch (e: Exception) { null }
+        }
     }
 }

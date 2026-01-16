@@ -14,7 +14,7 @@ dependencies {
     implementation(project(":payment:payment-api"))
 
     implementation(libs.spring.context)
-    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.springdoc.openapi)
     implementation(libs.kotlin.reflect)
     implementation(libs.jackson.module.kotlin)
@@ -25,5 +25,5 @@ dependencies {
     testImplementation(libs.cucumber.junit.platform)
     testImplementation(libs.cucumber.spring)
     testImplementation(libs.junit.platform.suite)
-    testImplementation(libs.rest.assured)
+    testImplementation(libs.spring.boot.starter.webflux)
 }

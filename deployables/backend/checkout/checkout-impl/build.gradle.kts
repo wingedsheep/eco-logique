@@ -20,7 +20,7 @@ dependencies {
     implementation(project(":common:common-money"))
     implementation(project(":common:common-result"))
 
-    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
     implementation(libs.springdoc.openapi)

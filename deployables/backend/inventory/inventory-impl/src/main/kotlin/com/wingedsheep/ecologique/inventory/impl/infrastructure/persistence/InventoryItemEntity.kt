@@ -8,19 +8,19 @@ import java.util.UUID
 
 @Table("inventory_items", schema = "inventory")
 internal class InventoryItemEntity(
-    @Id private val id: Long?,
+    @Id private val id: Long = 0L,
     val productId: UUID,
     val warehouseId: UUID,
     val quantityOnHand: Int,
     val quantityReserved: Int
-) : Persistable<Long?> {
+) : Persistable<Long> {
 
     @Transient
     private var isNewEntity: Boolean = true
 
-    override fun getId(): Long? = id
+    override fun getId(): Long = id
 
-    override fun isNew(): Boolean = id == null || isNewEntity
+    override fun isNew(): Boolean = id == 0L || isNewEntity
 
     fun markAsExisting(): InventoryItemEntity {
         isNewEntity = false

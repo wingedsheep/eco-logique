@@ -16,7 +16,7 @@ dependencies {
     implementation(project(":common:common-country"))
     implementation(project(":common:common-result"))
 
-    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.data.jdbc)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
@@ -34,8 +34,8 @@ dependencies {
     testImplementation(libs.cucumber.junit.platform)
     testImplementation(libs.cucumber.spring)
     testImplementation(libs.junit.platform.suite)
-    testImplementation(libs.rest.assured)
-    testImplementation(libs.flyway.core)
+    testImplementation(libs.spring.boot.starter.webflux)
+    testImplementation(libs.spring.boot.starter.flyway)
     testImplementation(libs.flyway.database.postgresql)
     testRuntimeOnly(libs.postgresql)
 }

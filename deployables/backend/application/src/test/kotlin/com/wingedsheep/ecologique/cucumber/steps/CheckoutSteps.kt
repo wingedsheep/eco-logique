@@ -9,13 +9,13 @@ import com.wingedsheep.ecologique.cucumber.TestApiClient
 import com.wingedsheep.ecologique.inventory.impl.MockInventoryService
 import com.wingedsheep.ecologique.payment.api.dto.CardBrand
 import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.cucumber.TestResponse
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.Before
 import io.cucumber.java.en.And
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 import java.math.BigDecimal
 import java.util.UUID
@@ -25,7 +25,7 @@ class CheckoutSteps(
     private val api: TestApiClient,
     private val inventoryService: MockInventoryService
 ) {
-    private var checkoutResponse: Response? = null
+    private var checkoutResponse: TestResponse? = null
     private var checkoutError: String? = null
 
     @Before
@@ -51,7 +51,7 @@ class CheckoutSteps(
 
             val response = api.post("/api/v1/cart/items", request)
             assertThat(response.statusCode)
-                .withFailMessage("Failed to add item to cart: ${response.body.asString()}")
+                .withFailMessage("Failed to add item to cart: ${response.bodyAsString()}")
                 .isEqualTo(201)
         }
     }
@@ -91,7 +91,7 @@ class CheckoutSteps(
     fun checkoutShouldSucceed() {
         val response = requireResponse()
         assertThat(response.statusCode)
-            .withFailMessage("Expected 201 but got ${response.statusCode}: ${response.body.asString()}")
+            .withFailMessage("Expected 201 but got ${response.statusCode}: ${response.bodyAsString()}")
             .isEqualTo(201)
     }
 
@@ -101,44 +101,44 @@ class CheckoutSteps(
         assertThat(response.statusCode)
             .withFailMessage("Expected error status but got ${response.statusCode}")
             .isNotEqualTo(201)
-        assertThat(response.body.asString()).containsIgnoringCase(expectedError)
+        assertThat(response.bodyAsString()).containsIgnoringCase(expectedError)
     }
 
     @Then("an order should be created with status {string}")
     fun orderCreatedWithStatus(expectedStatus: String) {
         val response = requireResponse()
         if (response.statusCode == 201) {
-            val orderId = response.jsonPath().getString("orderId")
+            val orderId = response.getString("orderId")
             assertThat(orderId).isNotNull()
 
             // Verify order status via orders API
             val orderResponse = api.get("/api/v1/orders/$orderId")
             assertThat(orderResponse.statusCode).isEqualTo(200)
-            assertThat(orderResponse.jsonPath().getString("status")).isEqualTo(expectedStatus)
+            assertThat(orderResponse.getString("status")).isEqualTo(expectedStatus)
         }
     }
 
     @Then("an order should exist with status {string}")
     fun orderExistsWithStatus(expectedStatus: String) {
         // Try to get order ID from response or context
-        val orderId = checkoutResponse?.jsonPath()?.getString("orderId")
+        val orderId = checkoutResponse?.getString("orderId")
             ?: context.getLatestOrder()?.id
             ?: throw IllegalStateException("No order found")
 
         val orderResponse = api.get("/api/v1/orders/$orderId")
         assertThat(orderResponse.statusCode).isEqualTo(200)
-        assertThat(orderResponse.jsonPath().getString("status")).isEqualTo(expectedStatus)
+        assertThat(orderResponse.getString("status")).isEqualTo(expectedStatus)
     }
 
     @And("my cart should be empty")
     fun cartShouldBeEmpty() {
         val cartResponse = api.get("/api/v1/cart")
         assertThat(cartResponse.statusCode).isEqualTo(200)
-        val items = cartResponse.jsonPath().getList<Map<String, Any>>("items")
+        val items = cartResponse.getList<Map<String, Any>>("items")
         assertThat(items).isEmpty()
     }
 
-    private fun requireResponse(): Response =
+    private fun requireResponse(): TestResponse =
         checkoutResponse ?: throw IllegalStateException("No checkout response - did you call a checkout step?")
 
     private fun performCheckout(token: String, last4: String, brand: CardBrand) {
@@ -151,20 +151,20 @@ class CheckoutSteps(
         val response = api.post("/api/v1/checkout", request)
         checkoutResponse = response
 
-        val responseBody = response.body.asString()
+        val responseBody = response.bodyAsString()
 
         if (response.statusCode == 201) {
             // Value classes are serialized as plain strings, not objects
-            val orderId = response.jsonPath().getString("orderId")
+            val orderId = response.getString("orderId")
                 ?: throw IllegalStateException("Checkout succeeded but orderId is null. Response: $responseBody")
-            val orderStatus = response.jsonPath().getString("orderStatus")
-            val paymentId = response.jsonPath().getString("paymentId")
-            val paymentStatus = response.jsonPath().getString("paymentStatus")
+            val orderStatus = response.getString("orderStatus") ?: "UNKNOWN"
+            val paymentId = response.getString("paymentId")
+            val paymentStatus = response.getString("paymentStatus") ?: "UNKNOWN"
 
             // Fetch order details to get the total
             val orderResponse = api.get("/api/v1/orders/$orderId")
             val grandTotal = if (orderResponse.statusCode == 200) {
-                BigDecimal(orderResponse.jsonPath().getString("grandTotal"))
+                BigDecimal(orderResponse.getString("grandTotal")!!)
             } else {
                 BigDecimal.ZERO
             }
@@ -194,7 +194,7 @@ class CheckoutSteps(
             checkoutError = responseBody
 
             // For payment failures, the order was created - extract orderId from error response
-            val orderId = response.jsonPath().getString("orderId")
+            val orderId = response.getString("orderId")
             if (orderId != null) {
                 val orderResponse = api.get("/api/v1/orders/$orderId")
                 if (orderResponse.statusCode == 200) {
@@ -202,8 +202,8 @@ class CheckoutSteps(
                         id = orderId,
                         ref = OrderRef(
                             id = orderId,
-                            status = orderResponse.jsonPath().getString("status"),
-                            grandTotal = BigDecimal(orderResponse.jsonPath().getString("grandTotal"))
+                            status = orderResponse.getString("status") ?: "UNKNOWN",
+                            grandTotal = BigDecimal(orderResponse.getString("grandTotal")!!)
                         )
                     )
                 }

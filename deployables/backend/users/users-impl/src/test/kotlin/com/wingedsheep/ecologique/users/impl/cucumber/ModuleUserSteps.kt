@@ -10,17 +10,19 @@ import io.cucumber.java.Before
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.RestAssured
-import io.restassured.http.ContentType
-import io.restassured.response.Response
-import io.restassured.specification.RequestSpecification
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.MediaType
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.returnResult
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
+import java.time.Duration
 
 class ModuleUserSteps {
 
@@ -34,15 +36,20 @@ class ModuleUserSteps {
     @Autowired
     private lateinit var mockIdentityProvider: MockIdentityProvider
 
-    private var response: Response? = null
+    private lateinit var client: WebTestClient
+    private val objectMapper = ObjectMapper()
+
+    private var response: TestResponse? = null
     private var currentSubject: String = ""
     private var currentUserId: UserId? = null
-    private lateinit var authenticatedRequest: RequestSpecification
+    private var authToken: String? = null
 
     @Before
     fun setup() {
-        RestAssured.port = port
-        RestAssured.basePath = "/api/v1/users"
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port/api/v1/users")
+            .responseTimeout(Duration.ofSeconds(30))
+            .build()
         mockIdentityProvider.clearUsers()
     }
 
@@ -72,9 +79,7 @@ class ModuleUserSteps {
             password = "TestPassword123!"
         )
 
-        authenticatedRequest = RestAssured.given()
-            .header("Authorization", "Bearer $tokenValue")
-            .contentType(ContentType.JSON)
+        authToken = tokenValue
     }
 
     @Given("a profile exists for the current user with name {string}")
@@ -85,9 +90,7 @@ class ModuleUserSteps {
             address = null
         )
 
-        authenticatedRequest
-            .body(request)
-            .post()
+        post("", request)
     }
 
     @Given("a profile exists for the current user with email {string}")
@@ -98,9 +101,7 @@ class ModuleUserSteps {
             address = null
         )
 
-        authenticatedRequest
-            .body(request)
-            .post()
+        post("", request)
     }
 
     @When("I create a profile with the following details:")
@@ -112,9 +113,7 @@ class ModuleUserSteps {
             address = null
         )
 
-        response = authenticatedRequest
-            .body(request)
-            .post()
+        response = post("", request)
     }
 
     @When("I create a profile with address:")
@@ -132,14 +131,12 @@ class ModuleUserSteps {
             )
         )
 
-        response = authenticatedRequest
-            .body(request)
-            .post()
+        response = post("", request)
     }
 
     @When("I retrieve my profile")
     fun retrieveProfile() {
-        response = authenticatedRequest.get()
+        response = get("")
     }
 
     @When("I update my address to:")
@@ -153,9 +150,7 @@ class ModuleUserSteps {
             countryCode = data["countryCode"]!!
         )
 
-        response = authenticatedRequest
-            .body(request)
-            .put("/address")
+        response = put("/address", request)
     }
 
     @When("I try to create another profile")
@@ -166,9 +161,7 @@ class ModuleUserSteps {
             address = null
         )
 
-        response = authenticatedRequest
-            .body(request)
-            .post()
+        response = post("", request)
     }
 
     @When("I try to create a profile with email {string}")
@@ -179,9 +172,7 @@ class ModuleUserSteps {
             address = null
         )
 
-        response = authenticatedRequest
-            .body(request)
-            .post()
+        response = post("", request)
     }
 
     @When("I try to create a profile with country {string}")
@@ -198,41 +189,39 @@ class ModuleUserSteps {
             )
         )
 
-        response = authenticatedRequest
-            .body(request)
-            .post()
+        response = post("", request)
     }
 
     @Then("the profile should be created successfully")
     fun profileCreatedSuccessfully() {
         assertThat(response!!.statusCode).isEqualTo(201)
-        assertThat(response!!.jsonPath().getString("id")).isNotNull()
+        assertThat(response!!.getString("id")).isNotNull()
     }
 
     @Then("the profile should have name {string}")
     fun profileHasName(expectedName: String) {
-        assertThat(response!!.jsonPath().getString("name")).isEqualTo(expectedName)
+        assertThat(response!!.getString("name")).isEqualTo(expectedName)
     }
 
     @Then("the profile should have email {string}")
     fun profileHasEmail(expectedEmail: String) {
-        assertThat(response!!.jsonPath().getString("email")).isEqualTo(expectedEmail)
+        assertThat(response!!.getString("email")).isEqualTo(expectedEmail)
     }
 
     @Then("the profile should have an address in {string}")
     fun profileHasAddressInCity(expectedCity: String) {
-        assertThat(response!!.jsonPath().getString("defaultAddress.city")).isEqualTo(expectedCity)
+        assertThat(response!!.getString("defaultAddress.city")).isEqualTo(expectedCity)
     }
 
     @Then("I should receive the profile details")
     fun receiveProfileDetails() {
         assertThat(response!!.statusCode).isEqualTo(200)
-        assertThat(response!!.jsonPath().getString("id")).isNotNull()
+        assertThat(response!!.getString("id")).isNotNull()
     }
 
     @Then("the profile name should be {string}")
     fun profileNameShouldBe(expectedName: String) {
-        assertThat(response!!.jsonPath().getString("name")).isEqualTo(expectedName)
+        assertThat(response!!.getString("name")).isEqualTo(expectedName)
     }
 
     @Then("the address should be updated successfully")
@@ -243,30 +232,96 @@ class ModuleUserSteps {
     @Then("I should receive an already exists error")
     fun shouldReceiveAlreadyExistsError() {
         assertThat(response!!.statusCode).isEqualTo(409)
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo("User Already Exists")
+        assertThat(response!!.getString("title")).isEqualTo("User Already Exists")
     }
 
     @Then("I should receive an email already exists error")
     fun shouldReceiveEmailAlreadyExistsError() {
         assertThat(response!!.statusCode).isEqualTo(409)
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo("Email Already Exists")
+        assertThat(response!!.getString("title")).isEqualTo("Email Already Exists")
     }
 
     @Then("I should receive a validation error")
     fun shouldReceiveValidationError() {
         assertThat(response!!.statusCode).isEqualTo(400)
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo("Validation Failed")
+        assertThat(response!!.getString("title")).isEqualTo("Validation Failed")
     }
 
     @Then("I should receive an invalid country error")
     fun shouldReceiveInvalidCountryError() {
         assertThat(response!!.statusCode).isEqualTo(400)
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo("Invalid Country")
+        assertThat(response!!.getString("title")).isEqualTo("Invalid Country")
     }
 
     @Then("I should receive a not found error")
     fun shouldReceiveNotFoundError() {
         assertThat(response!!.statusCode).isEqualTo(404)
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo("User Not Found")
+        assertThat(response!!.getString("title")).isEqualTo("User Not Found")
+    }
+
+    // Helper methods
+    private fun get(path: String): TestResponse {
+        val result = client.get()
+            .uri(path)
+            .headers { headers -> authToken?.let { headers.setBearerAuth(it) } }
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun post(path: String, body: Any): TestResponse {
+        val result = client.post()
+            .uri(path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .headers { headers -> authToken?.let { headers.setBearerAuth(it) } }
+            .bodyValue(body)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun put(path: String, body: Any): TestResponse {
+        val result = client.put()
+            .uri(path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .headers { headers -> authToken?.let { headers.setBearerAuth(it) } }
+            .bodyValue(body)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    class TestResponse(
+        val statusCode: Int,
+        private val body: String,
+        private val objectMapper: ObjectMapper
+    ) {
+        fun getString(path: String): String? = getValueAtPath(path) as? String
+
+        fun <T> getList(path: String): List<T> {
+            val value = if (path.isEmpty()) parseBody() else getValueAtPath(path)
+            @Suppress("UNCHECKED_CAST")
+            return value as? List<T> ?: emptyList()
+        }
+
+        private fun getValueAtPath(path: String): Any? {
+            if (body.isBlank()) return null
+            val parsed = parseBody() ?: return null
+            if (path.isEmpty()) return parsed
+            var current: Any? = parsed
+            for (segment in path.split(".")) {
+                current = when (current) {
+                    is Map<*, *> -> current[segment]
+                    is List<*> -> current.getOrNull(segment.toIntOrNull() ?: return null)
+                    else -> return null
+                }
+            }
+            return current
+        }
+
+        private fun parseBody(): Any? {
+            if (body.isBlank()) return null
+            return try { objectMapper.readValue<Any>(body) } catch (e: Exception) { null }
+        }
     }
 }

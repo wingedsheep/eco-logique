@@ -1,36 +1,41 @@
+import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.withType
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.kotlin.plugin.spring")
     jacoco
 }
 
-java {
+extensions.configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-kotlin {
+extensions.configure<KotlinJvmProjectExtension> {
     jvmToolchain(21)
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "21"
+    compilerOptions {
+        freeCompilerArgs.add("-Xjsr305=strict")
+        jvmTarget.set(JvmTarget.JVM_21)
     }
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    finalizedBy(tasks.jacocoTestReport)
+    finalizedBy(tasks.named("jacocoTestReport"))
 }
 
-jacoco {
+extensions.configure<JacocoPluginExtension> {
     toolVersion = "0.8.11"
 }
 
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.named("test"))
     reports {
         xml.required.set(true)
         html.required.set(true)
@@ -40,7 +45,10 @@ tasks.jacocoTestReport {
 dependencies {
     // Modules using this convention import Spring Boot BOM via dependencyManagement,
     // which provides version-managed test dependencies (no versions needed here).
-    testImplementation(kotlin("test"))
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    "testImplementation"(kotlin("test"))
+    "testImplementation"("org.springframework.boot:spring-boot-starter-test")
+    "testImplementation"("org.springframework.boot:spring-boot-starter-webmvc-test")
+    "testImplementation"("org.springframework.boot:spring-boot-starter-data-jdbc-test")
+    "testImplementation"("org.springframework.boot:spring-boot-starter-jdbc-test")
+    "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
 }

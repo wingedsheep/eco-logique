@@ -26,7 +26,7 @@ class WorldviewOrderDataLoader(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    override fun run(args: ApplicationArguments?) {
+    override fun run(args: ApplicationArguments) {
         if (activeProfile.contains("prod") || activeProfile.contains("test")) {
             logger.info("Skipping worldview order data for profile: $activeProfile")
             return

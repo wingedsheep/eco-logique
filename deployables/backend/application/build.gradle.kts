@@ -29,7 +29,7 @@ dependencies {
     implementation(project(":inventory:inventory-worldview"))
     implementation(project(":checkout:checkout-impl"))
 
-    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.data.jdbc)
     implementation(libs.spring.boot.starter.security)
@@ -51,7 +51,7 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.rest.assured)
+    testImplementation(libs.spring.boot.starter.webflux)
     testImplementation(testFixtures(project(":products:products-api")))
     testImplementation(testFixtures(project(":orders:orders-api")))
     testImplementation(testFixtures(project(":cart:cart-api")))

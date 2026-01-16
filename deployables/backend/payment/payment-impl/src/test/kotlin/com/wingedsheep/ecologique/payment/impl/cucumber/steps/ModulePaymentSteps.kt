@@ -8,13 +8,17 @@ import io.cucumber.java.Before
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.RestAssured
-import io.restassured.http.ContentType
-import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.returnResult
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.math.BigDecimal
+import java.time.Duration
 import java.util.UUID
 
 class ModulePaymentSteps {
@@ -25,14 +29,19 @@ class ModulePaymentSteps {
     @Autowired
     private lateinit var mockPaymentService: MockPaymentService
 
-    private var response: Response? = null
+    private lateinit var client: WebTestClient
+    private val objectMapper = jacksonObjectMapper()
+
+    private var response: TestResponse? = null
     private var createdPaymentId: String? = null
     private var currentOrderId: String = UUID.randomUUID().toString()
 
     @Before
     fun setup() {
-        RestAssured.port = port
-        RestAssured.basePath = "/api/v1/payments"
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port/api/v1/payments")
+            .responseTimeout(Duration.ofSeconds(30))
+            .build()
         mockPaymentService.clearPayments()
         currentOrderId = UUID.randomUUID().toString()
     }
@@ -88,32 +97,29 @@ class ModulePaymentSteps {
             description = "Test payment"
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .post()
+        response = post("", request)
 
         if (response!!.statusCode == 201) {
-            createdPaymentId = response!!.jsonPath().getString("id")
+            createdPaymentId = response!!.getString("id")
         }
     }
 
     @Then("the payment should succeed")
     fun paymentShouldSucceed() {
         assertThat(response!!.statusCode)
-            .withFailMessage("Expected 201 but got ${response!!.statusCode}: ${response!!.body.asString()}")
+            .withFailMessage("Expected 201 but got ${response!!.statusCode}: ${response!!.body}")
             .isEqualTo(201)
         assertThat(createdPaymentId).isNotNull()
     }
 
     @Then("the payment status should be {string}")
     fun paymentStatusShouldBe(expectedStatus: String) {
-        assertThat(response!!.jsonPath().getString("status")).isEqualTo(expectedStatus)
+        assertThat(response!!.getString("status")).isEqualTo(expectedStatus)
     }
 
     @Then("the payment method summary should contain {string}")
     fun paymentMethodSummaryShouldContain(expectedText: String) {
-        assertThat(response!!.jsonPath().getString("paymentMethodSummary")).contains(expectedText)
+        assertThat(response!!.getString("paymentMethodSummary")).contains(expectedText)
     }
 
     @Then("the payment should fail with status code {int}")
@@ -123,29 +129,29 @@ class ModulePaymentSteps {
 
     @Then("the error title should be {string}")
     fun errorTitleShouldBe(expectedTitle: String) {
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo(expectedTitle)
+        assertThat(response!!.getString("title")).isEqualTo(expectedTitle)
     }
 
     @When("I retrieve the payment by ID")
     fun retrievePaymentById() {
-        response = RestAssured.get("/$createdPaymentId")
+        response = get("/$createdPaymentId")
     }
 
     @Then("I should receive the payment details")
     fun shouldReceivePaymentDetails() {
         assertThat(response!!.statusCode).isEqualTo(200)
-        assertThat(response!!.jsonPath().getString("id")).isEqualTo(createdPaymentId)
+        assertThat(response!!.getString("id")).isEqualTo(createdPaymentId)
     }
 
     @When("I retrieve a non-existent payment")
     fun retrieveNonExistentPayment() {
-        response = RestAssured.get("/${UUID.randomUUID()}")
+        response = get("/${UUID.randomUUID()}")
     }
 
     @Then("I should receive a not found error")
     fun shouldReceiveNotFoundError() {
         assertThat(response!!.statusCode).isEqualTo(404)
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo("Payment Not Found")
+        assertThat(response!!.getString("title")).isEqualTo("Payment Not Found")
     }
 
     @Given("a successful payment exists")
@@ -166,13 +172,10 @@ class ModulePaymentSteps {
             description = "Additional payment"
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .post()
+        response = post("", request)
 
         if (response!!.statusCode == 201) {
-            createdPaymentId = response!!.jsonPath().getString("id")
+            createdPaymentId = response!!.getString("id")
         }
     }
 
@@ -194,18 +197,73 @@ class ModulePaymentSteps {
             description = "Test payment"
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .post()
+        response = post("", request)
 
         if (response!!.statusCode == 201) {
-            createdPaymentId = response!!.jsonPath().getString("id")
+            createdPaymentId = response!!.getString("id")
         }
     }
 
     @Then("the payment amount should be {double}")
     fun paymentAmountShouldBe(expectedAmount: Double) {
-        assertThat(response!!.jsonPath().getDouble("amount.amount")).isEqualTo(expectedAmount)
+        assertThat(response!!.getDouble("amount.amount")).isEqualTo(expectedAmount)
+    }
+
+    // Helper methods
+    private fun get(path: String): TestResponse {
+        val result = client.get().uri(path).exchange().returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun post(path: String, body: Any): TestResponse {
+        val result = client.post()
+            .uri(path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(body)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    class TestResponse(
+        val statusCode: Int,
+        val body: String,
+        private val objectMapper: ObjectMapper
+    ) {
+        fun getString(path: String): String? {
+            val value = getValueAtPath(path)
+            return when (value) {
+                is String -> value
+                null -> null
+                else -> value.toString()
+            }
+        }
+        fun getDouble(path: String): Double? = (getValueAtPath(path) as? Number)?.toDouble()
+
+        fun <T> getList(path: String): List<T> {
+            val value = if (path.isEmpty()) parseBody() else getValueAtPath(path)
+            @Suppress("UNCHECKED_CAST")
+            return value as? List<T> ?: emptyList()
+        }
+
+        private fun getValueAtPath(path: String): Any? {
+            if (body.isBlank()) return null
+            val parsed = parseBody() ?: return null
+            if (path.isEmpty()) return parsed
+            var current: Any? = parsed
+            for (segment in path.split(".")) {
+                current = when (current) {
+                    is Map<*, *> -> current[segment]
+                    is List<*> -> current.getOrNull(segment.toIntOrNull() ?: return null)
+                    else -> return null
+                }
+            }
+            return current
+        }
+
+        private fun parseBody(): Any? {
+            if (body.isBlank()) return null
+            return try { objectMapper.readValue<Any>(body) } catch (e: Exception) { null }
+        }
     }
 }

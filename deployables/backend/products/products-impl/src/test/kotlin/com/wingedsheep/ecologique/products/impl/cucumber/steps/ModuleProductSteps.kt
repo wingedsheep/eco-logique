@@ -9,38 +9,46 @@ import io.cucumber.java.Before
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.RestAssured
-import io.restassured.http.ContentType
-import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.returnResult
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.math.BigDecimal
+import java.time.Duration
 
 class ModuleProductSteps {
 
     @LocalServerPort
     private var port: Int = 0
 
-    private var response: Response? = null
+    private lateinit var client: WebTestClient
+    private val objectMapper = jacksonObjectMapper()
+
+    private var response: TestResponse? = null
     private var createdProductId: String? = null
 
     @Before
     fun setup() {
-        RestAssured.port = port
-        RestAssured.basePath = "/api/v1/products"
+        client = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port/api/v1/products")
+            .responseTimeout(Duration.ofSeconds(30))
+            .build()
     }
 
     @Given("the module is running")
     fun moduleIsRunning() {
-        // No-op, just to verify context loaded
         assertThat(port).isGreaterThan(0)
     }
 
     @Given("the products database is empty")
     fun productsDbEmpty() {
-        val products = RestAssured.get().then().extract().body().jsonPath().getList<Map<String, Any>>("")
+        val products = get("").getList<Map<String, Any>>("")
         products.forEach { product ->
-            RestAssured.delete("/${product["id"]}")
+            delete("/${product["id"]}")
         }
     }
 
@@ -61,13 +69,10 @@ class ModuleProductSteps {
             carbonFootprintKg = BigDecimal(carbonInfo[0])
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .post()
+        response = post("", request)
 
         if (response!!.statusCode == 201) {
-            createdProductId = response!!.jsonPath().getString("id")
+            createdProductId = response!!.getString("id")
         }
     }
 
@@ -79,7 +84,7 @@ class ModuleProductSteps {
 
     @Then("the product should have a sustainability rating")
     fun productHasSustainabilityRating() {
-        val rating = response!!.jsonPath().getString("sustainabilityRating")
+        val rating = response!!.getString("sustainabilityRating")
         assertThat(rating).isNotNull()
         assertThat(rating).isIn("A_PLUS", "A", "B", "C", "D")
     }
@@ -96,12 +101,8 @@ class ModuleProductSteps {
             carbonFootprintKg = BigDecimal("1.5")
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .post()
-
-        createdProductId = response!!.jsonPath().getString("id")
+        response = post("", request)
+        createdProductId = response!!.getString("id")
     }
 
     @Given("a product {string} exists with price {double} EUR")
@@ -116,28 +117,24 @@ class ModuleProductSteps {
             carbonFootprintKg = BigDecimal("3.0")
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .post()
-
-        createdProductId = response!!.jsonPath().getString("id")
+        response = post("", request)
+        createdProductId = response!!.getString("id")
     }
 
     @When("I retrieve the product by ID")
     fun retrieveProductById() {
-        response = RestAssured.get("/$createdProductId")
+        response = get("/$createdProductId")
     }
 
     @Then("I should receive the product details")
     fun receiveProductDetails() {
         assertThat(response!!.statusCode).isEqualTo(200)
-        assertThat(response!!.jsonPath().getString("id")).isEqualTo(createdProductId)
+        assertThat(response!!.getString("id")).isEqualTo(createdProductId)
     }
 
     @Then("the product name should be {string}")
     fun productNameShouldBe(expectedName: String) {
-        assertThat(response!!.jsonPath().getString("name")).isEqualTo(expectedName)
+        assertThat(response!!.getString("name")).isEqualTo(expectedName)
     }
 
     @When("I update the product price to {double} EUR")
@@ -147,16 +144,13 @@ class ModuleProductSteps {
             priceCurrency = Currency.EUR
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .put("/$createdProductId/price")
+        response = put("/$createdProductId/price", request)
     }
 
     @Then("the product price should be {double} EUR")
     fun productPriceShouldBe(expectedPrice: Double) {
         assertThat(response!!.statusCode).isEqualTo(200)
-        assertThat(response!!.jsonPath().getDouble("priceAmount")).isEqualTo(expectedPrice)
+        assertThat(response!!.getDouble("priceAmount")).isEqualTo(expectedPrice)
     }
 
     @Given("the following products exist:")
@@ -171,43 +165,37 @@ class ModuleProductSteps {
                 weightGrams = 100,
                 carbonFootprintKg = BigDecimal("1.5")
             )
-
-            RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(request)
-                .post()
+            post("", request)
         }
     }
 
     @When("I list products in category {string}")
     fun listProductsInCategory(category: String) {
-        response = RestAssured.given()
-            .queryParam("category", category)
-            .get()
+        response = get("?category=$category")
     }
 
     @Then("I should receive {int} product")
     fun shouldReceiveProducts(count: Int) {
         assertThat(response!!.statusCode).isEqualTo(200)
-        val products = response!!.jsonPath().getList<Map<String, Any>>("")
+        val products = response!!.getList<Map<String, Any>>("")
         assertThat(products).hasSize(count)
     }
 
     @Then("the product should be {string}")
     fun productShouldBe(expectedName: String) {
-        val products = response!!.jsonPath().getList<Map<String, Any>>("")
+        val products = response!!.getList<Map<String, Any>>("")
         assertThat(products[0]["name"]).isEqualTo(expectedName)
     }
 
     @When("I delete the product")
     fun deleteProduct() {
-        response = RestAssured.delete("/$createdProductId")
+        response = delete("/$createdProductId")
     }
 
     @Then("the product should no longer exist")
     fun productShouldNoLongerExist() {
         assertThat(response!!.statusCode).isEqualTo(204)
-        val getResponse = RestAssured.get("/$createdProductId")
+        val getResponse = get("/$createdProductId")
         assertThat(getResponse.statusCode).isEqualTo(404)
     }
 
@@ -223,15 +211,78 @@ class ModuleProductSteps {
             carbonFootprintKg = BigDecimal("2.0")
         )
 
-        response = RestAssured.given()
-            .contentType(ContentType.JSON)
-            .body(request)
-            .post()
+        response = post("", request)
     }
 
     @Then("I should receive a duplicate name error")
     fun shouldReceiveDuplicateNameError() {
         assertThat(response!!.statusCode).isEqualTo(409)
-        assertThat(response!!.jsonPath().getString("title")).isEqualTo("Duplicate Product Name")
+        assertThat(response!!.getString("title")).isEqualTo("Duplicate Product Name")
+    }
+
+    // Helper methods
+    private fun get(path: String): TestResponse {
+        val result = client.get().uri(path).exchange().returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun post(path: String, body: Any): TestResponse {
+        val result = client.post()
+            .uri(path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(body)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun put(path: String, body: Any): TestResponse {
+        val result = client.put()
+            .uri(path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(body)
+            .exchange()
+            .returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    private fun delete(path: String): TestResponse {
+        val result = client.delete().uri(path).exchange().returnResult<String>()
+        return TestResponse(result.status.value(), result.responseBody.blockFirst() ?: "", objectMapper)
+    }
+
+    class TestResponse(
+        val statusCode: Int,
+        private val body: String,
+        private val objectMapper: ObjectMapper
+    ) {
+        fun getString(path: String): String? = getValueAtPath(path) as? String
+        fun getDouble(path: String): Double? = (getValueAtPath(path) as? Number)?.toDouble()
+
+        fun <T> getList(path: String): List<T> {
+            val value = if (path.isEmpty()) parseBody() else getValueAtPath(path)
+            @Suppress("UNCHECKED_CAST")
+            return value as? List<T> ?: emptyList()
+        }
+
+        private fun getValueAtPath(path: String): Any? {
+            if (body.isBlank()) return null
+            val parsed = parseBody() ?: return null
+            if (path.isEmpty()) return parsed
+            var current: Any? = parsed
+            for (segment in path.split(".")) {
+                current = when (current) {
+                    is Map<*, *> -> current[segment]
+                    is List<*> -> current.getOrNull(segment.toIntOrNull() ?: return null)
+                    else -> return null
+                }
+            }
+            return current
+        }
+
+        private fun parseBody(): Any? {
+            if (body.isBlank()) return null
+            return try { objectMapper.readValue<Any>(body) } catch (e: Exception) { null }
+        }
     }
 }

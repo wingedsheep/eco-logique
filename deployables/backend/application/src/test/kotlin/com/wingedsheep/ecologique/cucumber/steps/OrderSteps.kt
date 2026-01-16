@@ -7,10 +7,10 @@ import com.wingedsheep.ecologique.cucumber.TestApiClient
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineCreateRequest
 import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.cucumber.TestResponse
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 import java.math.BigDecimal
 import java.util.UUID
@@ -19,8 +19,8 @@ class OrderJourneySteps(
     private val context: ScenarioContext,
     private val api: TestApiClient
 ) {
-    private var orderResponse: Response? = null
-    private var ordersListResponse: Response? = null
+    private var orderResponse: TestResponse? = null
+    private var ordersListResponse: TestResponse? = null
 
     @When("I place an order with:")
     fun placeOrderWith(dataTable: DataTable) {
@@ -47,11 +47,11 @@ class OrderJourneySteps(
 
         if (orderResponse!!.statusCode == 201) {
             context.storeOrder(
-                id = orderResponse!!.jsonPath().getString("id"),
+                id = orderResponse!!.getString("id")!!,
                 ref = OrderRef(
-                    id = orderResponse!!.jsonPath().getString("id"),
-                    status = orderResponse!!.jsonPath().getString("status"),
-                    grandTotal = BigDecimal(orderResponse!!.jsonPath().getString("grandTotal"))
+                    id = orderResponse!!.getString("id")!!,
+                    status = orderResponse!!.getString("status") ?: "UNKNOWN",
+                    grandTotal = BigDecimal(orderResponse!!.getString("grandTotal")!!)
                 )
             )
         }
@@ -60,9 +60,9 @@ class OrderJourneySteps(
     @Then("the order should be created with status {string}")
     fun orderCreatedWithStatus(expectedStatus: String) {
         assertThat(orderResponse!!.statusCode)
-            .withFailMessage("Expected 201 but got ${orderResponse!!.statusCode}: ${orderResponse!!.body.asString()}")
+            .withFailMessage("Expected 201 but got ${orderResponse!!.statusCode}: ${orderResponse!!.bodyAsString()}")
             .isEqualTo(201)
-        assertThat(orderResponse!!.jsonPath().getString("status")).isEqualTo(expectedStatus)
+        assertThat(orderResponse!!.getString("status")).isEqualTo(expectedStatus)
     }
 
     @Then("the order total should be {double} EUR")
@@ -75,8 +75,8 @@ class OrderJourneySteps(
         }
         // POST returns 201, GET returns 200
         assertThat(response.statusCode).isIn(200, 201)
-        assertThat(response.jsonPath().getDouble("grandTotal")).isEqualTo(expectedTotal)
-        assertThat(response.jsonPath().getString("currency")).isEqualTo("EUR")
+        assertThat(response.getDouble("grandTotal")).isEqualTo(expectedTotal)
+        assertThat(response.getString("currency")).isEqualTo("EUR")
     }
 
     @When("I view my order history")
@@ -87,7 +87,7 @@ class OrderJourneySteps(
     @Then("I should see {int} order(s) in my history")
     fun shouldSeeOrdersInHistory(expectedCount: Int) {
         assertThat(ordersListResponse!!.statusCode).isEqualTo(200)
-        val orders = ordersListResponse!!.jsonPath().getList<Map<String, Any>>("")
+        val orders = ordersListResponse!!.getList<Map<String, Any>>("")
         assertThat(orders).hasSizeGreaterThanOrEqualTo(expectedCount)
     }
 
@@ -98,6 +98,6 @@ class OrderJourneySteps(
 
         val response = api.get("/api/v1/orders/${order.id}")
         assertThat(response.statusCode).isEqualTo(200)
-        assertThat(response.jsonPath().getString("status")).isEqualTo(expectedStatus)
+        assertThat(response.getString("status")).isEqualTo(expectedStatus)
     }
 }

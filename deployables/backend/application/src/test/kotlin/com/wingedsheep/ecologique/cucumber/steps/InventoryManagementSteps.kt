@@ -8,11 +8,11 @@ import com.wingedsheep.ecologique.inventory.api.dto.StockUpdateRequest
 import com.wingedsheep.ecologique.inventory.api.dto.WarehouseCreateRequest
 import com.wingedsheep.ecologique.inventory.impl.MockInventoryService
 import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.cucumber.TestResponse
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.And
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 import java.util.UUID
 
@@ -21,10 +21,10 @@ class InventoryManagementSteps(
     private val api: TestApiClient,
     private val mockInventoryService: MockInventoryService
 ) {
-    private var warehouseResponse: Response? = null
-    private var stockResponse: Response? = null
-    private var warehouseListResponse: Response? = null
-    private var inventoryCheckResponse: Response? = null
+    private var warehouseResponse: TestResponse? = null
+    private var stockResponse: TestResponse? = null
+    private var warehouseListResponse: TestResponse? = null
+    private var inventoryCheckResponse: TestResponse? = null
 
     @When("I create a warehouse with the following details:")
     fun createWarehouse(dataTable: DataTable) {
@@ -51,9 +51,9 @@ class InventoryManagementSteps(
         warehouseResponse = api.post("/api/v1/admin/inventory/warehouses", request)
 
         if (warehouseResponse!!.statusCode == 201) {
-            val id = warehouseResponse!!.jsonPath().getString("id")
-            val name = warehouseResponse!!.jsonPath().getString("name")
-            val countryCode = warehouseResponse!!.jsonPath().getString("countryCode")
+            val id = warehouseResponse!!.getString("id")!!
+            val name = warehouseResponse!!.getString("name")!!
+            val countryCode = warehouseResponse!!.getString("countryCode")!!
 
             context.storeWarehouse(
                 name = name,
@@ -69,7 +69,7 @@ class InventoryManagementSteps(
     @Then("the warehouse should be created successfully")
     fun warehouseShouldBeCreated() {
         assertThat(warehouseResponse!!.statusCode)
-            .withFailMessage("Expected 201 but got ${warehouseResponse!!.statusCode}: ${warehouseResponse!!.body.asString()}")
+            .withFailMessage("Expected 201 but got ${warehouseResponse!!.statusCode}: ${warehouseResponse!!.bodyAsString()}")
             .isEqualTo(201)
     }
 
@@ -80,7 +80,7 @@ class InventoryManagementSteps(
 
         val response = api.get("/api/v1/admin/inventory/warehouses/${warehouse.id}")
         assertThat(response.statusCode).isEqualTo(200)
-        assertThat(response.jsonPath().getString("name")).isEqualTo(warehouseName)
+        assertThat(response.getString("name")).isEqualTo(warehouseName)
     }
 
     @When("I add stock for product {string} to warehouse {string} with quantity {int}")
@@ -109,7 +109,7 @@ class InventoryManagementSteps(
     @Then("the stock update should succeed")
     fun stockUpdateShouldSucceed() {
         assertThat(stockResponse!!.statusCode)
-            .withFailMessage("Expected 200 but got ${stockResponse!!.statusCode}: ${stockResponse!!.body.asString()}")
+            .withFailMessage("Expected 200 but got ${stockResponse!!.statusCode}: ${stockResponse!!.bodyAsString()}")
             .isEqualTo(200)
     }
 
@@ -124,7 +124,7 @@ class InventoryManagementSteps(
         val product = context.getProduct(productName)
             ?: throw IllegalStateException("Product '$productName' not found in context")
 
-        val stockLevels = response.jsonPath().getList<Map<String, Any>>("")
+        val stockLevels = response.getList<Map<String, Any>>("")
         val productStock = stockLevels.find {
             it["productId"].toString() == product.id
         }
@@ -145,7 +145,7 @@ class InventoryManagementSteps(
     @Then("I should see at least {int} warehouse(s)")
     fun shouldSeeAtLeastWarehouses(minCount: Int) {
         assertThat(warehouseListResponse!!.statusCode).isEqualTo(200)
-        val warehouses = warehouseListResponse!!.jsonPath().getList<Map<String, Any>>("")
+        val warehouses = warehouseListResponse!!.getList<Map<String, Any>>("")
         assertThat(warehouses.size).isGreaterThanOrEqualTo(minCount)
     }
 
@@ -160,10 +160,10 @@ class InventoryManagementSteps(
     @Then("the total available stock should be {int}")
     fun totalAvailableStockShouldBe(expectedStock: Int) {
         assertThat(inventoryCheckResponse!!.statusCode)
-            .withFailMessage("Expected 200 but got ${inventoryCheckResponse!!.statusCode}: ${inventoryCheckResponse!!.body.asString()}")
+            .withFailMessage("Expected 200 but got ${inventoryCheckResponse!!.statusCode}: ${inventoryCheckResponse!!.bodyAsString()}")
             .isEqualTo(200)
 
-        val available = inventoryCheckResponse!!.jsonPath().getInt("available")
+        val available = inventoryCheckResponse!!.getInt("available")
         assertThat(available).isEqualTo(expectedStock)
     }
 }

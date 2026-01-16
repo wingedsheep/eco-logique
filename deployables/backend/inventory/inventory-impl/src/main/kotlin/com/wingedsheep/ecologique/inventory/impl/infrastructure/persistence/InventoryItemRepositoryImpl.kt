@@ -16,7 +16,7 @@ internal class InventoryItemRepositoryImpl(
 
     override fun save(item: InventoryItem): InventoryItem {
         val existing = jdbc.findByProductIdAndWarehouseId(item.productId.value, item.warehouseId.value)
-        val entity = item.toEntity(existing?.id)
+        val entity = item.toEntity(existing?.id ?: 0L)
         if (existing != null) {
             entity.markAsExisting()
         }

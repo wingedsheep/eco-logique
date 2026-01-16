@@ -8,6 +8,7 @@ import com.wingedsheep.ecologique.cucumber.ScenarioContext.OrderRef
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.PaymentRef
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.ProductRef
 import com.wingedsheep.ecologique.cucumber.TestApiClient
+import com.wingedsheep.ecologique.cucumber.TestResponse
 import com.wingedsheep.ecologique.payment.api.dto.CardBrand
 import com.wingedsheep.ecologique.products.api.ProductCategory
 import com.wingedsheep.ecologique.products.api.ProductId
@@ -16,7 +17,6 @@ import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.And
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
-import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 import java.math.BigDecimal
 import java.util.UUID
@@ -25,9 +25,9 @@ class CompleteOrderJourneySteps(
     private val context: ScenarioContext,
     private val api: TestApiClient
 ) {
-    private var productResponse: Response? = null
-    private var cartResponse: Response? = null
-    private var checkoutResponse: Response? = null
+    private var productResponse: TestResponse? = null
+    private var cartResponse: TestResponse? = null
+    private var checkoutResponse: TestResponse? = null
 
     @When("as admin I create a product with:")
     fun adminCreateProductWithDetails(dataTable: DataTable) {
@@ -49,7 +49,7 @@ class CompleteOrderJourneySteps(
             context.storeProduct(
                 name = data["name"]!!,
                 ref = ProductRef(
-                    id = productResponse!!.jsonPath().getString("id"),
+                    id = productResponse!!.getString("id")!!,
                     name = data["name"]!!,
                     price = BigDecimal(data["price"]!!)
                 )
@@ -60,7 +60,7 @@ class CompleteOrderJourneySteps(
     @Then("the product creation should succeed")
     fun productShouldBeCreated() {
         assertThat(productResponse!!.statusCode)
-            .withFailMessage("Expected 201 but got ${productResponse!!.statusCode}: ${productResponse!!.body.asString()}")
+            .withFailMessage("Expected 201 but got ${productResponse!!.statusCode}: ${productResponse!!.bodyAsString()}")
             .isEqualTo(201)
     }
 
@@ -69,7 +69,7 @@ class CompleteOrderJourneySteps(
         val response = api.get("/api/v1/products")
         assertThat(response.statusCode).isEqualTo(200)
 
-        val products = response.jsonPath().getList<Map<String, Any>>("")
+        val products = response.getList<Map<String, Any>>("")
         val product = products.find { it["name"] == productName }
         assertThat(product)
             .withFailMessage("Product '$productName' not found in product list")
@@ -103,7 +103,7 @@ class CompleteOrderJourneySteps(
 
         cartResponse = api.post("/api/v1/cart/items", request)
         assertThat(cartResponse!!.statusCode)
-            .withFailMessage("Failed to add item to cart: ${cartResponse!!.body.asString()}")
+            .withFailMessage("Failed to add item to cart: ${cartResponse!!.bodyAsString()}")
             .isEqualTo(201)
     }
 
@@ -119,7 +119,7 @@ class CompleteOrderJourneySteps(
 
         cartResponse = api.post("/api/v1/cart/items", request)
         assertThat(cartResponse!!.statusCode)
-            .withFailMessage("Failed to add item to cart: ${cartResponse!!.body.asString()}")
+            .withFailMessage("Failed to add item to cart: ${cartResponse!!.bodyAsString()}")
             .isEqualTo(201)
     }
 
@@ -131,7 +131,7 @@ class CompleteOrderJourneySteps(
         val response = api.get("/api/v1/cart")
         assertThat(response.statusCode).isEqualTo(200)
 
-        val items = response.jsonPath().getList<Map<String, Any>>("items")
+        val items = response.getList<Map<String, Any>>("items")
         val cartItem = items.find { it["productId"].toString() == product.id }
 
         assertThat(cartItem)
@@ -147,7 +147,7 @@ class CompleteOrderJourneySteps(
         val response = api.get("/api/v1/cart")
         assertThat(response.statusCode).isEqualTo(200)
 
-        val items = response.jsonPath().getList<Map<String, Any>>("items")
+        val items = response.getList<Map<String, Any>>("items")
         val totalQuantity = items.sumOf { (it["quantity"] as Number).toInt() }
         assertThat(totalQuantity).isEqualTo(expectedTotal)
     }
@@ -157,7 +157,7 @@ class CompleteOrderJourneySteps(
         val response = api.get("/api/v1/cart")
         assertThat(response.statusCode).isEqualTo(200)
 
-        val subtotal = response.jsonPath().getDouble("subtotal")
+        val subtotal = response.getDouble("subtotal")
         assertThat(subtotal).isEqualTo(expectedTotal)
     }
 
@@ -174,7 +174,7 @@ class CompleteOrderJourneySteps(
         val response = api.get("/api/v1/orders")
         assertThat(response.statusCode).isEqualTo(200)
 
-        val orders = response.jsonPath().getList<Map<String, Any>>("")
+        val orders = response.getList<Map<String, Any>>("")
         val found = orders.any { it["id"] == order.id }
         assertThat(found)
             .withFailMessage("Order ${order.id} not found in order history")
@@ -198,7 +198,7 @@ class CompleteOrderJourneySteps(
         val response = api.get("/api/v1/orders/${order.id}")
         assertThat(response.statusCode).isEqualTo(200)
 
-        val lines = response.jsonPath().getList<Map<String, Any>>("lines")
+        val lines = response.getList<Map<String, Any>>("lines")
         val line = lines.find { it["productName"] == productName }
 
         assertThat(line)
@@ -227,15 +227,15 @@ class CompleteOrderJourneySteps(
         checkoutResponse = api.post("/api/v1/checkout", request)
 
         if (checkoutResponse!!.statusCode == 201) {
-            val orderId = checkoutResponse!!.jsonPath().getString("orderId")
-            val orderStatus = checkoutResponse!!.jsonPath().getString("orderStatus")
-            val paymentId = checkoutResponse!!.jsonPath().getString("paymentId")
-            val paymentStatus = checkoutResponse!!.jsonPath().getString("paymentStatus")
+            val orderId = checkoutResponse!!.getString("orderId")!!
+            val orderStatus = checkoutResponse!!.getString("orderStatus") ?: "UNKNOWN"
+            val paymentId = checkoutResponse!!.getString("paymentId")
+            val paymentStatus = checkoutResponse!!.getString("paymentStatus") ?: "UNKNOWN"
 
             // Fetch order details to get the total
             val orderResponse = api.get("/api/v1/orders/$orderId")
             val grandTotal = if (orderResponse.statusCode == 200) {
-                BigDecimal(orderResponse.jsonPath().getString("grandTotal"))
+                BigDecimal(orderResponse.getString("grandTotal")!!)
             } else {
                 BigDecimal.ZERO
             }

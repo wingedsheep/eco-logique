@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 
 @CucumberContextConfiguration
@@ -24,7 +24,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 class ModuleCucumberSpringConfiguration {
 
     companion object {
-        private val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:14-alpine")
+        private val postgres = PostgreSQLContainer("postgres:14-alpine")
             .withDatabaseName("ecologique")
             .withUsername("user")
             .withPassword("password")
@@ -37,9 +37,11 @@ class ModuleCucumberSpringConfiguration {
         @JvmStatic
         @DynamicPropertySource
         fun setDatasourceProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url", postgres::getJdbcUrl)
-            registry.add("spring.datasource.username", postgres::getUsername)
-            registry.add("spring.datasource.password", postgres::getPassword)
+            registry.add("spring.datasource.url") { postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { postgres.username }
+            registry.add("spring.datasource.password") { postgres.password }
+            registry.add("spring.flyway.locations") { arrayOf("classpath:db/migration/cart") }
+            registry.add("spring.flyway.create-schemas") { "true" }
         }
     }
 

@@ -1,30 +1,38 @@
 [versions]
-kotlin = "2.1.20"
-spring-boot = "3.5.9"
+kotlin = "2.2.0"
+spring-boot = "4.0.0"
 dependency-management = "1.1.7"
 jib = "3.5.2"
 sonarqube = "7.2.2.6593"
 jacoco = "0.8.15"
 
 # Test dependencies
-cucumber = "7.22.1"
-testcontainers = "1.20.6"
+cucumber = "7.33.0"
+testcontainers = "2.0.2"
 junit-platform = "1.12.0"
 assertj = "3.27.6"
 mockito-kotlin = "5.4.0"
 rest-assured = "5.5.6"
 
 # Other
-springdoc = "2.8.15"
+springdoc = "3.0.1"
 
 [libraries]
 # Spring Boot starters (managed by BOM, no version needed in usage)
-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-classic = { module = "org.springframework.boot:spring-boot-starter-classic" }
+spring-boot-starter-test-classic = { module = "org.springframework.boot:spring-boot-starter-test-classic" }
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
+spring-boot-starter-data-jdbc-test = { module = "org.springframework.boot:spring-boot-starter-data-jdbc-test" }
+spring-boot-starter-jdbc-test = { module = "org.springframework.boot:spring-boot-starter-jdbc-test" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
+spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
 
 # Spring (managed by BOM)
 spring-context = { module = "org.springframework:spring-context" }
@@ -35,8 +43,8 @@ postgresql = { module = "org.postgresql:postgresql" }
 flyway-core = { module = "org.flywaydb:flyway-core" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 
-# Jackson
-jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+# Jackson 3 (Spring Boot 4.x uses tools.jackson group)
+jackson-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin" }
 
 # Kotlin
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
@@ -49,8 +57,8 @@ cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber"
 cucumber-junit-platform = { module = "io.cucumber:cucumber-junit-platform-engine", version.ref = "cucumber" }
 cucumber-spring = { module = "io.cucumber:cucumber-spring", version.ref = "cucumber" }
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite", version.ref = "junit-platform" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }

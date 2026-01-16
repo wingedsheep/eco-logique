@@ -44,7 +44,7 @@ private fun WarehouseEntity.toAddress(): Address? {
     )
 }
 
-internal fun InventoryItem.toEntity(existingId: Long? = null) = InventoryItemEntity(
+internal fun InventoryItem.toEntity(existingId: Long = 0L) = InventoryItemEntity(
     id = existingId,
     productId = productId.value,
     warehouseId = warehouseId.value,

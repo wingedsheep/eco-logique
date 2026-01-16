@@ -106,9 +106,9 @@ class PaymentSteps(
 
         val response = api.get("/api/v1/orders/${order.id}")
         assertThat(response.statusCode)
-            .withFailMessage("Expected 200 but got ${response.statusCode}: ${response.body.asString()}")
+            .withFailMessage("Expected 200 but got ${response.statusCode}: ${response.bodyAsString()}")
             .isEqualTo(200)
-        assertThat(response.jsonPath().getString("status")).isEqualTo(expectedStatus)
+        assertThat(response.getString("status")).isEqualTo(expectedStatus)
     }
 
     private fun processPaymentWithCard(token: String, last4: String, brand: CardBrand) {
