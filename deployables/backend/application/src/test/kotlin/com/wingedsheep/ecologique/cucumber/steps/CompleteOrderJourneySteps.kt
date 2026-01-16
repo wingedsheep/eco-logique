@@ -14,6 +14,8 @@ import com.wingedsheep.ecologique.payment.api.dto.CardBrand
 import com.wingedsheep.ecologique.products.api.ProductCategory
 import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
+import com.wingedsheep.ecologique.users.api.dto.AddressDto
+import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.And
 import io.cucumber.java.en.Then
@@ -160,6 +162,34 @@ class CompleteOrderJourneySteps(
 
         val subtotal = response.getDouble("subtotal")
         assertThat(subtotal).isEqualTo(expectedTotal)
+    }
+
+    @When("I set up my profile with a shipping address in {string}")
+    fun setUpProfileWithAddress(country: String) {
+        val (city, countryCode) = when (country.lowercase()) {
+            "netherlands", "nl" -> "Amsterdam" to "NL"
+            "germany", "de" -> "Berlin" to "DE"
+            "belgium", "be" -> "Brussels" to "BE"
+            "france", "fr" -> "Paris" to "FR"
+            else -> country to country.take(2).uppercase()
+        }
+
+        val request = UserCreateRequest(
+            name = "Test Customer",
+            email = "test.customer.${System.currentTimeMillis()}@demo.com",
+            address = AddressDto(
+                street = "Test Street",
+                houseNumber = "123",
+                postalCode = "12345",
+                city = city,
+                countryCode = countryCode
+            )
+        )
+
+        val response = api.post("/api/v1/users", request)
+        assertThat(response.statusCode)
+            .withFailMessage("Failed to create user profile: ${response.bodyAsString()}")
+            .isIn(200, 201)
     }
 
     @When("I checkout with a valid Mastercard")

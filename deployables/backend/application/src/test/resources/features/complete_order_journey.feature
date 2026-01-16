@@ -45,15 +45,20 @@ Feature: Complete Order Journey - End to End
     Then the total available stock should be 50
 
     # =========================================
-    # STEP 5: Customer adds product to cart
+    # STEP 5: Customer sets up profile with shipping address
     # =========================================
     Given I am authenticated as a customer
+    When I set up my profile with a shipping address in "Netherlands"
+
+    # =========================================
+    # STEP 6: Customer adds product to cart
+    # =========================================
     When I add 2 of "Eco-Friendly Water Bottle" to my cart
     Then my cart should contain 2 of "Eco-Friendly Water Bottle"
     And the cart total should be 69.98 EUR
 
     # =========================================
-    # STEP 6: Customer checks out and pays
+    # STEP 7: Customer checks out and pays
     # =========================================
     When I checkout with a valid Visa card
     Then the checkout should succeed
@@ -62,26 +67,26 @@ Feature: Complete Order Journey - End to End
     And my cart should be empty
 
     # =========================================
-    # STEP 7: Verify stock was reduced after order
+    # STEP 8: Verify stock was reduced after order
     # =========================================
     When I check the stock availability for "Eco-Friendly Water Bottle"
     Then the total available stock should be 48
 
     # =========================================
-    # STEP 8: Customer views order in history
+    # STEP 9: Customer views order in history
     # =========================================
     When I view my order history
     Then the order history should contain the recent order
 
     # =========================================
-    # STEP 9: Verify order details
+    # STEP 10: Verify order details
     # =========================================
     When I view the order details
     Then the order should contain "Eco-Friendly Water Bottle" with quantity 2
     And the order payment status should be "SUCCEEDED"
 
     # =========================================
-    # STEP 10: Verify shipment was created
+    # STEP 11: Verify shipment was created
     # =========================================
     Then a shipment should be created for the order
     And the shipment should have a tracking number starting with "ECO-"
@@ -89,6 +94,6 @@ Feature: Complete Order Journey - End to End
     And the shipment should be assigned to warehouse "Amsterdam Distribution Center"
 
     # =========================================
-    # STEP 11: Verify order status updated to SHIPPED
+    # STEP 12: Verify order status updated to SHIPPED
     # =========================================
     Then the order status should now be "SHIPPED"
