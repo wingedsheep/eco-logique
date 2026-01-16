@@ -1,0 +1,12 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    problemdetails:
+      enabled: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/shipping
+    schemas: shipping
+    default-schema: shipping
+    create-schemas: true
