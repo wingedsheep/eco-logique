@@ -2,6 +2,7 @@ package com.wingedsheep.ecologique.shipping.impl.infrastructure
 
 import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.shipping.api.ShipmentId
+import com.wingedsheep.ecologique.shipping.api.ShipmentStatus
 import com.wingedsheep.ecologique.shipping.api.ShippingService
 import com.wingedsheep.ecologique.shipping.api.dto.ShipmentDto
 import com.wingedsheep.ecologique.shipping.api.error.ShippingError
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -51,6 +54,24 @@ internal class ShippingController(
         )
     }
 
+    @PutMapping("/{id}/status")
+    @Operation(summary = "Update shipment status", description = "Updates the status of a shipment. Typically used by warehouse staff to mark items as shipped.")
+    fun updateShipmentStatus(
+        @PathVariable id: UUID,
+        @RequestBody request: UpdateShipmentStatusRequest
+    ): ResponseEntity<ShipmentDto> {
+        val status = try {
+            ShipmentStatus.valueOf(request.status)
+        } catch (e: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status: ${request.status}")
+        }
+
+        return shippingService.updateStatus(ShipmentId(id), status).fold(
+            onSuccess = { ResponseEntity.ok(it) },
+            onFailure = { throw it.toResponseStatusException() }
+        )
+    }
+
     private fun ShippingError.toResponseStatusException(): ResponseStatusException = when (this) {
         is ShippingError.NotFound -> ResponseStatusException(
             HttpStatus.NOT_FOUND,
@@ -82,3 +103,10 @@ internal class ShippingController(
         )
     }
 }
+
+/**
+ * Request body for updating shipment status.
+ */
+internal data class UpdateShipmentStatusRequest(
+    val status: String
+)

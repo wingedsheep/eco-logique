@@ -53,10 +53,11 @@ class AuthenticationSteps(
         whenever(jwtDecoder.decode(tokenValue)).thenReturn(jwt)
 
         // Register user in identity provider so UserContext can find them
-        // Only register if not already registered in this test run
+        // Use createTestUser with userId as externalSubject so JWT sub claim matches
         if (userId !in registeredUsers) {
-            registrationService.createDemoUser(
+            registrationService.createTestUser(
                 userId = UserId(UUID.fromString(userId)),
+                externalSubject = userId,  // JWT sub claim is set to userId
                 email = "test-$userId@demo.com",
                 password = "TestPassword123!"
             )

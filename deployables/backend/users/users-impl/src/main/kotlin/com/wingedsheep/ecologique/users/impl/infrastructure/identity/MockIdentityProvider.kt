@@ -118,12 +118,17 @@ internal class MockIdentityProvider : InternalIdentityProvider {
      */
     fun getUser(email: String): MockUser? = usersByEmail[email.lowercase()]
 
-    /**
-     * Creates a user with a specific external subject for test scenarios.
-     * This allows tests to match the JWT subject with the identity provider subject.
-     */
-    fun createUserWithSubject(userId: UserId, externalSubject: String, email: String, password: String) {
+    override fun createUserWithSubject(
+        userId: UserId,
+        externalSubject: String,
+        email: String,
+        password: String
+    ): Result<Unit, RegistrationError> {
         val normalizedEmail = email.lowercase()
+
+        if (usersByEmail.containsKey(normalizedEmail)) {
+            return Result.err(RegistrationError.EmailAlreadyExists(email))
+        }
 
         val user = MockUser(
             userId = userId,
@@ -139,6 +144,7 @@ internal class MockIdentityProvider : InternalIdentityProvider {
         userIdToSubject[userId] = externalSubject
 
         logger.info("MOCK IDENTITY PROVIDER: Test user created with subject $externalSubject")
+        return Result.ok(Unit)
     }
 
     data class MockUser(

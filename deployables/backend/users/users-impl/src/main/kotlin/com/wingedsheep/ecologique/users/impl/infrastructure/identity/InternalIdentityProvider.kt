@@ -71,4 +71,24 @@ internal interface InternalIdentityProvider {
      * @return The UserId if found, null otherwise
      */
     fun getUserIdBySubject(subject: String): UserId?
+
+    /**
+     * Creates a user with a specific external subject.
+     *
+     * This method is intended for test scenarios where the JWT subject
+     * needs to match the identity provider's subject.
+     *
+     * @param userId The user ID to assign
+     * @param externalSubject The external subject to use (matches JWT sub claim)
+     * @param email The user's email address
+     * @param password The user's password
+     * @return [Result.Ok] with [Unit] on success,
+     *         or [Result.Err] with a [RegistrationError]
+     */
+    fun createUserWithSubject(
+        userId: UserId,
+        externalSubject: String,
+        email: String,
+        password: String
+    ): Result<Unit, RegistrationError>
 }

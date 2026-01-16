@@ -11,6 +11,7 @@ import com.wingedsheep.ecologique.shipping.api.dto.ShipmentDto
 import com.wingedsheep.ecologique.shipping.api.error.ShippingError
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentCreated
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentDelivered
+import com.wingedsheep.ecologique.shipping.api.event.ShipmentShipped
 import com.wingedsheep.ecologique.shipping.impl.domain.Shipment
 import com.wingedsheep.ecologique.shipping.impl.domain.TrackingNumberGenerator
 import com.wingedsheep.ecologique.shipping.impl.infrastructure.ShipmentRepository
@@ -122,6 +123,19 @@ internal class ShippingServiceImpl(
         val updatedShipment = shipment.transitionTo(newStatus, now)
 
         shipmentRepository.save(updatedShipment.toEntity().markAsExisting())
+
+        // Publish event if shipped (warehouse staff marked as shipped)
+        if (newStatus == ShipmentStatus.SHIPPED) {
+            eventPublisher.publishEvent(
+                ShipmentShipped(
+                    shipmentId = updatedShipment.id,
+                    orderId = updatedShipment.orderId,
+                    trackingNumber = updatedShipment.trackingNumber,
+                    shippedAt = updatedShipment.shippedAt!!,
+                    timestamp = now
+                )
+            )
+        }
 
         // Publish event if delivered
         if (newStatus == ShipmentStatus.DELIVERED) {

@@ -175,6 +175,31 @@ internal class RegistrationServiceImpl(
         return Result.ok(userId)
     }
 
+    override fun createTestUser(
+        userId: UserId,
+        externalSubject: String,
+        email: String,
+        password: String
+    ): Result<UserId, RegistrationError> {
+        // Check if user already exists
+        val existsResult = identityProvider.userExists(email)
+        if (existsResult is Result.Err) {
+            return Result.err(RegistrationError.IdentityProviderUnavailable)
+        }
+        if ((existsResult as Result.Ok).value) {
+            // User already exists, return success
+            return Result.ok(userId)
+        }
+
+        // Create user with specific external subject
+        val createResult = identityProvider.createUserWithSubject(userId, externalSubject, email, password)
+        if (createResult is Result.Err) {
+            return Result.err(createResult.error)
+        }
+
+        return Result.ok(userId)
+    }
+
     private fun validateEmail(email: String): RegistrationError? {
         if (email.isBlank()) {
             return RegistrationError.InvalidEmail(email, "Email is required")

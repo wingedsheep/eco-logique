@@ -21,22 +21,23 @@ Feature: Complete Order Journey - End to End
     # =========================================
     # STEP 2: Admin creates a warehouse
     # =========================================
+    # Using France (FR) as it doesn't have a worldview warehouse
     When I create a warehouse with the following details:
-      | name        | Amsterdam Distribution Center |
-      | countryCode | NL                            |
-      | street      | Prinsengracht                 |
-      | houseNumber | 263                           |
-      | postalCode  | 1016 GV                       |
-      | city        | Amsterdam                     |
+      | name        | Paris Distribution Center |
+      | countryCode | FR                        |
+      | street      | Avenue des Champs-Élysées |
+      | houseNumber | 100                       |
+      | postalCode  | 75008                     |
+      | city        | Paris                     |
     Then the warehouse should be created successfully
-    And the warehouse "Amsterdam Distribution Center" should exist
+    And the warehouse "Paris Distribution Center" should exist
 
     # =========================================
     # STEP 3: Admin adds stock for the product
     # =========================================
-    When I add stock for product "Eco-Friendly Water Bottle" to warehouse "Amsterdam Distribution Center" with quantity 50
+    When I add stock for product "Eco-Friendly Water Bottle" to warehouse "Paris Distribution Center" with quantity 50
     Then the stock update should succeed
-    And the stock level for "Eco-Friendly Water Bottle" in "Amsterdam Distribution Center" should be 50
+    And the stock level for "Eco-Friendly Water Bottle" in "Paris Distribution Center" should be 50
 
     # =========================================
     # STEP 4: Admin verifies inventory check API
@@ -48,7 +49,7 @@ Feature: Complete Order Journey - End to End
     # STEP 5: Customer sets up profile with shipping address
     # =========================================
     Given I am authenticated as a customer
-    When I set up my profile with a shipping address in "Netherlands"
+    When I set up my profile with a shipping address in "France"
 
     # =========================================
     # STEP 6: Customer adds product to cart
@@ -60,6 +61,8 @@ Feature: Complete Order Journey - End to End
     # =========================================
     # STEP 7: Customer checks out and pays
     # =========================================
+    # After checkout, order is PAID and shipment is CREATED
+    # Order remains in PAID status until warehouse staff ships it
     When I checkout with a valid Visa card
     Then the checkout should succeed
     And an order should be created with status "PAID"
@@ -86,14 +89,23 @@ Feature: Complete Order Journey - End to End
     And the order payment status should be "SUCCEEDED"
 
     # =========================================
-    # STEP 11: Verify shipment was created
+    # STEP 11: Verify shipment was created (awaiting warehouse processing)
     # =========================================
     Then a shipment should be created for the order
     And the shipment should have a tracking number starting with "ECO-"
     And the shipment status should be "CREATED"
-    And the shipment should be assigned to warehouse "Amsterdam Distribution Center"
+    And the shipment should be assigned to warehouse "Paris Distribution Center"
 
     # =========================================
-    # STEP 12: Verify order status updated to SHIPPED
+    # STEP 12: Warehouse staff processes and ships the order
     # =========================================
+    Given I am authenticated as an admin
+    When the warehouse marks the shipment as processing
+    And the warehouse marks the shipment as shipped
+    Then the shipment status should be "SHIPPED"
+
+    # =========================================
+    # STEP 13: Customer verifies order status updated to SHIPPED
+    # =========================================
+    Given I am authenticated as a customer
     Then the order status should now be "SHIPPED"

@@ -9,6 +9,7 @@ import com.wingedsheep.ecologique.shipping.api.ShippingService
 import com.wingedsheep.ecologique.shipping.api.dto.CreateShipmentRequest
 import com.wingedsheep.ecologique.shipping.api.dto.ShippingAddressDto
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentCreated
+import com.wingedsheep.ecologique.shipping.api.event.ShipmentShipped
 import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
 import org.springframework.context.event.EventListener
@@ -22,8 +23,13 @@ import java.util.logging.Logger
  * When a payment is completed:
  * 1. Retrieves the order and user details
  * 2. Creates a shipment with the user's shipping address
+ * 3. Order remains in PAID status
  *
  * When a shipment is created:
+ * - Warehouse receives notification to prepare the order
+ * - Order remains in PAID status awaiting warehouse processing
+ *
+ * When a shipment is shipped (warehouse marks it as shipped):
  * 1. Updates the order status to SHIPPED
  */
 @Component
@@ -95,7 +101,17 @@ class ShippingEventListener(
 
     @EventListener
     fun onShipmentCreated(event: ShipmentCreated) {
-        logger.info("Shipment created for order ${event.orderId.value}, updating order status to SHIPPED")
+        // Shipment created - warehouse is now aware and can start processing
+        // Order remains in PAID status until warehouse staff marks it as shipped
+        logger.info(
+            "Shipment created for order ${event.orderId.value}, tracking: ${event.trackingNumber}. " +
+                "Awaiting warehouse processing."
+        )
+    }
+
+    @EventListener
+    fun onShipmentShipped(event: ShipmentShipped) {
+        logger.info("Shipment shipped for order ${event.orderId.value}, updating order status to SHIPPED")
 
         orderService.updateStatus(event.orderId, OrderStatus.SHIPPED).fold(
             onSuccess = {

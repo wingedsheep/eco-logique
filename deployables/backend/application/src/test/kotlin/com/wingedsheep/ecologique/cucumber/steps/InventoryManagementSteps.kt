@@ -73,9 +73,33 @@ class InventoryManagementSteps(
 
     @Then("the warehouse {string} should exist")
     fun warehouseShouldExist(warehouseName: String) {
-        val warehouse = context.getWarehouse(warehouseName)
-            ?: throw IllegalStateException("Warehouse '$warehouseName' not found in context")
+        // First check if warehouse is already in context
+        var warehouse = context.getWarehouse(warehouseName)
 
+        // If not in context, try to look it up from the API (for worldview warehouses)
+        if (warehouse == null) {
+            val response = api.get("/api/v1/admin/inventory/warehouses")
+            assertThat(response.statusCode)
+                .withFailMessage("Failed to get warehouses: ${response.bodyAsString()}")
+                .isEqualTo(200)
+
+            val warehouses = response.getList<Map<String, Any>>("")
+            val warehouseData = warehouses.find { it["name"] == warehouseName }
+                ?: throw IllegalStateException("Warehouse '$warehouseName' not found in API response")
+
+            // Store in context for later use
+            context.storeWarehouse(
+                name = warehouseName,
+                ref = ScenarioContext.WarehouseRef(
+                    id = warehouseData["id"] as String,
+                    name = warehouseName,
+                    countryCode = warehouseData["countryCode"] as String
+                )
+            )
+            warehouse = context.getWarehouse(warehouseName)!!
+        }
+
+        // Verify warehouse exists via API
         val response = api.get("/api/v1/admin/inventory/warehouses/${warehouse.id}")
         assertThat(response.statusCode).isEqualTo(200)
         assertThat(response.getString("name")).isEqualTo(warehouseName)

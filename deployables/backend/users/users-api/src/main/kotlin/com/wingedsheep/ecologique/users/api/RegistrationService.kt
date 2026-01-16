@@ -68,4 +68,25 @@ interface RegistrationService {
      *         or [Result.Err] with a [RegistrationError]
      */
     fun createDemoUser(userId: UserId, email: String, password: String): Result<UserId, RegistrationError>
+
+    /**
+     * Creates a pre-verified user for testing with a specific external subject.
+     *
+     * This method allows tests to create users where the identity provider's
+     * external subject matches the JWT subject. This is necessary for integration
+     * tests that use mocked JWTs.
+     *
+     * @param userId The user ID to assign
+     * @param externalSubject The external subject to use (matches JWT sub claim)
+     * @param email The user's email address
+     * @param password The user's password
+     * @return [Result.Ok] with the user's ID upon success,
+     *         or [Result.Err] with a [RegistrationError]
+     */
+    fun createTestUser(
+        userId: UserId,
+        externalSubject: String,
+        email: String,
+        password: String
+    ): Result<UserId, RegistrationError>
 }

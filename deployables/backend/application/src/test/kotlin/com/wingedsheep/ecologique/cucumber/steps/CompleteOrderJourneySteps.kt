@@ -171,6 +171,7 @@ class CompleteOrderJourneySteps(
             "germany", "de" -> "Berlin" to "DE"
             "belgium", "be" -> "Brussels" to "BE"
             "france", "fr" -> "Paris" to "FR"
+            "portugal", "pt" -> "Lisbon" to "PT"
             else -> country to country.take(2).uppercase()
         }
 
@@ -393,5 +394,33 @@ class CompleteOrderJourneySteps(
         assertThat(shipment.warehouseId)
             .withFailMessage("Expected shipment to be assigned to warehouse '$warehouseName' (${warehouse.id}) but was assigned to ${shipment.warehouseId}")
             .isEqualTo(warehouse.id)
+    }
+
+    // ==================== Warehouse Processing Steps ====================
+
+    @When("the warehouse marks the shipment as processing")
+    fun warehouseMarksShipmentAsProcessing() {
+        updateShipmentStatus("PROCESSING")
+    }
+
+    @When("the warehouse marks the shipment as shipped")
+    fun warehouseMarksShipmentAsShipped() {
+        updateShipmentStatus("SHIPPED")
+    }
+
+    private fun updateShipmentStatus(status: String) {
+        val shipment = context.getLatestShipment()
+            ?: throw IllegalStateException("No shipment in context")
+
+        val response = api.put("/api/v1/shipments/${shipment.id}/status", mapOf("status" to status))
+        assertThat(response.statusCode)
+            .withFailMessage("Failed to update shipment status to $status: ${response.bodyAsString()}")
+            .isEqualTo(200)
+
+        // Update shipment in context
+        context.storeShipment(
+            orderId = shipment.orderId,
+            ref = shipment.copy(status = status)
+        )
     }
 }
