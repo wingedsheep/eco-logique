@@ -6,8 +6,8 @@ import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineDto
 import com.wingedsheep.ecologique.products.api.ProductId
-import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_KEYCLOAK_ID
-import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_KEYCLOAK_ID
+import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_USER_ID
+import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_USER_ID
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -16,7 +16,7 @@ object WorldviewOrder {
 
     val johnDoeCreatedOrder = OrderDto(
         id = OrderId(UUID.fromString("00000000-0000-0000-0001-000000000001")),
-        userId = JOHN_KEYCLOAK_ID,
+        userId = JOHN_USER_ID.value.toString(),
         status = OrderStatus.CREATED,
         lines = listOf(
             OrderLineDto(
@@ -35,7 +35,7 @@ object WorldviewOrder {
 
     val johnDoePaidOrder = OrderDto(
         id = OrderId(UUID.fromString("00000000-0000-0000-0001-000000000002")),
-        userId = JOHN_KEYCLOAK_ID,
+        userId = JOHN_USER_ID.value.toString(),
         status = OrderStatus.PAID,
         lines = listOf(
             OrderLineDto(
@@ -61,7 +61,7 @@ object WorldviewOrder {
 
     val janeSmithShippedOrder = OrderDto(
         id = OrderId(UUID.fromString("00000000-0000-0000-0001-000000000003")),
-        userId = JANE_KEYCLOAK_ID,
+        userId = JANE_USER_ID.value.toString(),
         status = OrderStatus.SHIPPED,
         lines = listOf(
             OrderLineDto(
@@ -80,7 +80,7 @@ object WorldviewOrder {
 
     val janeSmithDeliveredOrder = OrderDto(
         id = OrderId(UUID.fromString("00000000-0000-0000-0001-000000000004")),
-        userId = JANE_KEYCLOAK_ID,
+        userId = JANE_USER_ID.value.toString(),
         status = OrderStatus.DELIVERED,
         lines = listOf(
             OrderLineDto(

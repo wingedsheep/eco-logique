@@ -1,16 +1,14 @@
 package com.wingedsheep.ecologique.users.worldview
 
-import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserDto
-import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_KEYCLOAK_ID
-import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_KEYCLOAK_ID
-import java.util.UUID
+import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_USER_ID
+import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_USER_ID
 
 object WorldviewUser {
 
     val johnDoe = UserDto(
-        id = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
+        id = JOHN_USER_ID,
         name = "John Doe",
         email = "john@demo.com",
         defaultAddress = AddressDto(
@@ -23,7 +21,7 @@ object WorldviewUser {
     )
 
     val janeSmith = UserDto(
-        id = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
+        id = JANE_USER_ID,
         name = "Jane Smith",
         email = "jane@demo.com",
         defaultAddress = AddressDto(
@@ -37,17 +35,9 @@ object WorldviewUser {
 
     val allUsers = listOf(johnDoe, janeSmith)
 
-    val keycloakSubjects = mapOf(
-        JOHN_KEYCLOAK_ID to johnDoe,
-        JANE_KEYCLOAK_ID to janeSmith
-    )
-
     fun findByName(name: String): UserDto? =
         allUsers.find { it.name == name }
 
     fun findByEmail(email: String): UserDto? =
         allUsers.find { it.email == email }
-
-    fun findByKeycloakSubject(subject: String): UserDto? =
-        keycloakSubjects[subject]
 }

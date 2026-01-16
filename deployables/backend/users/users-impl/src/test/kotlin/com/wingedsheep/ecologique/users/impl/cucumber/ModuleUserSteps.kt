@@ -1,8 +1,10 @@
 package com.wingedsheep.ecologique.users.impl.cucumber
 
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import com.wingedsheep.ecologique.users.api.dto.UserUpdateAddressRequest
+import com.wingedsheep.ecologique.users.impl.infrastructure.identity.MockIdentityProvider
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.Before
 import io.cucumber.java.en.Given
@@ -29,14 +31,19 @@ class ModuleUserSteps {
     @Autowired
     private lateinit var jwtDecoder: JwtDecoder
 
+    @Autowired
+    private lateinit var mockIdentityProvider: MockIdentityProvider
+
     private var response: Response? = null
     private var currentSubject: String = ""
+    private var currentUserId: UserId? = null
     private lateinit var authenticatedRequest: RequestSpecification
 
     @Before
     fun setup() {
         RestAssured.port = port
         RestAssured.basePath = "/api/v1/users"
+        mockIdentityProvider.clearUsers()
     }
 
     @Given("the module is running")
@@ -54,6 +61,16 @@ class ModuleUserSteps {
             .build()
 
         whenever(jwtDecoder.decode(tokenValue)).thenReturn(jwt)
+
+        // Create a demo user in the identity provider so UserContext can resolve the user
+        // The JWT subject must match the identity provider's external subject
+        currentUserId = UserId.generate()
+        mockIdentityProvider.createUserWithSubject(
+            userId = currentUserId!!,
+            externalSubject = subject,
+            email = "$subject@test.com",
+            password = "TestPassword123!"
+        )
 
         authenticatedRequest = RestAssured.given()
             .header("Authorization", "Bearer $tokenValue")

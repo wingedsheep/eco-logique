@@ -5,7 +5,8 @@ import org.springframework.boot.runApplication
 
 @SpringBootApplication(
     scanBasePackages = [
-        "com.wingedsheep.ecologique.users.impl"
+        "com.wingedsheep.ecologique.users.impl",
+        "com.wingedsheep.ecologique.users.impl.cucumber"
     ]
 )
 class TestApplication

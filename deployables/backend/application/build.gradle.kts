@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":orders:orders-worldview"))
     implementation(project(":cart:cart-impl"))
     implementation(project(":cart:cart-worldview"))
+    implementation(project(":email:email-impl"))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)

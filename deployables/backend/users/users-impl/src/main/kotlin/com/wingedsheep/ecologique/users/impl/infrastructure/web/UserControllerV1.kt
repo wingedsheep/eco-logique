@@ -1,6 +1,8 @@
 package com.wingedsheep.ecologique.users.impl.infrastructure.web
 
 import com.wingedsheep.ecologique.common.country.Country
+import com.wingedsheep.ecologique.users.api.UserContext
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import com.wingedsheep.ecologique.users.api.dto.UserDto
@@ -11,8 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.ErrorResponseException
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -24,17 +24,19 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1/users")
 @Tag(name = "Users", description = "User profile management")
-class UserControllerV1(
-    private val userService: UserService
+internal class UserControllerV1(
+    private val userService: UserService,
+    private val userContext: UserContext
 ) {
 
     @PostMapping
     @Operation(summary = "Create user profile", description = "Creates a new user profile linked to the authenticated user")
     fun createProfile(
-        @AuthenticationPrincipal jwt: Jwt,
         @RequestBody request: UserCreateRequest
     ): ResponseEntity<UserDto> {
-        return userService.createProfile(jwt.subject, request).fold(
+        val userId = getCurrentUserIdOrThrow()
+
+        return userService.createProfile(userId, request).fold(
             onSuccess = { user ->
                 ResponseEntity.status(HttpStatus.CREATED).body(user)
             },
@@ -46,8 +48,10 @@ class UserControllerV1(
 
     @GetMapping
     @Operation(summary = "Get user profile", description = "Retrieves the profile of the authenticated user")
-    fun getProfile(@AuthenticationPrincipal jwt: Jwt): ResponseEntity<UserDto> {
-        return userService.getProfile(jwt.subject).fold(
+    fun getProfile(): ResponseEntity<UserDto> {
+        val userId = getCurrentUserIdOrThrow()
+
+        return userService.getProfile(userId).fold(
             onSuccess = { user ->
                 ResponseEntity.ok(user)
             },
@@ -60,15 +64,32 @@ class UserControllerV1(
     @PutMapping("/address")
     @Operation(summary = "Update user address", description = "Updates the default delivery address of the authenticated user")
     fun updateAddress(
-        @AuthenticationPrincipal jwt: Jwt,
         @RequestBody request: UserUpdateAddressRequest
     ): ResponseEntity<UserDto> {
-        return userService.updateAddress(jwt.subject, request).fold(
+        val userId = getCurrentUserIdOrThrow()
+
+        return userService.updateAddress(userId, request).fold(
             onSuccess = { user ->
                 ResponseEntity.ok(user)
             },
             onFailure = { error ->
                 throw error.toErrorResponseException()
+            }
+        )
+    }
+
+    private fun getCurrentUserIdOrThrow(): UserId {
+        return userContext.getCurrentUserId().fold(
+            onSuccess = { it },
+            onFailure = {
+                throw ErrorResponseException(
+                    HttpStatus.FORBIDDEN,
+                    ProblemDetail.forStatusAndDetail(
+                        HttpStatus.FORBIDDEN,
+                        "User not registered. Please complete registration first."
+                    ),
+                    null
+                )
             }
         )
     }

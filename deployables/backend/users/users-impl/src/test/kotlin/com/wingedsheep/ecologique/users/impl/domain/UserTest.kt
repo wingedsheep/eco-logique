@@ -1,6 +1,7 @@
 package com.wingedsheep.ecologique.users.impl.domain
 
 import com.wingedsheep.ecologique.common.country.Country
+import com.wingedsheep.ecologique.users.api.UserId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -11,6 +12,7 @@ class UserTest {
     fun `should create User with valid data`() {
         // Given & When
         val user = User.create(
+            id = UserId.generate(),
             externalSubject = "auth0|123456",
             name = "John Doe",
             email = "john@example.com",
@@ -37,6 +39,7 @@ class UserTest {
 
         // When
         val user = User.create(
+            id = UserId.generate(),
             externalSubject = "auth0|123456",
             name = "John Doe",
             email = "john@example.com",
@@ -53,6 +56,7 @@ class UserTest {
         // Given & When & Then
         assertThatThrownBy {
             User.create(
+                id = UserId.generate(),
                 externalSubject = "auth0|123456",
                 name = "",
                 email = "john@example.com",
@@ -68,6 +72,7 @@ class UserTest {
         // Given & When & Then
         assertThatThrownBy {
             User.create(
+                id = UserId.generate(),
                 externalSubject = "auth0|123456",
                 name = "a".repeat(256),
                 email = "john@example.com",
@@ -83,6 +88,7 @@ class UserTest {
         // Given & When & Then
         assertThatThrownBy {
             User.create(
+                id = UserId.generate(),
                 externalSubject = "",
                 name = "John Doe",
                 email = "john@example.com",
@@ -97,6 +103,7 @@ class UserTest {
     fun `updateAddress should return new user with updated address`() {
         // Given
         val user = User.create(
+            id = UserId.generate(),
             externalSubject = "auth0|123456",
             name = "John Doe",
             email = "john@example.com",

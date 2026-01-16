@@ -7,7 +7,7 @@ import com.wingedsheep.ecologique.users.api.dto.UserUpdateAddressRequest
 import com.wingedsheep.ecologique.users.api.error.UserError
 
 interface UserService {
-    fun createProfile(externalSubject: String, request: UserCreateRequest): Result<UserDto, UserError>
-    fun getProfile(externalSubject: String): Result<UserDto, UserError>
-    fun updateAddress(externalSubject: String, request: UserUpdateAddressRequest): Result<UserDto, UserError>
+    fun createProfile(userId: UserId, request: UserCreateRequest): Result<UserDto, UserError>
+    fun getProfile(userId: UserId): Result<UserDto, UserError>
+    fun updateAddress(userId: UserId, request: UserUpdateAddressRequest): Result<UserDto, UserError>
 }

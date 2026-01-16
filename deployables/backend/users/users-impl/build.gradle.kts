@@ -12,6 +12,7 @@ dependencyManagement {
 
 dependencies {
     implementation(project(":users:users-api"))
+    implementation(project(":email:email-api"))
     implementation(project(":common:common-country"))
     implementation(project(":common:common-result"))
 

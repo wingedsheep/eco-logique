@@ -2,6 +2,7 @@ package com.wingedsheep.ecologique.users.impl.application
 
 import com.wingedsheep.ecologique.common.country.Country
 import com.wingedsheep.ecologique.common.result.Result
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import com.wingedsheep.ecologique.users.api.dto.UserDto
@@ -11,21 +12,31 @@ import com.wingedsheep.ecologique.users.impl.domain.Address
 import com.wingedsheep.ecologique.users.impl.domain.Email
 import com.wingedsheep.ecologique.users.impl.domain.User
 import com.wingedsheep.ecologique.users.impl.domain.UserRepository
+import com.wingedsheep.ecologique.users.impl.infrastructure.identity.InternalIdentityProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 internal class UserServiceImpl(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val identityProvider: InternalIdentityProvider
 ) : UserService {
 
     @Transactional
     override fun createProfile(
-        externalSubject: String,
+        userId: UserId,
         request: UserCreateRequest
     ): Result<UserDto, UserError> {
+        if (userRepository.findById(userId) != null) {
+            return Result.err(UserError.AlreadyExists(userId.value.toString()))
+        }
+
+        // Get external subject from identity provider (internal)
+        val externalSubject = identityProvider.getExternalSubjectByUserId(userId)
+            ?: return Result.err(UserError.NotFound(userId.value.toString()))
+
         if (userRepository.existsByExternalSubject(externalSubject)) {
-            return Result.err(UserError.AlreadyExists(externalSubject))
+            return Result.err(UserError.AlreadyExists(userId.value.toString()))
         }
 
         val email = try {
@@ -59,6 +70,7 @@ internal class UserServiceImpl(
 
         val user = try {
             User.create(
+                id = userId,
                 externalSubject = externalSubject,
                 name = request.name,
                 email = request.email,
@@ -73,20 +85,20 @@ internal class UserServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getProfile(externalSubject: String): Result<UserDto, UserError> {
-        val user = userRepository.findByExternalSubject(externalSubject)
-            ?: return Result.err(UserError.NotFound(externalSubject))
+    override fun getProfile(userId: UserId): Result<UserDto, UserError> {
+        val user = userRepository.findById(userId)
+            ?: return Result.err(UserError.NotFound(userId.value.toString()))
 
         return Result.ok(user.toDto())
     }
 
     @Transactional
     override fun updateAddress(
-        externalSubject: String,
+        userId: UserId,
         request: UserUpdateAddressRequest
     ): Result<UserDto, UserError> {
-        val user = userRepository.findByExternalSubject(externalSubject)
-            ?: return Result.err(UserError.NotFound(externalSubject))
+        val user = userRepository.findById(userId)
+            ?: return Result.err(UserError.NotFound(userId.value.toString()))
 
         val country = try {
             Country.valueOf(request.countryCode)

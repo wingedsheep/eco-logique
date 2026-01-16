@@ -1,5 +1,7 @@
 package com.wingedsheep.ecologique.users.worldview
 
+import com.wingedsheep.ecologique.users.api.RegistrationService
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
 import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
@@ -9,11 +11,13 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
+import java.util.UUID
 
 @Component
 @Order(2)
 class WorldviewUserDataLoader(
     private val userService: UserService,
+    private val registrationService: RegistrationService,
     @Value("\${spring.profiles.active:}") private val activeProfile: String
 ) : ApplicationRunner {
 
@@ -31,11 +35,22 @@ class WorldviewUserDataLoader(
     }
 
     private fun loadUsers() {
-        worldviewUsers.forEach { (keycloakId, userData) ->
-            val existingProfile = userService.getProfile(keycloakId)
+        for (userData in worldviewUsers) {
+            val existingProfile = userService.getProfile(userData.userId)
             if (existingProfile.isOk) {
                 logger.debug("Worldview user already exists: ${userData.name}")
-                return@forEach
+                continue
+            }
+
+            // Create demo user (pre-verified)
+            val createResult = registrationService.createDemoUser(
+                userData.userId,
+                userData.email,
+                "DemoPassword123!"
+            )
+            if (createResult.isErr) {
+                logger.warn("Failed to create identity for ${userData.name}")
+                continue
             }
 
             val request = UserCreateRequest(
@@ -44,7 +59,7 @@ class WorldviewUserDataLoader(
                 address = userData.address
             )
 
-            userService.createProfile(keycloakId, request)
+            userService.createProfile(userData.userId, request)
                 .onSuccess { created ->
                     logger.debug("Created worldview user: ${created.name} (${created.id})")
                 }
@@ -55,17 +70,19 @@ class WorldviewUserDataLoader(
     }
 
     companion object {
-        const val JOHN_KEYCLOAK_ID = "550e8400-e29b-41d4-a716-446655440001"
-        const val JANE_KEYCLOAK_ID = "550e8400-e29b-41d4-a716-446655440002"
+        val JOHN_USER_ID = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+        val JANE_USER_ID = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
 
         private data class WorldviewUserData(
+            val userId: UserId,
             val name: String,
             val email: String,
             val address: AddressDto?
         )
 
-        private val worldviewUsers = mapOf(
-            JOHN_KEYCLOAK_ID to WorldviewUserData(
+        private val worldviewUsers = listOf(
+            WorldviewUserData(
+                userId = JOHN_USER_ID,
                 name = "John Doe",
                 email = "john@demo.com",
                 address = AddressDto(
@@ -76,7 +93,8 @@ class WorldviewUserDataLoader(
                     countryCode = "NL"
                 )
             ),
-            JANE_KEYCLOAK_ID to WorldviewUserData(
+            WorldviewUserData(
+                userId = JANE_USER_ID,
                 name = "Jane Smith",
                 email = "jane@demo.com",
                 address = AddressDto(

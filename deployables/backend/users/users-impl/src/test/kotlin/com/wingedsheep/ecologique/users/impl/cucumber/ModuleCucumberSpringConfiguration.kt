@@ -15,7 +15,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @Testcontainers
-@Import(JwtTestConfig::class)
+@Import(JwtTestConfig::class, TestEmailConfig::class, TestSecurityConfig::class)
 class ModuleCucumberSpringConfiguration {
 
     companion object {

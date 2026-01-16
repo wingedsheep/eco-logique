@@ -15,9 +15,10 @@ moduleDependencyValidation {
     allowedDependencies.set(
         mapOf(
             "products" to emptySet(),
-            "users" to emptySet(),
+            "users" to setOf("email"),
             "orders" to setOf("products", "users"),
             "cart" to setOf("products", "users"),
+            "email" to emptySet(),
         )
     )
 }

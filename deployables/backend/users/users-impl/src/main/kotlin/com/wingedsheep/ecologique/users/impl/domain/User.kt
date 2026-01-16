@@ -19,12 +19,13 @@ internal data class User(
 
     companion object {
         fun create(
+            id: UserId,
             externalSubject: String,
             name: String,
             email: String,
             address: Address?
         ): User = User(
-            id = UserId.generate(),
+            id = id,
             externalSubject = externalSubject,
             name = name,
             email = Email(email),
