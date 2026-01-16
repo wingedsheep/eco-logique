@@ -1,6 +1,6 @@
 Feature: Complete Order Journey - End to End
   As a business
-  I want to verify the complete order flow from product creation to payment
+  I want to verify the complete order flow from product creation to shipment
   So that I can ensure all systems work together correctly
 
   Scenario: Complete order flow from product creation to successful payment with stock verification
@@ -79,3 +79,16 @@ Feature: Complete Order Journey - End to End
     When I view the order details
     Then the order should contain "Eco-Friendly Water Bottle" with quantity 2
     And the order payment status should be "SUCCEEDED"
+
+    # =========================================
+    # STEP 10: Verify shipment was created
+    # =========================================
+    Then a shipment should be created for the order
+    And the shipment should have a tracking number starting with "ECO-"
+    And the shipment status should be "CREATED"
+    And the shipment should be assigned to warehouse "Amsterdam Distribution Center"
+
+    # =========================================
+    # STEP 11: Verify order status updated to SHIPPED
+    # =========================================
+    Then the order status should now be "SHIPPED"

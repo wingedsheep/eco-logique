@@ -7,6 +7,7 @@ import com.wingedsheep.ecologique.cucumber.ScenarioContext
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.OrderRef
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.PaymentRef
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.ProductRef
+import com.wingedsheep.ecologique.cucumber.ScenarioContext.ShipmentRef
 import com.wingedsheep.ecologique.cucumber.TestApiClient
 import com.wingedsheep.ecologique.cucumber.TestResponse
 import com.wingedsheep.ecologique.payment.api.dto.CardBrand
@@ -262,5 +263,105 @@ class CompleteOrderJourneySteps(
                 )
             }
         }
+    }
+
+    // ==================== Shipping Steps ====================
+
+    @When("I check the shipment for my order")
+    fun checkShipmentForOrder() {
+        val order = context.getLatestOrder()
+            ?: throw IllegalStateException("No order in context")
+
+        val response = api.get("/api/v1/shipments?orderId=${order.id}")
+
+        if (response.statusCode == 200) {
+            context.storeShipment(
+                orderId = order.id,
+                ref = ShipmentRef(
+                    id = response.getString("id")!!,
+                    orderId = response.getString("orderId")!!,
+                    trackingNumber = response.getString("trackingNumber")!!,
+                    status = response.getString("status")!!,
+                    warehouseId = response.getString("warehouseId")!!
+                )
+            )
+        }
+    }
+
+    @Then("a shipment should be created for the order")
+    fun shipmentShouldBeCreatedForOrder() {
+        val order = context.getLatestOrder()
+            ?: throw IllegalStateException("No order in context")
+
+        val response = api.get("/api/v1/shipments?orderId=${order.id}")
+        assertThat(response.statusCode)
+            .withFailMessage("Expected shipment for order ${order.id} but got ${response.statusCode}: ${response.bodyAsString()}")
+            .isEqualTo(200)
+
+        val trackingNumber = response.getString("trackingNumber")
+        assertThat(trackingNumber)
+            .withFailMessage("Shipment should have a tracking number")
+            .isNotNull
+            .startsWith("ECO-")
+
+        // Store shipment in context
+        context.storeShipment(
+            orderId = order.id,
+            ref = ShipmentRef(
+                id = response.getString("id")!!,
+                orderId = response.getString("orderId")!!,
+                trackingNumber = trackingNumber!!,
+                status = response.getString("status")!!,
+                warehouseId = response.getString("warehouseId")!!
+            )
+        )
+    }
+
+    @Then("the shipment status should be {string}")
+    fun shipmentStatusShouldBe(expectedStatus: String) {
+        val shipment = context.getLatestShipment()
+            ?: throw IllegalStateException("No shipment in context")
+
+        assertThat(shipment.status).isEqualTo(expectedStatus)
+    }
+
+    @Then("the shipment should have a tracking number starting with {string}")
+    fun shipmentShouldHaveTrackingNumber(prefix: String) {
+        val shipment = context.getLatestShipment()
+            ?: throw IllegalStateException("No shipment in context")
+
+        assertThat(shipment.trackingNumber)
+            .withFailMessage("Expected tracking number to start with '$prefix' but was '${shipment.trackingNumber}'")
+            .startsWith(prefix)
+    }
+
+    @Then("the order status should now be {string}")
+    fun orderStatusShouldNowBe(expectedStatus: String) {
+        val order = context.getLatestOrder()
+            ?: throw IllegalStateException("No order in context")
+
+        val response = api.get("/api/v1/orders/${order.id}")
+        assertThat(response.statusCode).isEqualTo(200)
+
+        val status = response.getString("status")
+        assertThat(status)
+            .withFailMessage("Expected order status '$expectedStatus' but was '$status'")
+            .isEqualTo(expectedStatus)
+
+        // Update order in context
+        context.updateOrderStatus(order.id, status!!)
+    }
+
+    @Then("the shipment should be assigned to warehouse {string}")
+    fun shipmentShouldBeAssignedToWarehouse(warehouseName: String) {
+        val shipment = context.getLatestShipment()
+            ?: throw IllegalStateException("No shipment in context")
+
+        val warehouse = context.getWarehouse(warehouseName)
+            ?: throw IllegalStateException("Warehouse '$warehouseName' not found in context")
+
+        assertThat(shipment.warehouseId)
+            .withFailMessage("Expected shipment to be assigned to warehouse '$warehouseName' (${warehouse.id}) but was assigned to ${shipment.warehouseId}")
+            .isEqualTo(warehouse.id)
     }
 }
