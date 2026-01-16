@@ -35,10 +35,12 @@ class ProductSteps {
         RestAssured.port = port
         RestAssured.basePath = "/api/v1/products"
 
+        // Use a valid UUID for the user ID
+        val testUserId = "33333333-3333-3333-3333-333333333333"
         val tokenValue = "fake-jwt-token"
         val jwt = Jwt.withTokenValue(tokenValue)
             .header("alg", "none")
-            .claim("sub", "jane")
+            .claim("sub", testUserId)
             .claim("realm_access", mapOf("roles" to listOf("ROLE_ADMIN")))
             .build()
 

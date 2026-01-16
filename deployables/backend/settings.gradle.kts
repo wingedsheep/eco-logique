@@ -41,6 +41,10 @@ include(":email:email-impl")
 include(":payment:payment-api")
 include(":payment:payment-impl")
 include(":payment:payment-worldview")
+include(":inventory:inventory-api")
+include(":inventory:inventory-impl")
+include(":checkout:checkout-api")
+include(":checkout:checkout-impl")
 
 // Map common modules to the actual location
 project(":common:common-time").projectDir = file("../../common/common-time")

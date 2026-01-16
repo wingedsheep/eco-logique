@@ -203,16 +203,16 @@
 * **Description**: Handle payment transactions and trigger fulfillment.
 * **Deliverables**:
 
-  * [ ] `Payment` entity (Transaction ID, Order ID, Amount, Status).
-  * [ ] `PaymentService` to simulate interaction with a PSP.
-  * [ ] **Event**: Publish `PaymentCompleted` domain event upon success (in `payment-api`).
-  * [ ] REST API:
+  * [x] `Payment` entity (Transaction ID, Order ID, Amount, Status).
+  * [x] `PaymentService` to simulate interaction with a PSP.
+  * [x] **Event**: Publish `PaymentCompleted` domain event upon success (in `payment-api`).
+  * [x] REST API:
 
-    * [ ] `POST /payments` (initiate payment) *(also used by checkout orchestration)*
-  * [ ] On success: update `Order` status to `PAID` via `orders-api`
-  * [ ] On failure: update `Order` status to `PAYMENT_PENDING` or `CANCELLED` via `orders-api` (choose one for demo)
-  * [ ] Error handling: `PaymentError` sealed hierarchy in `payment-api`; controllers map errors to RFC7807 Problem Details.
-  * [ ] **Worldview**: Successful (Credit Card) and failed (Insufficient Funds) payment scenarios.
+    * [x] `POST /payments` (initiate payment) *(also used by checkout orchestration)*
+  * [x] On success: update `Order` status to `PAID` via `orders-api`
+  * [x] On failure: order stays in `PAYMENT_PENDING` (customer can retry)
+  * [x] Error handling: `PaymentError` sealed hierarchy in `payment-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] **Worldview**: Successful (Credit Card) and failed (Insufficient Funds) payment scenarios.
 
 ---
 

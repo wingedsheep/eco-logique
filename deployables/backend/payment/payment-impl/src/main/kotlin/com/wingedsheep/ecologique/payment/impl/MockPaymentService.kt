@@ -11,6 +11,7 @@ import com.wingedsheep.ecologique.payment.api.dto.PaymentResponse
 import com.wingedsheep.ecologique.payment.api.error.PaymentError
 import com.wingedsheep.ecologique.payment.api.event.PaymentCompleted
 import com.wingedsheep.ecologique.payment.api.event.PaymentFailed
+import com.wingedsheep.ecologique.payment.api.event.PaymentInitiated
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -58,6 +59,16 @@ class MockPaymentService(
         val paymentId = PaymentId.generate()
         val now = Instant.now()
         val methodSummary = request.paymentMethod.toSummary()
+
+        // Publish payment initiated event (order can transition to PAYMENT_PENDING)
+        eventPublisher.publishEvent(
+            PaymentInitiated(
+                paymentId = paymentId,
+                orderId = request.orderId,
+                amount = request.amount,
+                timestamp = now
+            )
+        )
 
         // Check for special test tokens that simulate failures
         val errorResult = checkForTestScenario(request.paymentMethod)

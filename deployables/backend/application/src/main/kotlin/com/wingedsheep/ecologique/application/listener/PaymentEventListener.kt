@@ -5,6 +5,7 @@ import com.wingedsheep.ecologique.orders.api.OrderService
 import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.payment.api.event.PaymentCompleted
 import com.wingedsheep.ecologique.payment.api.event.PaymentFailed
+import com.wingedsheep.ecologique.payment.api.event.PaymentInitiated
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -30,6 +31,21 @@ class PaymentEventListener(
         orderService.updateStatus(orderId, OrderStatus.PAID).fold(
             onSuccess = {
                 logger.info("Order ${event.orderId} status updated to PAID")
+            },
+            onFailure = { error ->
+                logger.warning("Failed to update order ${event.orderId} status: $error")
+            }
+        )
+    }
+
+    @EventListener
+    fun onPaymentInitiated(event: PaymentInitiated) {
+        logger.info("Payment initiated for order ${event.orderId}, updating status to PAYMENT_PENDING")
+
+        val orderId = OrderId(UUID.fromString(event.orderId))
+        orderService.updateStatus(orderId, OrderStatus.PAYMENT_PENDING).fold(
+            onSuccess = {
+                logger.info("Order ${event.orderId} status updated to PAYMENT_PENDING")
             },
             onFailure = { error ->
                 logger.warning("Failed to update order ${event.orderId} status: $error")

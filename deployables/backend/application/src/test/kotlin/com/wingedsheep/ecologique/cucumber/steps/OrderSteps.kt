@@ -67,8 +67,16 @@ class OrderJourneySteps(
 
     @Then("the order total should be {double} EUR")
     fun orderTotalShouldBe(expectedTotal: Double) {
-        assertThat(orderResponse!!.jsonPath().getDouble("grandTotal")).isEqualTo(expectedTotal)
-        assertThat(orderResponse!!.jsonPath().getString("currency")).isEqualTo("EUR")
+        // Use orderResponse if available (from direct order API), otherwise use context
+        val response = orderResponse ?: run {
+            val order = context.getLatestOrder()
+                ?: throw IllegalStateException("No order in context")
+            api.get("/api/v1/orders/${order.id}")
+        }
+        // POST returns 201, GET returns 200
+        assertThat(response.statusCode).isIn(200, 201)
+        assertThat(response.jsonPath().getDouble("grandTotal")).isEqualTo(expectedTotal)
+        assertThat(response.jsonPath().getString("currency")).isEqualTo("EUR")
     }
 
     @When("I view my order history")

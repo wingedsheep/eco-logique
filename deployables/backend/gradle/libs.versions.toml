@@ -28,6 +28,7 @@ spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boo
 
 # Spring (managed by BOM)
 spring-context = { module = "org.springframework:spring-context" }
+spring-tx = { module = "org.springframework:spring-tx" }
 
 # Database
 postgresql = { module = "org.postgresql:postgresql" }

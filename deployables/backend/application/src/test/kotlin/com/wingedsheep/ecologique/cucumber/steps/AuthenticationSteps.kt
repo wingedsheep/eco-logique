@@ -10,19 +10,29 @@ class AuthenticationSteps(
     private val context: ScenarioContext,
     private val jwtDecoder: JwtDecoder
 ) {
+    // Fixed UUIDs for test users to ensure consistency across tests
+    private val customerUserId = "11111111-1111-1111-1111-111111111111"
+    private val adminUserId = "22222222-2222-2222-2222-222222222222"
+
     @Given("I am authenticated as a customer")
     fun authenticatedAsCustomer() {
-        authenticate(userId = "customer-user", roles = listOf("ROLE_CUSTOMER"))
+        authenticate(userId = customerUserId, roles = listOf("ROLE_CUSTOMER"))
     }
 
     @Given("I am authenticated as an admin")
     fun authenticatedAsAdmin() {
-        authenticate(userId = "admin-user", roles = listOf("ROLE_ADMIN", "ROLE_CUSTOMER"))
+        authenticate(userId = adminUserId, roles = listOf("ROLE_ADMIN", "ROLE_CUSTOMER"))
     }
 
     @Given("I am authenticated as user {string}")
     fun authenticatedAsUser(userId: String) {
-        authenticate(userId = userId, roles = listOf("ROLE_CUSTOMER"))
+        // Allow explicit UUID or generate one for named users
+        val actualUserId = if (userId.matches(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))) {
+            userId
+        } else {
+            java.util.UUID.nameUUIDFromBytes(userId.toByteArray()).toString()
+        }
+        authenticate(userId = actualUserId, roles = listOf("ROLE_CUSTOMER"))
     }
 
     private fun authenticate(userId: String, roles: List<String>) {

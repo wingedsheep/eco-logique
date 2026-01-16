@@ -24,6 +24,9 @@ dependencies {
     implementation(project(":email:email-impl"))
     implementation(project(":payment:payment-api"))
     implementation(project(":payment:payment-impl"))
+    implementation(project(":inventory:inventory-api"))
+    implementation(project(":inventory:inventory-impl"))
+    implementation(project(":checkout:checkout-impl"))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
@@ -51,6 +54,8 @@ dependencies {
     testImplementation(testFixtures(project(":products:products-api")))
     testImplementation(testFixtures(project(":orders:orders-api")))
     testImplementation(testFixtures(project(":cart:cart-api")))
+    testImplementation(project(":checkout:checkout-api"))
+    testImplementation(project(":cart:cart-api"))
     testImplementation(libs.mockito.kotlin)
 }
 
