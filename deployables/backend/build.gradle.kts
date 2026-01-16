@@ -16,11 +16,12 @@ moduleDependencyValidation {
         mapOf(
             "products" to emptySet(),
             "users" to setOf("email"),
-            "orders" to setOf("products", "users"),
+            "orders" to setOf("products", "users", "inventory", "payment", "shipping"),
             "cart" to setOf("products", "users"),
             "email" to emptySet(),
             "inventory" to setOf("products"),
-            "shipping" to setOf("orders", "inventory"),
+            "payment" to emptySet(),
+            "shipping" to setOf("orders", "inventory", "payment", "users"),
         )
     )
 }

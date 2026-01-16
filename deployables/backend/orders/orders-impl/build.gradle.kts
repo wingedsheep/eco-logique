@@ -13,6 +13,9 @@ dependencyManagement {
 dependencies {
     implementation(project(":orders:orders-api"))
     implementation(project(":products:products-api"))
+    implementation(project(":inventory:inventory-api"))
+    implementation(project(":payment:payment-api"))
+    implementation(project(":shipping:shipping-api"))
     implementation(project(":common:common-money"))
     implementation(project(":common:common-result"))
 

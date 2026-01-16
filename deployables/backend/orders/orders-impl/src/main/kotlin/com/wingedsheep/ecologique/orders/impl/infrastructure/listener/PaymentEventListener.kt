@@ -1,4 +1,4 @@
-package com.wingedsheep.ecologique.application.listener
+package com.wingedsheep.ecologique.orders.impl.infrastructure.listener
 
 import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderService
@@ -13,12 +13,9 @@ import java.util.logging.Logger
 
 /**
  * Listens to payment events and updates order status accordingly.
- *
- * This is the application-level integration between the payment and orders modules.
- * The payment module publishes events, and this listener coordinates the order updates.
  */
 @Component
-class PaymentEventListener(
+internal class PaymentEventListener(
     private val orderService: OrderService
 ) {
     private val logger = Logger.getLogger(PaymentEventListener::class.java.name)
@@ -56,7 +53,5 @@ class PaymentEventListener(
     @EventListener
     fun onPaymentFailed(event: PaymentFailed) {
         logger.info("Payment failed for order ${event.orderId}: ${event.failureReason}")
-        // Order stays in PAYMENT_PENDING - customer can retry
-        // Could optionally send notification, log for analytics, etc.
     }
 }

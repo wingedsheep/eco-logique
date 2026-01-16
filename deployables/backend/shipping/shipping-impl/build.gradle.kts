@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":common:common-country"))
     implementation(project(":inventory:inventory-api"))
     implementation(project(":orders:orders-api"))
+    implementation(project(":payment:payment-api"))
+    implementation(project(":users:users-api"))
 
     implementation(libs.spring.context)
     implementation(libs.spring.boot.starter.data.jdbc)
