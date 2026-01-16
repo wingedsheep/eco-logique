@@ -48,7 +48,6 @@ jobs:
 
       - name: Run application tests
         run: ./gradlew :application:test --parallel --build-cache
-        continue-on-error: true
 
       - name: Publish test report
         if: always()
@@ -57,7 +56,7 @@ jobs:
           name: Tests
           reporter: java-junit
           path: "**/build/test-results/test/*.xml"
-          fail-on-error: "false"
+          fail-on-error: "true"
 
       - name: Add coverage to PR
         if: github.event_name == 'pull_request'
