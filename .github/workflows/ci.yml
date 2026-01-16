@@ -64,7 +64,7 @@ jobs:
       matrix:
         module:
           - name: common
-            tasks: ":common-country:test :common-money:test :common-time:test :common-result:test"
+            tasks: ":common:common-country:test :common:common-money:test :common:common-time:test :common:common-result:test"
           - name: products
             tasks: ":products:products-api:test :products:products-impl:test :products:products-worldview:test"
           - name: users
