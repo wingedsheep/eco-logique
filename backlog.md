@@ -3,7 +3,7 @@
 ## Progress Overview
 
 * **Foundation & Products**: ✅ Complete
-* **Upcoming Features**: **5 Items Remaining**
+* **Upcoming Features**: **4 Items Remaining**
 
 ---
 
@@ -225,12 +225,12 @@
 * **Description**: React to completed payments to create shipment records.
 * **Deliverables**:
 
-  * [ ] `Shipment` entity (tracking number, status, address, weight).
-  * [ ] **Event Listener**: Listen to `PaymentCompleted` to generate a `Shipment`.
-  * [ ] Assign shipment to warehouse (based on Country code).
-  * [ ] Update `Order` status to `SHIPPED` via `orders-api` when shipment created (demo-level).
-  * [ ] Error handling: `ShippingError` sealed hierarchy in `shipping-api`; controllers map errors to RFC7807 Problem Details.
-  * [ ] **Worldview**: Pre-defined shipment scenarios for testing.
+  * [x] `Shipment` entity (tracking number, status, address, weight).
+  * [x] **Event Listener**: Listen to `PaymentCompleted` to generate a `Shipment`.
+  * [x] Assign shipment to warehouse (based on Country code).
+  * [x] Update `Order` status to `SHIPPED` via `orders-api` when shipment created (demo-level).
+  * [x] Error handling: `ShippingError` sealed hierarchy in `shipping-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] **Worldview**: Pre-defined shipment scenarios for testing.
 
 ---
 
