@@ -1,6 +1,6 @@
 # Module Dependency Validation
 
-The `buildlogic.module-validation` plugin enforces module boundaries in a modular monolith.
+The `buildlogic.module-validation` plugin enforces module boundaries in a modular monolith by ensuring modules only depend on each other through their public APIs.
 
 ## Usage
 ```bash
@@ -13,38 +13,60 @@ Also runs as part of `./gradlew check`.
 
 **Depend on abstractions, not implementations.**
 
-- ✓ Depend on `api` modules
-- ✓ Depend on library modules (no suffix, e.g. `:common:common-money`)
-- ✗ Depend on `impl` or `worldview` modules across boundaries
+| Allowed | Not Allowed |
+|---------|-------------|
+| `api` modules (public contracts) | `impl` modules from other domains |
+| Library modules (e.g., `:common:common-money`) | `worldview` modules from other domains |
+
+## Module Types
+
+| Type | Purpose | Example |
+|------|---------|---------|
+| `api` | Public contracts (interfaces, DTOs) | `:orders:orders-api` |
+| `impl` | Private implementation details | `:orders:orders-impl` |
+| `worldview` | Test data factories and fixtures | `:orders:orders-worldview` |
 
 ## Rules
 
-### Production Code (main)
+### Production Code
+
+Dependencies flow **toward** API modules, never toward implementations:
+
 ```
-impl  ───►  api  ◄───  api
-             ▲
-             │
-worldview ───┘
+┌─────────────────────────────────────────────────────────┐
+│                      orders domain                      │
+│                                                         │
+│   orders-impl ──────► orders-api ◄────── orders-worldview
+│                           │                             │
+└───────────────────────────┼─────────────────────────────┘
+                            │
+              ┌─────────────┼─────────────┐
+              │             ▼             │
+              │        users-api          │
+              │      (allowed dep)        │
+              └───────────────────────────┘
 ```
 
-Cross-module dependencies must go through `api` modules and be whitelisted in `allowedDependencies`.
-
-The only exception: `worldview` modules may depend on other `worldview` modules for test data composition.
+- An `impl` module may only depend on its own `api` and on `api` modules from allowed domains
+- Cross-domain dependencies must be declared in `allowedDependencies`
+- Exception: `worldview` modules may depend on other `worldview` modules for composing test data
 
 ### Test Code
 
-Tests and test fixtures follow the same principle with one addition: they may depend on `testFixtures` of allowed modules.
+Tests and `testFixtures` follow the same rules, plus they may depend on `testFixtures` of allowed modules:
+
 ```
-a:impl:test ────────►  a:impl:testFixtures
-                       a:api:testFixtures
-                       b:api:testFixtures   (if b is allowed)
+orders-impl/test can depend on:
+  ├── orders-impl/testFixtures     (own module)
+  ├── orders-api/testFixtures      (own domain)
+  └── users-api/testFixtures       (allowed domain)
 ```
 
 This enables sharing test builders across modules without exposing implementation details.
 
 ### Composition Roots
 
-Modules in `compositionRoots` (e.g., `:application`) are leaf nodes—no module may depend on them.
+Modules listed in `compositionRoots` (e.g., `:application`) are leaf nodes that wire everything together. **No module may depend on a composition root.**
 
 ## Configuration
 ```kotlin
