@@ -13,6 +13,7 @@ class ScenarioContext {
     private val products = mutableMapOf<String, ProductRef>()
     private val orders = mutableMapOf<String, OrderRef>()
     private val payments = mutableMapOf<String, PaymentRef>()
+    private val warehouses = mutableMapOf<String, WarehouseRef>()
 
     fun storeProduct(name: String, ref: ProductRef) {
         products[name] = ref
@@ -37,6 +38,20 @@ class ScenarioContext {
     fun getPaymentForOrder(orderId: String): PaymentRef? = payments[orderId]
 
     fun getLatestPayment(): PaymentRef? = payments.values.lastOrNull()
+
+    fun storeWarehouse(name: String, ref: WarehouseRef) {
+        warehouses[name] = ref
+    }
+
+    fun getWarehouse(name: String): WarehouseRef? = warehouses[name]
+
+    fun getAllWarehouses(): List<WarehouseRef> = warehouses.values.toList()
+
+    data class WarehouseRef(
+        val id: String,
+        val name: String,
+        val countryCode: String
+    )
 
     data class ProductRef(
         val id: String,
