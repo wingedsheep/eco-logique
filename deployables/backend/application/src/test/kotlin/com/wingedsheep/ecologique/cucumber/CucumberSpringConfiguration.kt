@@ -29,6 +29,7 @@ class CucumberSpringConfiguration {
             .withUsername("user")
             .withPassword("password")
             .withInitScript("init-schemas.sql")
+            .withReuse(true)
 
         init {
             postgres.start()

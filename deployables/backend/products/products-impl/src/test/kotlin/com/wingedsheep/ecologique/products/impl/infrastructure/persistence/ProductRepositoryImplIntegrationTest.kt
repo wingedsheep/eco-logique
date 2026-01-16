@@ -35,6 +35,7 @@ class ProductRepositoryImplIntegrationTest {
             withDatabaseName("ecologique")
             withUsername("user")
             withPassword("password")
+            withReuse(true)
         }
 
         @JvmStatic
