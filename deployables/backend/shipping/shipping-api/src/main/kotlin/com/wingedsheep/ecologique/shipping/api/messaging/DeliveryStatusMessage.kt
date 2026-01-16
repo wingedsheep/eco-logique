@@ -1,4 +1,4 @@
-package com.wingedsheep.ecologique.application.messaging
+package com.wingedsheep.ecologique.shipping.api.messaging
 
 import java.time.Instant
 
@@ -13,4 +13,8 @@ data class DeliveryStatusMessage(
     val newStatus: String,
     val timestamp: Instant,
     val driverNotes: String? = null
-)
+) {
+    companion object {
+        const val QUEUE_NAME = "delivery.status.updates"
+    }
+}

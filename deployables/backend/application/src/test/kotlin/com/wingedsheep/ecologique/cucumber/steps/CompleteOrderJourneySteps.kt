@@ -1,7 +1,6 @@
 package com.wingedsheep.ecologique.cucumber.steps
 
-import com.wingedsheep.ecologique.application.config.RabbitMQConfig
-import com.wingedsheep.ecologique.application.messaging.DeliveryStatusMessage
+import com.wingedsheep.ecologique.shipping.api.messaging.DeliveryStatusMessage
 import com.wingedsheep.ecologique.cart.api.dto.AddCartItemRequest
 import com.wingedsheep.ecologique.checkout.api.dto.CheckoutRequest
 import com.wingedsheep.ecologique.common.money.Currency
@@ -443,7 +442,7 @@ class CompleteOrderJourneySteps(
             driverNotes = null
         )
 
-        rabbitTemplate.convertAndSend(RabbitMQConfig.DELIVERY_STATUS_QUEUE, message)
+        rabbitTemplate.convertAndSend(DeliveryStatusMessage.QUEUE_NAME, message)
 
         // Wait for the listener to process the message with retry
         waitForShipmentStatus(shipment.orderId, status)
@@ -461,7 +460,7 @@ class CompleteOrderJourneySteps(
             driverNotes = notes
         )
 
-        rabbitTemplate.convertAndSend(RabbitMQConfig.DELIVERY_STATUS_QUEUE, message)
+        rabbitTemplate.convertAndSend(DeliveryStatusMessage.QUEUE_NAME, message)
 
         // Wait for the listener to process the message with retry
         waitForShipmentStatus(shipment.orderId, status)

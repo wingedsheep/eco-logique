@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.spring.context)
     implementation(libs.spring.boot.starter.data.jdbc)
     implementation(libs.spring.boot.starter.webmvc)
+    implementation(libs.spring.boot.starter.amqp)
     implementation(libs.spring.tx)
     implementation(libs.kotlin.reflect)
     implementation(libs.jackson.module.kotlin)

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.wingedsheep.ecologique.shipping.api.messaging.DeliveryStatusMessage
 import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -15,13 +16,9 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class RabbitMQConfig {
 
-    companion object {
-        const val DELIVERY_STATUS_QUEUE = "delivery.status.updates"
-    }
-
     @Bean
     fun deliveryStatusQueue(): Queue {
-        return Queue(DELIVERY_STATUS_QUEUE, true)
+        return Queue(DeliveryStatusMessage.QUEUE_NAME, true)
     }
 
     @Bean

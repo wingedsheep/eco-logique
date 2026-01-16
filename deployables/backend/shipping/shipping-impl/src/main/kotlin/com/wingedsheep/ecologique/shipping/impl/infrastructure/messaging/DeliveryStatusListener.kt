@@ -1,9 +1,9 @@
-package com.wingedsheep.ecologique.application.messaging
+package com.wingedsheep.ecologique.shipping.impl.infrastructure.messaging
 
-import com.wingedsheep.ecologique.application.config.RabbitMQConfig
 import com.wingedsheep.ecologique.common.result.Result
 import com.wingedsheep.ecologique.shipping.api.ShipmentStatus
 import com.wingedsheep.ecologique.shipping.api.ShippingService
+import com.wingedsheep.ecologique.shipping.api.messaging.DeliveryStatusMessage
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Component
 import java.util.logging.Logger
@@ -15,12 +15,12 @@ import java.util.logging.Logger
  * this listener processes to update shipment and order statuses.
  */
 @Component
-class DeliveryStatusListener(
+internal class DeliveryStatusListener(
     private val shippingService: ShippingService
 ) {
     private val logger = Logger.getLogger(DeliveryStatusListener::class.java.name)
 
-    @RabbitListener(queues = [RabbitMQConfig.DELIVERY_STATUS_QUEUE])
+    @RabbitListener(queues = [DeliveryStatusMessage.QUEUE_NAME])
     fun handleDeliveryStatusUpdate(message: DeliveryStatusMessage) {
         logger.info("Received delivery status update: tracking=${message.trackingNumber}, status=${message.newStatus}")
 
