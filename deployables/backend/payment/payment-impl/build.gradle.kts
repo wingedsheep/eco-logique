@@ -17,4 +17,13 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.springdoc.openapi)
     implementation(libs.kotlin.reflect)
+    implementation(libs.jackson.module.kotlin)
+
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.cucumber.java)
+    testImplementation(libs.cucumber.junit.platform)
+    testImplementation(libs.cucumber.spring)
+    testImplementation(libs.junit.platform.suite)
+    testImplementation(libs.rest.assured)
 }
