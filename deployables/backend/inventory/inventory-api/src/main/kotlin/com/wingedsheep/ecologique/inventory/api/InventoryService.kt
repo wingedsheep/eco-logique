@@ -41,5 +41,5 @@ interface InventoryService {
      * @param reservationId The reservation to release.
      * @return [Result.Ok] on success, or [Result.Err] on failure.
      */
-    fun releaseReservation(reservationId: String): Result<Unit, InventoryError>
+    fun releaseReservation(reservationId: ReservationId): Result<Unit, InventoryError>
 }

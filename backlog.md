@@ -3,7 +3,7 @@
 ## Progress Overview
 
 * **Foundation & Products**: ✅ Complete
-* **Upcoming Features**: **7 Items Remaining**
+* **Upcoming Features**: **5 Items Remaining**
 
 ---
 
@@ -160,37 +160,38 @@
 * **Description**: Implement a simple checkout flow for demo (no separate DB schema unless persistence is required).
 * **Deliverables**:
 
-  * [ ] `CheckoutService`:
+  * [x] `CheckoutService`:
 
-    * [ ] Load cart items (via `cart-api`) + product snapshots (via `products-api`)
-    * [ ] Create `Order` + `OrderLines` + totals snapshot (via `orders-api`)
-    * [ ] Reserve stock via `InventoryService.reserveStock(sku, qty)` (via `inventory-api`)
-    * [ ] Initiate payment via `PaymentService` (via `payment-api`)
-    * [ ] Clear cart on success (or keep for demo—choose one and test)
-  * [ ] REST API:
+    * [x] Load cart items (via `cart-api`) + product snapshots (via `products-api`)
+    * [x] Create `Order` + `OrderLines` + totals snapshot (via `orders-api`)
+    * [x] Reserve stock via `InventoryService.reserveStock(sku, qty)` (via `inventory-api`)
+    * [x] Initiate payment via `PaymentService` (via `payment-api`)
+    * [x] Clear cart on success (or keep for demo—choose one and test)
+  * [x] REST API:
 
-    * [ ] `POST /checkout` → returns `{ orderId, paymentId, status }`
-  * [ ] Error handling: `CheckoutError` sealed hierarchy in `checkout-api`; controllers map errors to RFC7807 Problem Details.
-  * [ ] Tests: happy flow + stock failure.
+    * [x] `POST /checkout` → returns `{ orderId, paymentId, status }`
+  * [x] Error handling: `CheckoutError` sealed hierarchy in `checkout-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] Tests: happy flow + stock failure.
 
 ---
 
 ### 9. Inventory Management
 
-**Context**: Don’t sell products that aren’t available.
+**Context**: Don't sell products that aren't available.
 **Module**: `inventory-api`, `inventory-impl`, `inventory-worldview`
 
 * **Description**: Track stock levels across warehouses.
 * **Deliverables**:
 
-  * [ ] `Warehouse` and `InventoryItem` entities.
-  * [ ] `InventoryService` with `checkStock(sku)` and `reserveStock(sku, quantity)` methods.
+  * [x] `Warehouse` and `InventoryItem` entities (with database persistence, `StockReservation` for tracking).
+  * [x] `InventoryService` with `checkStock(sku)` and `reserveStock(sku, quantity)` methods.
   * [ ] REST API:
 
     * [ ] `GET /inventory/{sku}`
     * [ ] `POST /inventory/reserve`
-  * [ ] **Constraint**: Inventory cannot go below zero.
-  * [ ] Error handling: `InventoryError` sealed hierarchy in `inventory-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] **Constraint**: Inventory cannot go below zero.
+  * [x] Error handling: `InventoryError` sealed hierarchy in `inventory-api`; controllers map errors to RFC7807 Problem Details.
+  * [x] Domain events: `InventoryReserved` event published on successful reservation.
   * [ ] **Worldview**: Stock levels for all existing Worldview Products in different warehouses.
 
 ---

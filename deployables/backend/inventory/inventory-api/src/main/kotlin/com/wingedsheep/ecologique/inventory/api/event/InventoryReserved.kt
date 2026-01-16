@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.inventory.api.event
 
+import com.wingedsheep.ecologique.inventory.api.ReservationId
 import com.wingedsheep.ecologique.products.api.ProductId
 import java.time.Instant
 
@@ -11,7 +12,7 @@ import java.time.Instant
  * - Notifying warehouse systems
  */
 data class InventoryReserved(
-    val reservationId: String,
+    val reservationId: ReservationId,
     val productId: ProductId,
     val quantity: Int,
     val correlationId: String,

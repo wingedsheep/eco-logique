@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.inventory.api.error
 
+import com.wingedsheep.ecologique.inventory.api.ReservationId
 import com.wingedsheep.ecologique.products.api.ProductId
 
 /**
@@ -24,7 +25,7 @@ sealed class InventoryError {
     /**
      * Reservation not found.
      */
-    data class ReservationNotFound(val reservationId: String) : InventoryError()
+    data class ReservationNotFound(val reservationId: ReservationId) : InventoryError()
 
     /**
      * General inventory error.

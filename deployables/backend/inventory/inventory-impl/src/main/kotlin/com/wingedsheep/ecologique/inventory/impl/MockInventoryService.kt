@@ -2,15 +2,16 @@ package com.wingedsheep.ecologique.inventory.impl
 
 import com.wingedsheep.ecologique.common.result.Result
 import com.wingedsheep.ecologique.inventory.api.InventoryService
+import com.wingedsheep.ecologique.inventory.api.ReservationId
 import com.wingedsheep.ecologique.inventory.api.dto.ReservationResult
 import com.wingedsheep.ecologique.inventory.api.dto.StockLevel
 import com.wingedsheep.ecologique.inventory.api.error.InventoryError
 import com.wingedsheep.ecologique.inventory.api.event.InventoryReserved
 import com.wingedsheep.ecologique.products.api.ProductId
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import java.time.Instant
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 
@@ -27,6 +28,7 @@ import java.util.logging.Logger
  * - Set available < requested to simulate insufficient stock
  */
 @Service
+@Profile("test")
 class MockInventoryService(
     private val eventPublisher: ApplicationEventPublisher
 ) : InventoryService {
@@ -40,7 +42,7 @@ class MockInventoryService(
     private val stockLevels = ConcurrentHashMap<ProductId, Int>()
 
     // Active reservations
-    private val reservations = ConcurrentHashMap<String, Reservation>()
+    private val reservations = ConcurrentHashMap<ReservationId, Reservation>()
 
     override fun checkStock(productId: ProductId): Result<StockLevel, InventoryError> {
         val available = getAvailableStock(productId)
@@ -73,7 +75,7 @@ class MockInventoryService(
             )
         }
 
-        val reservationId = UUID.randomUUID().toString()
+        val reservationId = ReservationId.generate()
         val reservation = Reservation(
             id = reservationId,
             productId = productId,
@@ -87,7 +89,7 @@ class MockInventoryService(
         val newAvailable = available - quantity
         stockLevels[productId] = newAvailable
 
-        logger.info("MOCK INVENTORY: Reserved $quantity of $productId (correlation: $correlationId, reservation: $reservationId)")
+        logger.info("MOCK INVENTORY: Reserved $quantity of $productId (correlation: $correlationId, reservation: ${reservationId.value})")
 
         // Publish domain event
         eventPublisher.publishEvent(
@@ -110,7 +112,7 @@ class MockInventoryService(
         )
     }
 
-    override fun releaseReservation(reservationId: String): Result<Unit, InventoryError> {
+    override fun releaseReservation(reservationId: ReservationId): Result<Unit, InventoryError> {
         val reservation = reservations.remove(reservationId)
             ?: return Result.err(InventoryError.ReservationNotFound(reservationId))
 
@@ -118,7 +120,7 @@ class MockInventoryService(
         val currentAvailable = stockLevels[reservation.productId] ?: defaultStock
         stockLevels[reservation.productId] = currentAvailable + reservation.quantity
 
-        logger.info("MOCK INVENTORY: Released reservation $reservationId, restored ${reservation.quantity} of ${reservation.productId}")
+        logger.info("MOCK INVENTORY: Released reservation ${reservationId.value}, restored ${reservation.quantity} of ${reservation.productId}")
 
         return Result.ok(Unit)
     }
@@ -158,7 +160,7 @@ class MockInventoryService(
             .sumOf { it.quantity }
 
     data class Reservation(
-        val id: String,
+        val id: ReservationId,
         val productId: ProductId,
         val quantity: Int,
         val correlationId: String
