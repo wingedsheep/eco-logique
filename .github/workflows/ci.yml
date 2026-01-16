@@ -33,7 +33,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Validate Module Dependencies
-        run: ./gradlew validateModuleDependencies
+        run: ./gradlew validateModuleDependencies --parallel --build-cache
 
       - name: Publish Module Validation Report
         if: always()
@@ -43,17 +43,11 @@ jobs:
             cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Build
-        run: ./gradlew build -x test
-
-      - name: Run module tests with coverage
-        run: ./gradlew test -x :application:test jacocoTestReport
-
-      - name: Generate aggregated coverage report
-        run: ./gradlew jacocoAggregatedReport
+      - name: Build and run module tests with coverage
+        run: ./gradlew build test -x :application:test jacocoTestReport jacocoAggregatedReport --parallel --build-cache
 
       - name: Run application tests
-        run: ./gradlew :application:test
+        run: ./gradlew :application:test --parallel --build-cache
         continue-on-error: true
 
       - name: Publish test report
