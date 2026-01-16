@@ -83,6 +83,14 @@ internal class OrderServiceImpl(
     }
 
     @Transactional(readOnly = true)
+    override fun getOrderInternal(orderId: OrderId): Result<OrderDto, OrderError> {
+        val order = orderRepository.findById(orderId)
+            ?: return Result.err(OrderError.NotFound(orderId))
+
+        return Result.ok(order.toDto())
+    }
+
+    @Transactional(readOnly = true)
     override fun findOrdersForUser(userId: String): Result<List<OrderDto>, OrderError> {
         val orders = orderRepository.findByUserId(userId)
         return Result.ok(orders.map { it.toDto() })

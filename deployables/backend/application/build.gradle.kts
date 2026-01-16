@@ -28,6 +28,9 @@ dependencies {
     implementation(project(":inventory:inventory-impl"))
     implementation(project(":inventory:inventory-worldview"))
     implementation(project(":checkout:checkout-impl"))
+    implementation(project(":shipping:shipping-api"))
+    implementation(project(":shipping:shipping-impl"))
+    implementation(project(":shipping:shipping-worldview"))
 
     implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.actuator)

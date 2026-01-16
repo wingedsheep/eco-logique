@@ -46,6 +46,9 @@ include(":inventory:inventory-impl")
 include(":inventory:inventory-worldview")
 include(":checkout:checkout-api")
 include(":checkout:checkout-impl")
+include(":shipping:shipping-api")
+include(":shipping:shipping-impl")
+include(":shipping:shipping-worldview")
 
 // Map common modules to the actual location
 project(":common:common-time").projectDir = file("../../common/common-time")

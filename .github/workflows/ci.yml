@@ -81,6 +81,8 @@ jobs:
             tasks: ":inventory:inventory-api:test :inventory:inventory-impl:test :inventory:inventory-worldview:test"
           - name: checkout
             tasks: ":checkout:checkout-api:test :checkout:checkout-impl:test"
+          - name: shipping
+            tasks: ":shipping:shipping-api:test :shipping:shipping-impl:test :shipping:shipping-worldview:test"
 
     defaults:
       run:
