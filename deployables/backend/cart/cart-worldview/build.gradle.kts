@@ -14,6 +14,6 @@ dependencies {
     api(project(":products:products-worldview"))
     api(project(":users:users-worldview"))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework:spring-context")
+    implementation(libs.spring.boot.starter.data.jdbc)
+    implementation(libs.spring.context)
 }

@@ -14,6 +14,6 @@ dependencies {
     implementation(project(":common:common-country"))
     implementation(project(":products:products-worldview"))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework:spring-context")
+    implementation(libs.spring.boot.starter.data.jdbc)
+    implementation(libs.spring.context)
 }

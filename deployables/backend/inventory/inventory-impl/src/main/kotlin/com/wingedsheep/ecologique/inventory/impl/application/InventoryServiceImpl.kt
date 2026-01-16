@@ -15,7 +15,6 @@ import com.wingedsheep.ecologique.inventory.impl.domain.StockReservationReposito
 import com.wingedsheep.ecologique.inventory.impl.domain.WarehouseRepository
 import com.wingedsheep.ecologique.products.api.ProductId
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -28,7 +27,6 @@ import java.util.logging.Logger
  * and is used in production environments.
  */
 @Service
-@Profile("!test")
 internal class InventoryServiceImpl(
     private val inventoryItemRepository: InventoryItemRepository,
     private val reservationRepository: StockReservationRepository,

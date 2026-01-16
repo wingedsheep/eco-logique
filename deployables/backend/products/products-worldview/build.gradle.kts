@@ -13,6 +13,6 @@ dependencies {
     api(project(":products:products-api"))
     implementation(project(":common:common-money"))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework:spring-context")
+    implementation(libs.spring.boot.starter.data.jdbc)
+    implementation(libs.spring.context)
 }

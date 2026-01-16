@@ -5,33 +5,41 @@ import com.wingedsheep.ecologique.checkout.api.dto.CheckoutRequest
 import com.wingedsheep.ecologique.cucumber.ScenarioContext
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.OrderRef
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.PaymentRef
+import com.wingedsheep.ecologique.cucumber.ScenarioContext.WarehouseRef
 import com.wingedsheep.ecologique.cucumber.TestApiClient
-import com.wingedsheep.ecologique.inventory.impl.MockInventoryService
+import com.wingedsheep.ecologique.inventory.api.dto.StockUpdateRequest
+import com.wingedsheep.ecologique.inventory.api.dto.WarehouseCreateRequest
 import com.wingedsheep.ecologique.payment.api.dto.CardBrand
 import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.cucumber.TestResponse
 import io.cucumber.datatable.DataTable
-import io.cucumber.java.Before
 import io.cucumber.java.en.And
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.whenever
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import java.math.BigDecimal
 import java.util.UUID
 
 class CheckoutSteps(
     private val context: ScenarioContext,
     private val api: TestApiClient,
-    private val inventoryService: MockInventoryService
+    private val jwtDecoder: JwtDecoder
 ) {
     private var checkoutResponse: TestResponse? = null
     private var checkoutError: String? = null
 
-    @Before
-    fun clearInventory() {
-        inventoryService.clearInventory()
-    }
+    // Admin user ID for inventory management
+    private val adminUserId = "22222222-2222-2222-2222-222222222222"
+
+    // Default stock level for products (high enough for most test scenarios)
+    private val defaultStockLevel = 1000
+
+    // Test warehouse name
+    private val testWarehouseName = "Test Warehouse"
 
     @Given("I have the following items in my cart:")
     fun addItemsToCart(dataTable: DataTable) {
@@ -43,6 +51,9 @@ class CheckoutSteps(
             val quantity = requireNotNull(row["quantity"]) { "quantity column required" }.toInt()
             val product = context.getProduct(productName)
                 ?: throw IllegalStateException("Product '$productName' not set up. Use 'the following products are available' first.")
+
+            // Ensure stock exists for this product (with default high level)
+            ensureStockExists(product.id, defaultStockLevel)
 
             val request = AddCartItemRequest(
                 productId = ProductId(UUID.fromString(product.id)),
@@ -66,10 +77,7 @@ class CheckoutSteps(
         val product = context.getProduct(productName)
             ?: throw IllegalStateException("Product '$productName' not set up. Use 'the following products are available' first.")
 
-        inventoryService.setStockLevel(
-            ProductId(UUID.fromString(product.id)),
-            stockLevel
-        )
+        ensureStockExists(product.id, stockLevel)
     }
 
     @When("I checkout with a valid Visa card")
@@ -209,5 +217,84 @@ class CheckoutSteps(
                 }
             }
         }
+    }
+
+    private fun ensureStockExists(productId: String, quantity: Int) {
+        val originalToken = context.authToken
+        val originalUserId = context.currentUserId
+
+        try {
+            authenticateAsAdmin()
+
+            val warehouse = ensureTestWarehouseExists()
+
+            val request = StockUpdateRequest(
+                productId = ProductId(UUID.fromString(productId)),
+                quantityOnHand = quantity
+            )
+
+            val response = api.put("/api/v1/admin/inventory/warehouses/${warehouse.id}/stock", request)
+            assertThat(response.statusCode)
+                .withFailMessage("Failed to update stock: ${response.bodyAsString()}")
+                .isEqualTo(200)
+        } finally {
+            context.authToken = originalToken
+            context.currentUserId = originalUserId
+        }
+    }
+
+    private fun ensureTestWarehouseExists(): WarehouseRef {
+        // Check if we already have a test warehouse in context
+        context.getWarehouse(testWarehouseName)?.let { return it }
+
+        // Try to find existing warehouse
+        val listResponse = api.get("/api/v1/admin/inventory/warehouses")
+        if (listResponse.statusCode == 200) {
+            val warehouses = listResponse.getList<Map<String, Any>>("")
+            val existing = warehouses.find { it["name"] == testWarehouseName }
+            if (existing != null) {
+                val ref = WarehouseRef(
+                    id = existing["id"] as String,
+                    name = testWarehouseName,
+                    countryCode = existing["countryCode"] as String
+                )
+                context.storeWarehouse(testWarehouseName, ref)
+                return ref
+            }
+        }
+
+        // Create new warehouse
+        val request = WarehouseCreateRequest(
+            name = testWarehouseName,
+            countryCode = "NL",
+            address = null
+        )
+
+        val response = api.post("/api/v1/admin/inventory/warehouses", request)
+        assertThat(response.statusCode)
+            .withFailMessage("Failed to create test warehouse: ${response.bodyAsString()}")
+            .isEqualTo(201)
+
+        val ref = WarehouseRef(
+            id = response.getString("id")!!,
+            name = testWarehouseName,
+            countryCode = "NL"
+        )
+        context.storeWarehouse(testWarehouseName, ref)
+        return ref
+    }
+
+    private fun authenticateAsAdmin() {
+        val tokenValue = "test-token-admin-$adminUserId"
+        val jwt = Jwt.withTokenValue(tokenValue)
+            .header("alg", "none")
+            .claim("sub", adminUserId)
+            .claim("realm_access", mapOf("roles" to listOf("ROLE_ADMIN", "ROLE_CUSTOMER")))
+            .build()
+
+        whenever(jwtDecoder.decode(tokenValue)).thenReturn(jwt)
+
+        context.authToken = tokenValue
+        context.currentUserId = adminUserId
     }
 }

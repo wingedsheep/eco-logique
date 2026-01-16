@@ -6,7 +6,6 @@ import com.wingedsheep.ecologique.cucumber.TestApiClient
 import com.wingedsheep.ecologique.inventory.api.dto.AddressDto
 import com.wingedsheep.ecologique.inventory.api.dto.StockUpdateRequest
 import com.wingedsheep.ecologique.inventory.api.dto.WarehouseCreateRequest
-import com.wingedsheep.ecologique.inventory.impl.MockInventoryService
 import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.cucumber.TestResponse
 import io.cucumber.datatable.DataTable
@@ -18,8 +17,7 @@ import java.util.UUID
 
 class InventoryManagementSteps(
     private val context: ScenarioContext,
-    private val api: TestApiClient,
-    private val mockInventoryService: MockInventoryService
+    private val api: TestApiClient
 ) {
     private var warehouseResponse: TestResponse? = null
     private var stockResponse: TestResponse? = null
@@ -96,14 +94,6 @@ class InventoryManagementSteps(
         )
 
         stockResponse = api.put("/api/v1/admin/inventory/warehouses/${warehouse.id}/stock", request)
-
-        // Also update the mock inventory service so checkout works
-        if (stockResponse!!.statusCode == 200) {
-            mockInventoryService.setStockLevel(
-                ProductId(UUID.fromString(product.id)),
-                quantity
-            )
-        }
     }
 
     @Then("the stock update should succeed")
