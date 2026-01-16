@@ -33,8 +33,9 @@ internal data class Shipment(
         ShipmentStatus.CREATED -> newStatus in listOf(ShipmentStatus.PROCESSING, ShipmentStatus.CANCELLED)
         ShipmentStatus.PROCESSING -> newStatus in listOf(ShipmentStatus.SHIPPED, ShipmentStatus.CANCELLED)
         ShipmentStatus.SHIPPED -> newStatus in listOf(ShipmentStatus.IN_TRANSIT, ShipmentStatus.CANCELLED)
-        ShipmentStatus.IN_TRANSIT -> newStatus in listOf(ShipmentStatus.DELIVERED, ShipmentStatus.CANCELLED)
+        ShipmentStatus.IN_TRANSIT -> newStatus in listOf(ShipmentStatus.DELIVERED, ShipmentStatus.RETURNED, ShipmentStatus.CANCELLED)
         ShipmentStatus.DELIVERED -> false // Terminal state
+        ShipmentStatus.RETURNED -> newStatus == ShipmentStatus.IN_TRANSIT // Allow re-attempt delivery
         ShipmentStatus.CANCELLED -> false // Terminal state
     }
 

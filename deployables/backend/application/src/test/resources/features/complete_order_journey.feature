@@ -109,3 +109,16 @@ Feature: Complete Order Journey - End to End
     # =========================================
     Given I am authenticated as a customer
     Then the order status should now be "SHIPPED"
+
+    # =========================================
+    # STEP 14: Driver marks shipment as in transit via tablet
+    # =========================================
+    When the driver marks the shipment as "IN_TRANSIT"
+    Then the shipment status should be "IN_TRANSIT"
+
+    # =========================================
+    # STEP 15: Driver marks shipment as delivered via tablet
+    # =========================================
+    When the driver marks the shipment as "DELIVERED"
+    Then the shipment status should be "DELIVERED"
+    And the order status should now be "DELIVERED"

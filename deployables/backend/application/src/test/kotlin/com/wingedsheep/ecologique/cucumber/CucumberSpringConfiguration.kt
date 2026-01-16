@@ -9,6 +9,7 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.testcontainers.postgresql.PostgreSQLContainer
+import org.testcontainers.rabbitmq.RabbitMQContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 
 @CucumberContextConfiguration
@@ -31,8 +32,12 @@ class CucumberSpringConfiguration {
             .withInitScript("init-schemas.sql")
             .withReuse(true)
 
+        private val rabbitmq = RabbitMQContainer("rabbitmq:3-management-alpine")
+            .withReuse(true)
+
         init {
             postgres.start()
+            rabbitmq.start()
         }
 
         @JvmStatic
@@ -41,6 +46,11 @@ class CucumberSpringConfiguration {
             registry.add("spring.datasource.url") { postgres.jdbcUrl }
             registry.add("spring.datasource.username") { postgres.username }
             registry.add("spring.datasource.password") { postgres.password }
+
+            registry.add("spring.rabbitmq.host") { rabbitmq.host }
+            registry.add("spring.rabbitmq.port") { rabbitmq.amqpPort }
+            registry.add("spring.rabbitmq.username") { rabbitmq.adminUsername }
+            registry.add("spring.rabbitmq.password") { rabbitmq.adminPassword }
         }
     }
 }

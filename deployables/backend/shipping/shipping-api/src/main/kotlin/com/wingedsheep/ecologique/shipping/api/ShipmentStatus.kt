@@ -30,6 +30,11 @@ enum class ShipmentStatus {
     DELIVERED,
 
     /**
+     * Shipment was returned (failed delivery attempt).
+     */
+    RETURNED,
+
+    /**
      * Shipment was cancelled.
      */
     CANCELLED

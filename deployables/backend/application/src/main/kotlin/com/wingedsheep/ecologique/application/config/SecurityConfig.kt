@@ -34,6 +34,9 @@ class SecurityConfig {
                     // Admin endpoints (inventory management)
                     .requestMatchers("/api/v1/admin/inventory/**").hasRole("ADMIN")
 
+                    // Admin endpoints (shipment status updates - warehouse staff only)
+                    .requestMatchers(HttpMethod.PUT, "/api/v1/shipments/*/status").hasRole("ADMIN")
+
                     // Authenticated customer endpoints (orders, users, inventory)
                     .requestMatchers(HttpMethod.GET, "/api/v1/inventory/**").authenticated()
                     .requestMatchers("/api/v1/orders/**").authenticated()

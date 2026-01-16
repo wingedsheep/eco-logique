@@ -37,6 +37,9 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jdbc)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
+    implementation(libs.spring.boot.starter.amqp)
+    implementation(libs.jackson2.module.kotlin)
+    implementation(libs.jackson2.datatype.jsr310)
 
     implementation(libs.springdoc.openapi)
 
@@ -52,6 +55,7 @@ dependencies {
     testImplementation(libs.cucumber.spring)
     testImplementation(libs.junit.platform.suite)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.rabbitmq)
     testImplementation(libs.testcontainers.junit)
     testImplementation(libs.assertj.core)
     testImplementation(libs.spring.boot.starter.webflux)

@@ -116,6 +116,7 @@ class WorldviewOrderDataLoader(
         OrderStatus.PAID -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID)
         OrderStatus.SHIPPED -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID, OrderStatus.SHIPPED)
         OrderStatus.DELIVERED -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED)
+        OrderStatus.RETURNED -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.RETURNED)
         OrderStatus.CANCELLED -> emptyList()
     }
 }

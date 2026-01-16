@@ -9,6 +9,8 @@ import com.wingedsheep.ecologique.shipping.api.ShippingService
 import com.wingedsheep.ecologique.shipping.api.dto.CreateShipmentRequest
 import com.wingedsheep.ecologique.shipping.api.dto.ShippingAddressDto
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentCreated
+import com.wingedsheep.ecologique.shipping.api.event.ShipmentDelivered
+import com.wingedsheep.ecologique.shipping.api.event.ShipmentReturned
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentShipped
 import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
@@ -116,6 +118,34 @@ class ShippingEventListener(
         orderService.updateStatus(event.orderId, OrderStatus.SHIPPED).fold(
             onSuccess = {
                 logger.info("Order ${event.orderId.value} status updated to SHIPPED")
+            },
+            onFailure = { error ->
+                logger.warning("Failed to update order ${event.orderId.value} status: $error")
+            }
+        )
+    }
+
+    @EventListener
+    fun onShipmentDelivered(event: ShipmentDelivered) {
+        logger.info("Shipment delivered for order ${event.orderId.value}, updating order status to DELIVERED")
+
+        orderService.updateStatus(event.orderId, OrderStatus.DELIVERED).fold(
+            onSuccess = {
+                logger.info("Order ${event.orderId.value} status updated to DELIVERED")
+            },
+            onFailure = { error ->
+                logger.warning("Failed to update order ${event.orderId.value} status: $error")
+            }
+        )
+    }
+
+    @EventListener
+    fun onShipmentReturned(event: ShipmentReturned) {
+        logger.info("Shipment returned for order ${event.orderId.value}, updating order status to RETURNED")
+
+        orderService.updateStatus(event.orderId, OrderStatus.RETURNED).fold(
+            onSuccess = {
+                logger.info("Order ${event.orderId.value} status updated to RETURNED")
             },
             onFailure = { error ->
                 logger.warning("Failed to update order ${event.orderId.value} status: $error")

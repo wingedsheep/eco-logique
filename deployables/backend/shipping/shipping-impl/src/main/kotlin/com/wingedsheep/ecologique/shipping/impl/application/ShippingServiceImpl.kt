@@ -11,6 +11,7 @@ import com.wingedsheep.ecologique.shipping.api.dto.ShipmentDto
 import com.wingedsheep.ecologique.shipping.api.error.ShippingError
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentCreated
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentDelivered
+import com.wingedsheep.ecologique.shipping.api.event.ShipmentReturned
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentShipped
 import com.wingedsheep.ecologique.shipping.impl.domain.Shipment
 import com.wingedsheep.ecologique.shipping.impl.domain.TrackingNumberGenerator
@@ -145,6 +146,19 @@ internal class ShippingServiceImpl(
                     orderId = updatedShipment.orderId,
                     trackingNumber = updatedShipment.trackingNumber,
                     deliveredAt = updatedShipment.deliveredAt!!,
+                    timestamp = now
+                )
+            )
+        }
+
+        // Publish event if returned
+        if (newStatus == ShipmentStatus.RETURNED) {
+            eventPublisher.publishEvent(
+                ShipmentReturned(
+                    shipmentId = updatedShipment.id,
+                    orderId = updatedShipment.orderId,
+                    trackingNumber = updatedShipment.trackingNumber,
+                    returnedAt = now,
                     timestamp = now
                 )
             )

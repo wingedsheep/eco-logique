@@ -17,6 +17,11 @@ spring:
           jwk-set-uri: http://localhost:8180/realms/ecologique/protocol/openid-connect/certs
   flyway:
     enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
 server:
   port: 8080

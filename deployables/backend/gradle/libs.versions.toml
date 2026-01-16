@@ -35,11 +35,18 @@ flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql
 # Jackson 3 (Spring Boot 4.x uses tools.jackson group)
 jackson-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin" }
 
+# Jackson 2 (for Spring AMQP compatibility)
+jackson2-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+jackson2-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
+
 # Kotlin
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 
 # SpringDoc
 springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# Messaging
+spring-boot-starter-amqp = { module = "org.springframework.boot:spring-boot-starter-amqp" }
 
 # Test dependencies
 cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber" }
@@ -47,6 +54,7 @@ cucumber-junit-platform = { module = "io.cucumber:cucumber-junit-platform-engine
 cucumber-spring = { module = "io.cucumber:cucumber-spring", version.ref = "cucumber" }
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite", version.ref = "junit-platform" }
 testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-rabbitmq = { module = "org.testcontainers:testcontainers-rabbitmq", version.ref = "testcontainers" }
 testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }

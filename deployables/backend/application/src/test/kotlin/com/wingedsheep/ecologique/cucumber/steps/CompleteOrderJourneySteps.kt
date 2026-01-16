@@ -1,5 +1,7 @@
 package com.wingedsheep.ecologique.cucumber.steps
 
+import com.wingedsheep.ecologique.application.config.RabbitMQConfig
+import com.wingedsheep.ecologique.application.messaging.DeliveryStatusMessage
 import com.wingedsheep.ecologique.cart.api.dto.AddCartItemRequest
 import com.wingedsheep.ecologique.checkout.api.dto.CheckoutRequest
 import com.wingedsheep.ecologique.common.money.Currency
@@ -21,12 +23,15 @@ import io.cucumber.java.en.And
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import org.assertj.core.api.Assertions.assertThat
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import java.math.BigDecimal
+import java.time.Instant
 import java.util.UUID
 
 class CompleteOrderJourneySteps(
     private val context: ScenarioContext,
-    private val api: TestApiClient
+    private val api: TestApiClient,
+    private val rabbitTemplate: RabbitTemplate
 ) {
     private var productResponse: TestResponse? = null
     private var cartResponse: TestResponse? = null
@@ -422,5 +427,85 @@ class CompleteOrderJourneySteps(
             orderId = shipment.orderId,
             ref = shipment.copy(status = status)
         )
+    }
+
+    // ==================== Driver Delivery Steps ====================
+
+    @When("the driver marks the shipment as {string}")
+    fun driverMarksShipmentAs(status: String) {
+        val shipment = context.getLatestShipment()
+            ?: throw IllegalStateException("No shipment in context")
+
+        val message = DeliveryStatusMessage(
+            trackingNumber = shipment.trackingNumber,
+            newStatus = status,
+            timestamp = Instant.now(),
+            driverNotes = null
+        )
+
+        rabbitTemplate.convertAndSend(RabbitMQConfig.DELIVERY_STATUS_QUEUE, message)
+
+        // Wait for the listener to process the message with retry
+        waitForShipmentStatus(shipment.orderId, status)
+    }
+
+    @When("the driver marks the shipment as {string} with notes {string}")
+    fun driverMarksShipmentAsWithNotes(status: String, notes: String) {
+        val shipment = context.getLatestShipment()
+            ?: throw IllegalStateException("No shipment in context")
+
+        val message = DeliveryStatusMessage(
+            trackingNumber = shipment.trackingNumber,
+            newStatus = status,
+            timestamp = Instant.now(),
+            driverNotes = notes
+        )
+
+        rabbitTemplate.convertAndSend(RabbitMQConfig.DELIVERY_STATUS_QUEUE, message)
+
+        // Wait for the listener to process the message with retry
+        waitForShipmentStatus(shipment.orderId, status)
+    }
+
+    private fun waitForShipmentStatus(orderId: String, expectedStatus: String) {
+        val maxAttempts = 10
+        val delayMs = 200L
+
+        for (attempt in 1..maxAttempts) {
+            Thread.sleep(delayMs)
+
+            val response = api.get("/api/v1/shipments?orderId=$orderId")
+            if (response.statusCode == 200) {
+                val currentStatus = response.getString("status")
+                if (currentStatus == expectedStatus) {
+                    context.storeShipment(
+                        orderId = orderId,
+                        ref = ShipmentRef(
+                            id = response.getString("id")!!,
+                            orderId = response.getString("orderId")!!,
+                            trackingNumber = response.getString("trackingNumber")!!,
+                            status = currentStatus!!,
+                            warehouseId = response.getString("warehouseId")!!
+                        )
+                    )
+                    return
+                }
+            }
+        }
+
+        // Final fetch to update context even if status didn't change
+        val response = api.get("/api/v1/shipments?orderId=$orderId")
+        if (response.statusCode == 200) {
+            context.storeShipment(
+                orderId = orderId,
+                ref = ShipmentRef(
+                    id = response.getString("id")!!,
+                    orderId = response.getString("orderId")!!,
+                    trackingNumber = response.getString("trackingNumber")!!,
+                    status = response.getString("status")!!,
+                    warehouseId = response.getString("warehouseId")!!
+                )
+            )
+        }
     }
 }
