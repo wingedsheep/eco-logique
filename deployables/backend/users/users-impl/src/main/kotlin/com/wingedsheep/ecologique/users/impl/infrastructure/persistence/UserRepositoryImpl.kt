@@ -1,8 +1,8 @@
 package com.wingedsheep.ecologique.users.impl.infrastructure.persistence
 
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.impl.domain.Email
 import com.wingedsheep.ecologique.users.impl.domain.User
-import com.wingedsheep.ecologique.users.impl.domain.UserId
 import com.wingedsheep.ecologique.users.impl.domain.UserRepository
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Component

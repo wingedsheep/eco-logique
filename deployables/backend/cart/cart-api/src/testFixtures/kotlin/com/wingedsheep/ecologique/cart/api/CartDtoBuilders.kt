@@ -4,14 +4,18 @@ import com.wingedsheep.ecologique.cart.api.dto.AddCartItemRequest
 import com.wingedsheep.ecologique.cart.api.dto.CartDto
 import com.wingedsheep.ecologique.cart.api.dto.CartItemDto
 import com.wingedsheep.ecologique.cart.api.dto.UpdateCartItemRequest
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.users.api.UserId
 import java.math.BigDecimal
+import java.util.UUID
 
 fun buildCartDto(
-    userId: String = "USER-TEST-001",
+    userId: UserId = UserId.generate(),
     items: List<CartItemDto> = listOf(buildCartItemDto()),
     totalItems: Int = items.sumOf { it.quantity },
     subtotal: BigDecimal = items.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.lineTotal) },
-    currency: String = "EUR"
+    currency: Currency = Currency.EUR
 ): CartDto = CartDto(
     userId = userId,
     items = items,
@@ -21,7 +25,7 @@ fun buildCartDto(
 )
 
 fun buildCartItemDto(
-    productId: String = "PROD-TEST-001",
+    productId: ProductId = ProductId(UUID.randomUUID()),
     productName: String = "Test Product",
     unitPrice: BigDecimal = BigDecimal("29.99"),
     quantity: Int = 1,
@@ -35,7 +39,7 @@ fun buildCartItemDto(
 )
 
 fun buildAddCartItemRequest(
-    productId: String = "PROD-TEST-001",
+    productId: ProductId = ProductId(UUID.randomUUID()),
     quantity: Int = 1
 ): AddCartItemRequest = AddCartItemRequest(
     productId = productId,

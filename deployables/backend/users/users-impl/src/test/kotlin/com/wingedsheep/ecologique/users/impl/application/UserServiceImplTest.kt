@@ -5,10 +5,10 @@ import com.wingedsheep.ecologique.users.api.buildAddressDto
 import com.wingedsheep.ecologique.users.api.buildUserCreateRequest
 import com.wingedsheep.ecologique.users.api.buildUserUpdateAddressRequest
 import com.wingedsheep.ecologique.users.api.error.UserError
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.impl.domain.Address
 import com.wingedsheep.ecologique.users.impl.domain.Email
 import com.wingedsheep.ecologique.users.impl.domain.User
-import com.wingedsheep.ecologique.users.impl.domain.UserId
 import com.wingedsheep.ecologique.users.impl.domain.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

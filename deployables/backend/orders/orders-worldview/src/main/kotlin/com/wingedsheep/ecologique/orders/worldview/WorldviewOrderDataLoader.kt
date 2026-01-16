@@ -1,6 +1,8 @@
 package com.wingedsheep.ecologique.orders.worldview
 
+import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderService
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineCreateRequest
@@ -13,7 +15,6 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
-import java.util.UUID
 
 @Component
 @Order(3)
@@ -92,7 +93,7 @@ class WorldviewOrderDataLoader(
                 null
             } else {
                 OrderLineCreateRequest(
-                    productId = product.id.toString(),
+                    productId = product.id,
                     productName = line.productName,
                     unitPrice = line.unitPrice,
                     quantity = line.quantity
@@ -101,20 +102,20 @@ class WorldviewOrderDataLoader(
         }
     }
 
-    private fun updateStatusIfNeeded(orderId: UUID, targetStatus: String) {
+    private fun updateStatusIfNeeded(orderId: OrderId, targetStatus: OrderStatus) {
         val statusPath = getStatusPath(targetStatus)
         statusPath.forEach { status ->
             orderService.updateStatus(orderId, status)
         }
     }
 
-    private fun getStatusPath(targetStatus: String): List<String> = when (targetStatus) {
-        "CREATED" -> emptyList()
-        "RESERVED" -> listOf("RESERVED")
-        "PAYMENT_PENDING" -> listOf("RESERVED", "PAYMENT_PENDING")
-        "PAID" -> listOf("RESERVED", "PAYMENT_PENDING", "PAID")
-        "SHIPPED" -> listOf("RESERVED", "PAYMENT_PENDING", "PAID", "SHIPPED")
-        "DELIVERED" -> listOf("RESERVED", "PAYMENT_PENDING", "PAID", "SHIPPED", "DELIVERED")
-        else -> emptyList()
+    private fun getStatusPath(targetStatus: OrderStatus): List<OrderStatus> = when (targetStatus) {
+        OrderStatus.CREATED -> emptyList()
+        OrderStatus.RESERVED -> listOf(OrderStatus.RESERVED)
+        OrderStatus.PAYMENT_PENDING -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING)
+        OrderStatus.PAID -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID)
+        OrderStatus.SHIPPED -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID, OrderStatus.SHIPPED)
+        OrderStatus.DELIVERED -> listOf(OrderStatus.RESERVED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED)
+        OrderStatus.CANCELLED -> emptyList()
     }
 }

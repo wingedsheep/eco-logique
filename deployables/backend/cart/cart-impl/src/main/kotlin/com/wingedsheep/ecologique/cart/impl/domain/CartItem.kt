@@ -1,15 +1,15 @@
 package com.wingedsheep.ecologique.cart.impl.domain
 
+import com.wingedsheep.ecologique.products.api.ProductId
 import java.math.BigDecimal
 
 internal data class CartItem(
-    val productId: String,
+    val productId: ProductId,
     val productName: String,
     val unitPrice: BigDecimal,
     val quantity: Int
 ) {
     init {
-        require(productId.isNotBlank()) { "Product ID cannot be blank" }
         require(productName.isNotBlank()) { "Product name cannot be blank" }
         require(unitPrice > BigDecimal.ZERO) { "Unit price must be positive" }
         require(quantity > 0) { "Quantity must be positive" }
@@ -20,7 +20,7 @@ internal data class CartItem(
 
     companion object {
         fun create(
-            productId: String,
+            productId: ProductId,
             productName: String,
             unitPrice: BigDecimal,
             quantity: Int

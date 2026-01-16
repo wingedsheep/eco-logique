@@ -1,10 +1,10 @@
 package com.wingedsheep.ecologique.users.impl.infrastructure.persistence
 
 import com.wingedsheep.ecologique.common.country.Country
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.impl.domain.Address
 import com.wingedsheep.ecologique.users.impl.domain.Email
 import com.wingedsheep.ecologique.users.impl.domain.User
-import com.wingedsheep.ecologique.users.impl.domain.UserId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

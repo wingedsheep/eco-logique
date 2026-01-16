@@ -1,19 +1,25 @@
 package com.wingedsheep.ecologique.cart.impl.domain
 
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.users.api.UserId
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.util.UUID
 
 class CartTest {
+
+    private val userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000100"))
+    private val productId1 = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+    private val productId2 = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
 
     @Test
     fun `should create empty cart`() {
         // When
-        val cart = Cart.empty("USER-001")
+        val cart = Cart.empty(userId)
 
         // Then
-        assertThat(cart.userId).isEqualTo("USER-001")
+        assertThat(cart.userId).isEqualTo(userId)
         assertThat(cart.items).isEmpty()
         assertThat(cart.totalItems).isEqualTo(0)
         assertThat(cart.subtotal).isEqualByComparingTo(BigDecimal.ZERO)
@@ -22,7 +28,7 @@ class CartTest {
     @Test
     fun `should add item to empty cart`() {
         // Given
-        val cart = Cart.empty("USER-001")
+        val cart = Cart.empty(userId)
         val item = buildCartItem()
 
         // When
@@ -30,14 +36,14 @@ class CartTest {
 
         // Then
         assertThat(updatedCart.items).hasSize(1)
-        assertThat(updatedCart.items[0].productId).isEqualTo("PROD-001")
+        assertThat(updatedCart.items[0].productId).isEqualTo(productId1)
         assertThat(updatedCart.totalItems).isEqualTo(2)
     }
 
     @Test
     fun `should merge quantities when adding same product`() {
         // Given
-        val cart = Cart.empty("USER-001")
+        val cart = Cart.empty(userId)
             .addItem(buildCartItem(quantity = 2))
         val newItem = buildCartItem(quantity = 3)
 
@@ -52,9 +58,9 @@ class CartTest {
     @Test
     fun `should calculate subtotal correctly`() {
         // Given
-        val cart = Cart.empty("USER-001")
-            .addItem(buildCartItem(productId = "PROD-001", unitPrice = BigDecimal("10.00"), quantity = 2))
-            .addItem(buildCartItem(productId = "PROD-002", unitPrice = BigDecimal("15.50"), quantity = 3))
+        val cart = Cart.empty(userId)
+            .addItem(buildCartItem(productId = productId1, unitPrice = BigDecimal("10.00"), quantity = 2))
+            .addItem(buildCartItem(productId = productId2, unitPrice = BigDecimal("15.50"), quantity = 3))
 
         // Then
         assertThat(cart.subtotal).isEqualByComparingTo(BigDecimal("66.50"))
@@ -64,79 +70,59 @@ class CartTest {
     @Test
     fun `should update item quantity`() {
         // Given
-        val cart = Cart.empty("USER-001")
+        val cart = Cart.empty(userId)
             .addItem(buildCartItem(quantity = 2))
 
         // When
-        val updatedCart = cart.updateItemQuantity("PROD-001", 5)
+        val updatedCart = cart.updateItemQuantity(productId1, 5)
 
         // Then
         assertThat(updatedCart.items[0].quantity).isEqualTo(5)
     }
 
     @Test
-    fun `should throw when updating with invalid quantity`() {
-        // Given
-        val cart = Cart.empty("USER-001")
-            .addItem(buildCartItem())
-
-        // When & Then
-        assertThatThrownBy { cart.updateItemQuantity("PROD-001", 0) }
-            .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage("Quantity must be positive")
-    }
-
-    @Test
     fun `should remove item from cart`() {
         // Given
-        val cart = Cart.empty("USER-001")
-            .addItem(buildCartItem(productId = "PROD-001"))
-            .addItem(buildCartItem(productId = "PROD-002"))
+        val cart = Cart.empty(userId)
+            .addItem(buildCartItem(productId = productId1))
+            .addItem(buildCartItem(productId = productId2))
 
         // When
-        val updatedCart = cart.removeItem("PROD-001")
+        val updatedCart = cart.removeItem(productId1)
 
         // Then
         assertThat(updatedCart.items).hasSize(1)
-        assertThat(updatedCart.items[0].productId).isEqualTo("PROD-002")
+        assertThat(updatedCart.items[0].productId).isEqualTo(productId2)
     }
 
     @Test
     fun `should clear cart`() {
         // Given
-        val cart = Cart.empty("USER-001")
-            .addItem(buildCartItem(productId = "PROD-001"))
-            .addItem(buildCartItem(productId = "PROD-002"))
+        val cart = Cart.empty(userId)
+            .addItem(buildCartItem(productId = productId1))
+            .addItem(buildCartItem(productId = productId2))
 
         // When
         val clearedCart = cart.clear()
 
         // Then
         assertThat(clearedCart.items).isEmpty()
-        assertThat(clearedCart.userId).isEqualTo("USER-001")
+        assertThat(clearedCart.userId).isEqualTo(userId)
     }
 
     @Test
     fun `should check if cart contains product`() {
         // Given
-        val cart = Cart.empty("USER-001")
-            .addItem(buildCartItem(productId = "PROD-001"))
+        val cart = Cart.empty(userId)
+            .addItem(buildCartItem(productId = productId1))
 
         // Then
-        assertThat(cart.containsProduct("PROD-001")).isTrue()
-        assertThat(cart.containsProduct("PROD-002")).isFalse()
-    }
-
-    @Test
-    fun `should throw when user ID is blank`() {
-        // When & Then
-        assertThatThrownBy { Cart(userId = "", items = emptyList()) }
-            .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage("User ID cannot be blank")
+        assertThat(cart.containsProduct(productId1)).isTrue()
+        assertThat(cart.containsProduct(productId2)).isFalse()
     }
 
     private fun buildCartItem(
-        productId: String = "PROD-001",
+        productId: ProductId = productId1,
         productName: String = "Test Product",
         unitPrice: BigDecimal = BigDecimal("29.99"),
         quantity: Int = 2

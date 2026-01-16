@@ -2,24 +2,29 @@ package com.wingedsheep.ecologique.cart.worldview
 
 import com.wingedsheep.ecologique.cart.api.dto.CartDto
 import com.wingedsheep.ecologique.cart.api.dto.CartItemDto
-import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_KEYCLOAK_ID
-import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JOHN_KEYCLOAK_ID
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.users.api.UserId
 import java.math.BigDecimal
+import java.util.UUID
 
 object WorldviewCart {
 
+    private val JOHN_USER_ID = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+    private val JANE_USER_ID = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+
     val johnDoeCart = CartDto(
-        userId = JOHN_KEYCLOAK_ID,
+        userId = JOHN_USER_ID,
         items = listOf(
             CartItemDto(
-                productId = "PROD-001",
+                productId = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
                 productName = "Organic Cotton T-Shirt",
                 unitPrice = BigDecimal("29.99"),
                 quantity = 2,
                 lineTotal = BigDecimal("59.98")
             ),
             CartItemDto(
-                productId = "PROD-002",
+                productId = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
                 productName = "Bamboo Toothbrush Set (4 pack)",
                 unitPrice = BigDecimal("12.50"),
                 quantity = 1,
@@ -28,14 +33,14 @@ object WorldviewCart {
         ),
         totalItems = 3,
         subtotal = BigDecimal("72.48"),
-        currency = "EUR"
+        currency = Currency.EUR
     )
 
     val janeSmithCart = CartDto(
-        userId = JANE_KEYCLOAK_ID,
+        userId = JANE_USER_ID,
         items = listOf(
             CartItemDto(
-                productId = "PROD-003",
+                productId = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000003")),
                 productName = "Solar Powered Phone Charger",
                 unitPrice = BigDecimal("45.00"),
                 quantity = 1,
@@ -44,11 +49,11 @@ object WorldviewCart {
         ),
         totalItems = 1,
         subtotal = BigDecimal("45.00"),
-        currency = "EUR"
+        currency = Currency.EUR
     )
 
     val allCarts = listOf(johnDoeCart, janeSmithCart)
 
-    fun findByUserId(userId: String): CartDto? =
+    fun findByUserId(userId: UserId): CartDto? =
         allCarts.find { it.userId == userId }
 }

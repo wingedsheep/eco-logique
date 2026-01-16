@@ -4,10 +4,9 @@ import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import com.wingedsheep.ecologique.users.api.dto.UserDto
 import com.wingedsheep.ecologique.users.api.dto.UserUpdateAddressRequest
-import java.util.UUID
 
 fun buildUserDto(
-    id: UUID = UUID.randomUUID(),
+    id: UserId = UserId.generate(),
     name: String = "Test User",
     email: String = "test@example.com",
     defaultAddress: AddressDto? = buildAddressDto()

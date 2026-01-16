@@ -1,12 +1,13 @@
 package com.wingedsheep.ecologique.users.worldview
 
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import com.wingedsheep.ecologique.users.api.dto.UserDto
 import java.util.UUID
 
 fun buildWorldviewUser(
-    id: UUID = UUID.randomUUID(),
+    id: UserId = UserId.generate(),
     name: String = "Worldview Test User",
     email: String = "worldview-${UUID.randomUUID().toString().take(8)}@example.com",
     defaultAddress: AddressDto? = buildWorldviewAddress()

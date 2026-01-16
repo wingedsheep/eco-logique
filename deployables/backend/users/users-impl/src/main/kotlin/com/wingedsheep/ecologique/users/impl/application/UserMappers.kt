@@ -6,7 +6,7 @@ import com.wingedsheep.ecologique.users.impl.domain.Address
 import com.wingedsheep.ecologique.users.impl.domain.User
 
 internal fun User.toDto(): UserDto = UserDto(
-    id = id.value,
+    id = id,
     name = name,
     email = email.value,
     defaultAddress = defaultAddress?.toDto()

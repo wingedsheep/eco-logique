@@ -5,6 +5,8 @@ import com.wingedsheep.ecologique.cart.api.dto.AddCartItemRequest
 import com.wingedsheep.ecologique.cart.api.dto.CartDto
 import com.wingedsheep.ecologique.cart.api.dto.UpdateCartItemRequest
 import com.wingedsheep.ecologique.cart.api.error.CartError
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.users.api.UserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/cart")
@@ -32,7 +35,8 @@ class CartControllerV1(
     @GetMapping
     @Operation(summary = "Get cart", description = "Retrieves the cart for the authenticated user")
     fun getCart(@AuthenticationPrincipal jwt: Jwt): ResponseEntity<CartDto> {
-        return cartService.getCart(jwt.subject).fold(
+        val userId = UserId(UUID.fromString(jwt.subject))
+        return cartService.getCart(userId).fold(
             onSuccess = { cart ->
                 ResponseEntity.ok(cart)
             },
@@ -48,7 +52,8 @@ class CartControllerV1(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestBody request: AddCartItemRequest
     ): ResponseEntity<CartDto> {
-        return cartService.addItem(jwt.subject, request).fold(
+        val userId = UserId(UUID.fromString(jwt.subject))
+        return cartService.addItem(userId, request).fold(
             onSuccess = { cart ->
                 ResponseEntity.status(HttpStatus.CREATED).body(cart)
             },
@@ -65,7 +70,9 @@ class CartControllerV1(
         @PathVariable productId: String,
         @RequestBody request: UpdateCartItemRequest
     ): ResponseEntity<CartDto> {
-        return cartService.updateItem(jwt.subject, productId, request).fold(
+        val userId = UserId(UUID.fromString(jwt.subject))
+        val parsedProductId = ProductId(UUID.fromString(productId))
+        return cartService.updateItem(userId, parsedProductId, request).fold(
             onSuccess = { cart ->
                 ResponseEntity.ok(cart)
             },
@@ -81,7 +88,9 @@ class CartControllerV1(
         @AuthenticationPrincipal jwt: Jwt,
         @PathVariable productId: String
     ): ResponseEntity<CartDto> {
-        return cartService.removeItem(jwt.subject, productId).fold(
+        val userId = UserId(UUID.fromString(jwt.subject))
+        val parsedProductId = ProductId(UUID.fromString(productId))
+        return cartService.removeItem(userId, parsedProductId).fold(
             onSuccess = { cart ->
                 ResponseEntity.ok(cart)
             },
@@ -94,7 +103,8 @@ class CartControllerV1(
     @DeleteMapping
     @Operation(summary = "Clear cart", description = "Removes all items from the cart")
     fun clearCart(@AuthenticationPrincipal jwt: Jwt): ResponseEntity<Unit> {
-        return cartService.clearCart(jwt.subject).fold(
+        val userId = UserId(UUID.fromString(jwt.subject))
+        return cartService.clearCart(userId).fold(
             onSuccess = {
                 ResponseEntity.noContent().build()
             },

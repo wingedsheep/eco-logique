@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.users.worldview
 
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserDto
 import com.wingedsheep.ecologique.users.worldview.WorldviewUserDataLoader.Companion.JANE_KEYCLOAK_ID
@@ -9,7 +10,7 @@ import java.util.UUID
 object WorldviewUser {
 
     val johnDoe = UserDto(
-        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        id = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
         name = "John Doe",
         email = "john@demo.com",
         defaultAddress = AddressDto(
@@ -22,7 +23,7 @@ object WorldviewUser {
     )
 
     val janeSmith = UserDto(
-        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+        id = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
         name = "Jane Smith",
         email = "jane@demo.com",
         defaultAddress = AddressDto(

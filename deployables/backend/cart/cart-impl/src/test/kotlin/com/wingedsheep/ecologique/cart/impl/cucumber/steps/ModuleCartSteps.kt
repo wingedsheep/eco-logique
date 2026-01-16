@@ -8,6 +8,7 @@ import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.buildProductDto
 import com.wingedsheep.ecologique.products.api.error.ProductError
+import com.wingedsheep.ecologique.users.api.UserId
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.Before
 import io.cucumber.java.en.Given
@@ -43,7 +44,7 @@ class ModuleCartSteps {
     private lateinit var cartService: CartService
 
     private var response: Response? = null
-    private var currentSubject: String = ""
+    private var currentUserId: UserId = UserId.generate()
     private lateinit var authenticatedRequest: RequestSpecification
 
     @Before
@@ -60,7 +61,7 @@ class ModuleCartSteps {
 
     @Given("I am authenticated as cart user {string}")
     fun authenticatedAs(subject: String) {
-        currentSubject = subject
+        currentUserId = UserId(UUID.fromString(subject))
         val tokenValue = "test-token-$subject"
         val jwt = Jwt.withTokenValue(tokenValue)
             .header("alg", "none")
@@ -93,12 +94,12 @@ class ModuleCartSteps {
 
     @Given("my cart is empty")
     fun cartIsEmpty() {
-        cartService.clearCart(currentSubject)
+        cartService.clearCart(currentUserId)
     }
 
     @Given("my cart has the following items:")
     fun cartHasItems(dataTable: DataTable) {
-        cartService.clearCart(currentSubject)
+        cartService.clearCart(currentUserId)
         dataTable.asMaps().forEach { row ->
             val productUuid = UUID.fromString(row["productId"]!!)
             val productId = ProductId(productUuid)
@@ -109,7 +110,7 @@ class ModuleCartSteps {
             whenever(productService.getProduct(productId))
                 .thenReturn(Result.ok(buildProductDto(id = productId, name = productName, priceAmount = price)))
 
-            cartService.addItem(currentSubject, AddCartItemRequest(productUuid.toString(), quantity))
+            cartService.addItem(currentUserId, AddCartItemRequest(productId, quantity))
         }
     }
 
@@ -119,7 +120,8 @@ class ModuleCartSteps {
     }
 
     @When("I add {int} of product {string} to my cart")
-    fun addProductToCart(quantity: Int, productId: String) {
+    fun addProductToCart(quantity: Int, productIdStr: String) {
+        val productId = ProductId(UUID.fromString(productIdStr))
         val request = AddCartItemRequest(productId, quantity)
         response = authenticatedRequest.body(request).post("/items")
     }

@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.cart.impl.domain
 
+import com.wingedsheep.ecologique.products.api.ProductId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -7,11 +8,13 @@ import java.math.BigDecimal
 
 class CartItemTest {
 
+    private val testProductId = ProductId.generate()
+
     @Test
     fun `should create cart item with calculated line total`() {
         // Given & When
         val item = CartItem.create(
-            productId = "PROD-001",
+            productId = testProductId,
             productName = "Test Product",
             unitPrice = BigDecimal("10.00"),
             quantity = 3
@@ -22,26 +25,11 @@ class CartItemTest {
     }
 
     @Test
-    fun `should throw when product ID is blank`() {
-        // When & Then
-        assertThatThrownBy {
-            CartItem.create(
-                productId = "",
-                productName = "Test",
-                unitPrice = BigDecimal("10.00"),
-                quantity = 1
-            )
-        }
-            .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage("Product ID cannot be blank")
-    }
-
-    @Test
     fun `should throw when product name is blank`() {
         // When & Then
         assertThatThrownBy {
             CartItem.create(
-                productId = "PROD-001",
+                productId = testProductId,
                 productName = "",
                 unitPrice = BigDecimal("10.00"),
                 quantity = 1
@@ -56,7 +44,7 @@ class CartItemTest {
         // When & Then
         assertThatThrownBy {
             CartItem.create(
-                productId = "PROD-001",
+                productId = testProductId,
                 productName = "Test",
                 unitPrice = BigDecimal.ZERO,
                 quantity = 1
@@ -71,7 +59,7 @@ class CartItemTest {
         // When & Then
         assertThatThrownBy {
             CartItem.create(
-                productId = "PROD-001",
+                productId = testProductId,
                 productName = "Test",
                 unitPrice = BigDecimal("10.00"),
                 quantity = 0

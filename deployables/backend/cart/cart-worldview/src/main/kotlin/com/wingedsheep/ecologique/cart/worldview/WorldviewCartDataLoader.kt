@@ -60,7 +60,7 @@ class WorldviewCartDataLoader(
 
                 cartService.addItem(
                     cartDto.userId,
-                    AddCartItemRequest(product.id.toString(), item.quantity)
+                    AddCartItemRequest(product.id, item.quantity)
                 ).onSuccess {
                     logger.debug("Added ${item.quantity}x ${item.productName} to cart for ${cartDto.userId}")
                 }.onFailure { error ->

@@ -1,16 +1,19 @@
 package com.wingedsheep.ecologique.cucumber.steps
 
+import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.cucumber.ScenarioContext
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.OrderRef
 import com.wingedsheep.ecologique.cucumber.TestApiClient
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineCreateRequest
+import com.wingedsheep.ecologique.products.api.ProductId
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 import java.math.BigDecimal
+import java.util.UUID
 
 class OrderJourneySteps(
     private val context: ScenarioContext,
@@ -28,7 +31,7 @@ class OrderJourneySteps(
                 ?: throw IllegalStateException("Product '$productName' not set up. Use 'the following products are available' first.")
 
             OrderLineCreateRequest(
-                productId = product.id,
+                productId = ProductId(UUID.fromString(product.id)),
                 productName = product.name,
                 unitPrice = product.price,
                 quantity = quantity
@@ -37,7 +40,7 @@ class OrderJourneySteps(
 
         val request = OrderCreateRequest(
             lines = lines,
-            currency = "EUR"
+            currency = Currency.EUR
         )
 
         orderResponse = api.post("/api/v1/orders", request)

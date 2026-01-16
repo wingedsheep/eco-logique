@@ -5,13 +5,13 @@ Feature: Module Level Cart Management
     Given the cart module is running
 
   Scenario: View empty cart
-    Given I am authenticated as cart user "empty-cart-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000101"
     And my cart is empty
     When I view my cart
     Then my cart should be empty
 
   Scenario: Add item to cart
-    Given I am authenticated as cart user "add-item-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000102"
     And the following products are available for cart:
       | productId                            | productName          | price |
       | 00000000-0000-0000-0000-000000000001 | Organic Cotton Shirt | 29.99 |
@@ -23,7 +23,7 @@ Feature: Module Level Cart Management
     And the cart total items should be 2
 
   Scenario: Add multiple items to cart
-    Given I am authenticated as cart user "multi-item-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000103"
     And the following products are available for cart:
       | productId                            | productName     | price |
       | 00000000-0000-0000-0000-000000000001 | Product One     | 10.00 |
@@ -36,7 +36,7 @@ Feature: Module Level Cart Management
     And the cart total items should be 5
 
   Scenario: Add same product increases quantity
-    Given I am authenticated as cart user "merge-item-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000104"
     And the following products are available for cart:
       | productId                            | productName | price |
       | 00000000-0000-0000-0000-000000000001 | Product One | 10.00 |
@@ -48,7 +48,7 @@ Feature: Module Level Cart Management
     And the cart subtotal should be 50.00
 
   Scenario: Update item quantity
-    Given I am authenticated as cart user "update-qty-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000105"
     And the following products are available for cart:
       | productId                            | productName | price |
       | 00000000-0000-0000-0000-000000000001 | Product One | 10.00 |
@@ -61,7 +61,7 @@ Feature: Module Level Cart Management
     And the cart subtotal should be 50.00
 
   Scenario: Remove item from cart
-    Given I am authenticated as cart user "remove-item-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000106"
     And the following products are available for cart:
       | productId                            | productName | price |
       | 00000000-0000-0000-0000-000000000001 | Product One | 10.00 |
@@ -76,7 +76,7 @@ Feature: Module Level Cart Management
     And the cart subtotal should be 20.00
 
   Scenario: Clear cart
-    Given I am authenticated as cart user "clear-cart-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000107"
     And the following products are available for cart:
       | productId                            | productName | price |
       | 00000000-0000-0000-0000-000000000001 | Product One | 10.00 |
@@ -87,19 +87,19 @@ Feature: Module Level Cart Management
     Then my cart should be empty
 
   Scenario: Cannot add non-existent product
-    Given I am authenticated as cart user "invalid-product-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000108"
     And no products are available
     When I add 1 of product "00000000-0000-0000-0000-000000000999" to my cart
     Then I should receive a product not found error for cart
 
   Scenario: Cannot update non-existent item
-    Given I am authenticated as cart user "update-nonexistent-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000109"
     And my cart is empty
     When I update the quantity of "00000000-0000-0000-0000-000000000999" to 5
     Then I should receive an item not found error
 
   Scenario: Cannot remove non-existent item
-    Given I am authenticated as cart user "remove-nonexistent-user"
+    Given I am authenticated as cart user "00000000-0000-0000-0000-000000000110"
     And my cart is empty
     When I remove "00000000-0000-0000-0000-000000000999" from my cart
     Then I should receive an item not found error

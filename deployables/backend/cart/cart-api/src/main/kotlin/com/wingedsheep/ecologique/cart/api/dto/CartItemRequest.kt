@@ -1,11 +1,12 @@
 package com.wingedsheep.ecologique.cart.api.dto
 
+import com.wingedsheep.ecologique.products.api.ProductId
+
 data class AddCartItemRequest(
-    val productId: String,
+    val productId: ProductId,
     val quantity: Int
 ) {
     init {
-        require(productId.isNotBlank()) { "Product ID is required" }
         require(quantity > 0) { "Quantity must be positive" }
     }
 }

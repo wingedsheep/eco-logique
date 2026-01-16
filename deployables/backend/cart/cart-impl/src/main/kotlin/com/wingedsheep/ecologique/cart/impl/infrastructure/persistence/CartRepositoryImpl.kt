@@ -2,6 +2,7 @@ package com.wingedsheep.ecologique.cart.impl.infrastructure.persistence
 
 import com.wingedsheep.ecologique.cart.impl.domain.Cart
 import com.wingedsheep.ecologique.cart.impl.domain.CartRepository
+import com.wingedsheep.ecologique.users.api.UserId
 import org.springframework.data.repository.CrudRepository
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
@@ -14,8 +15,9 @@ internal class CartRepositoryImpl(
     private val jdbcTemplate: JdbcTemplate
 ) : CartRepository {
 
-    override fun findByUserId(userId: String): Cart? {
-        val items = cartItemJdbc.findByUserId(userId)
+    override fun findByUserId(userId: UserId): Cart? {
+        val userIdString = userId.value.toString()
+        val items = cartItemJdbc.findByUserId(userIdString)
         if (items.isEmpty()) {
             return null
         }
@@ -26,25 +28,27 @@ internal class CartRepositoryImpl(
     }
 
     override fun save(cart: Cart): Cart {
-        if (!cartJdbc.existsById(cart.userId)) {
-            cartJdbc.save(CartEntity(cart.userId))
+        val userIdString = cart.userId.value.toString()
+        if (!cartJdbc.existsById(userIdString)) {
+            cartJdbc.save(CartEntity(userIdString))
         } else {
-            cartJdbc.save(CartEntity(cart.userId).markAsExisting())
+            cartJdbc.save(CartEntity(userIdString).markAsExisting())
         }
 
         // Use native SQL to ensure delete executes immediately before inserts
-        jdbcTemplate.update("DELETE FROM cart.cart_items WHERE user_id = ?", cart.userId)
+        jdbcTemplate.update("DELETE FROM cart.cart_items WHERE user_id = ?", userIdString)
 
         cart.items.forEach { item ->
-            cartItemJdbc.save(item.toEntity(cart.userId))
+            cartItemJdbc.save(item.toEntity(userIdString))
         }
 
         return cart
     }
 
-    override fun deleteByUserId(userId: String) {
-        jdbcTemplate.update("DELETE FROM cart.cart_items WHERE user_id = ?", userId)
-        cartJdbc.deleteById(userId)
+    override fun deleteByUserId(userId: UserId) {
+        val userIdString = userId.value.toString()
+        jdbcTemplate.update("DELETE FROM cart.cart_items WHERE user_id = ?", userIdString)
+        cartJdbc.deleteById(userIdString)
     }
 }
 

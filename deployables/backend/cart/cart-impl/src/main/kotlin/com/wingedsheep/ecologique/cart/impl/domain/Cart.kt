@@ -1,14 +1,13 @@
 package com.wingedsheep.ecologique.cart.impl.domain
 
+import com.wingedsheep.ecologique.products.api.ProductId
+import com.wingedsheep.ecologique.users.api.UserId
 import java.math.BigDecimal
 
 internal data class Cart(
-    val userId: String,
+    val userId: UserId,
     val items: List<CartItem>
 ) {
-    init {
-        require(userId.isNotBlank()) { "User ID cannot be blank" }
-    }
 
     val totalItems: Int
         get() = items.sumOf { it.quantity }
@@ -26,25 +25,25 @@ internal data class Cart(
         }
     }
 
-    fun updateItemQuantity(productId: String, quantity: Int): Cart {
+    fun updateItemQuantity(productId: ProductId, quantity: Int): Cart {
         require(quantity > 0) { "Quantity must be positive" }
         return copy(items = items.map {
             if (it.productId == productId) it.copy(quantity = quantity) else it
         })
     }
 
-    fun removeItem(productId: String): Cart {
+    fun removeItem(productId: ProductId): Cart {
         return copy(items = items.filter { it.productId != productId })
     }
 
-    fun containsProduct(productId: String): Boolean {
+    fun containsProduct(productId: ProductId): Boolean {
         return items.any { it.productId == productId }
     }
 
     fun clear(): Cart = copy(items = emptyList())
 
     companion object {
-        fun empty(userId: String): Cart = Cart(
+        fun empty(userId: UserId): Cart = Cart(
             userId = userId,
             items = emptyList()
         )

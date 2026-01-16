@@ -1,5 +1,6 @@
 package com.wingedsheep.ecologique.users.impl.domain
 
+import com.wingedsheep.ecologique.users.api.UserId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.UUID

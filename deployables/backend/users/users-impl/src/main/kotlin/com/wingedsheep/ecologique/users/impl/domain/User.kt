@@ -1,6 +1,6 @@
 package com.wingedsheep.ecologique.users.impl.domain
 
-import java.util.UUID
+import com.wingedsheep.ecologique.users.api.UserId
 
 internal data class User(
     val id: UserId,
@@ -30,13 +30,6 @@ internal data class User(
             email = Email(email),
             defaultAddress = address
         )
-    }
-}
-
-@JvmInline
-internal value class UserId(val value: UUID) {
-    companion object {
-        fun generate(): UserId = UserId(UUID.randomUUID())
     }
 }
 

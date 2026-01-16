@@ -1,21 +1,24 @@
 package com.wingedsheep.ecologique.orders.worldview
 
+import com.wingedsheep.ecologique.common.money.Currency
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderLineDto
+import com.wingedsheep.ecologique.products.api.ProductId
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.UUID
 
 fun buildWorldviewOrder(
-    id: UUID = UUID.randomUUID(),
+    id: OrderId = OrderId.generate(),
     userId: String = "worldview-user",
-    status: String = "CREATED",
+    status: OrderStatus = OrderStatus.CREATED,
     lines: List<OrderLineDto> = listOf(buildWorldviewOrderLine()),
     subtotal: BigDecimal = BigDecimal("29.99"),
     grandTotal: BigDecimal = BigDecimal("29.99"),
-    currency: String = "EUR",
+    currency: Currency = Currency.EUR,
     createdAt: Instant = Instant.now()
 ): OrderDto = OrderDto(
     id = id,
@@ -29,7 +32,7 @@ fun buildWorldviewOrder(
 )
 
 fun buildWorldviewOrderLine(
-    productId: String = "PROD-WV-001",
+    productId: ProductId = ProductId.generate(),
     productName: String = "Worldview Test Product",
     unitPrice: BigDecimal = BigDecimal("29.99"),
     quantity: Int = 1,
@@ -44,14 +47,14 @@ fun buildWorldviewOrderLine(
 
 fun buildWorldviewOrderCreateRequest(
     lines: List<OrderLineCreateRequest> = listOf(buildWorldviewOrderLineCreateRequest()),
-    currency: String = "EUR"
+    currency: Currency = Currency.EUR
 ): OrderCreateRequest = OrderCreateRequest(
     lines = lines,
     currency = currency
 )
 
 fun buildWorldviewOrderLineCreateRequest(
-    productId: String = "PROD-WV-001",
+    productId: ProductId = ProductId.generate(),
     productName: String = "Worldview Test Product",
     unitPrice: BigDecimal = BigDecimal("29.99"),
     quantity: Int = 1

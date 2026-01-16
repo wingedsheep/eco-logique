@@ -4,13 +4,14 @@ import com.wingedsheep.ecologique.cart.api.dto.CartDto
 import com.wingedsheep.ecologique.cart.api.dto.CartItemDto
 import com.wingedsheep.ecologique.cart.impl.domain.Cart
 import com.wingedsheep.ecologique.cart.impl.domain.CartItem
+import com.wingedsheep.ecologique.common.money.Currency
 
 internal fun Cart.toDto(): CartDto = CartDto(
     userId = userId,
     items = items.map { it.toDto() },
     totalItems = totalItems,
     subtotal = subtotal,
-    currency = "EUR"
+    currency = Currency.EUR
 )
 
 internal fun CartItem.toDto(): CartItemDto = CartItemDto(
