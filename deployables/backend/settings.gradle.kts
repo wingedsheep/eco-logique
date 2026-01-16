@@ -43,6 +43,7 @@ include(":payment:payment-impl")
 include(":payment:payment-worldview")
 include(":inventory:inventory-api")
 include(":inventory:inventory-impl")
+include(":inventory:inventory-worldview")
 include(":checkout:checkout-api")
 include(":checkout:checkout-impl")
 

@@ -7,5 +7,6 @@ internal interface InventoryItemRepository {
     fun save(item: InventoryItem): InventoryItem
     fun findByProductIdAndWarehouseId(productId: ProductId, warehouseId: WarehouseId): InventoryItem?
     fun findByProductId(productId: ProductId): List<InventoryItem>
+    fun findByWarehouseId(warehouseId: WarehouseId): List<InventoryItem>
     fun findAll(): List<InventoryItem>
 }

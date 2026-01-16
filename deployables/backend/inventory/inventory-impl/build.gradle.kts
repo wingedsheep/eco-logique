@@ -13,9 +13,12 @@ dependencyManagement {
 dependencies {
     implementation(project(":inventory:inventory-api"))
     implementation(project(":common:common-result"))
+    implementation(project(":common:common-country"))
 
     implementation(libs.spring.context)
     implementation(libs.spring.boot.starter.data.jdbc)
+    implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.tx)
     implementation(libs.kotlin.reflect)
+    implementation(libs.springdoc.openapi)
 }

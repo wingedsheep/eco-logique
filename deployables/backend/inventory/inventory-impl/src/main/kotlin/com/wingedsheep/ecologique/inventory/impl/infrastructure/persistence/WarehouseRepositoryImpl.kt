@@ -27,10 +27,24 @@ internal class WarehouseRepositoryImpl(
             .orElse(null)
     }
 
+    override fun findByName(name: String): Warehouse? {
+        return jdbc.findByName(name)?.toDomain()
+    }
+
     override fun findAll(): List<Warehouse> {
         return jdbc.findAll().map { it.toDomain() }
+    }
+
+    override fun delete(id: WarehouseId) {
+        jdbc.deleteById(id.value)
+    }
+
+    override fun existsById(id: WarehouseId): Boolean {
+        return jdbc.existsById(id.value)
     }
 }
 
 @Repository
-internal interface WarehouseRepositoryJdbc : CrudRepository<WarehouseEntity, UUID>
+internal interface WarehouseRepositoryJdbc : CrudRepository<WarehouseEntity, UUID> {
+    fun findByName(name: String): WarehouseEntity?
+}

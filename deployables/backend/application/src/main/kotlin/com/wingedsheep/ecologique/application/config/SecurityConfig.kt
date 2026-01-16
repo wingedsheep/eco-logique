@@ -31,7 +31,11 @@ class SecurityConfig {
                     .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole("ADMIN")
 
-                    // Authenticated customer endpoints (orders, users)
+                    // Admin endpoints (inventory management)
+                    .requestMatchers("/api/v1/admin/inventory/**").hasRole("ADMIN")
+
+                    // Authenticated customer endpoints (orders, users, inventory)
+                    .requestMatchers(HttpMethod.GET, "/api/v1/inventory/**").authenticated()
                     .requestMatchers("/api/v1/orders/**").authenticated()
                     .requestMatchers("/api/v1/users/**").authenticated()
 

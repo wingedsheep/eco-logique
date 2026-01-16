@@ -1,6 +1,7 @@
 package com.wingedsheep.ecologique.inventory.api.error
 
 import com.wingedsheep.ecologique.inventory.api.ReservationId
+import com.wingedsheep.ecologique.inventory.api.WarehouseId
 import com.wingedsheep.ecologique.products.api.ProductId
 
 /**
@@ -31,4 +32,24 @@ sealed class InventoryError {
      * General inventory error.
      */
     data class InventoryUnavailable(val reason: String) : InventoryError()
+
+    /**
+     * Warehouse not found.
+     */
+    data class WarehouseNotFound(val warehouseId: WarehouseId) : InventoryError()
+
+    /**
+     * Warehouse name already exists.
+     */
+    data class DuplicateWarehouseName(val name: String) : InventoryError()
+
+    /**
+     * Validation failed.
+     */
+    data class ValidationFailed(val reason: String) : InventoryError()
+
+    /**
+     * Invalid country code.
+     */
+    data class InvalidCountryCode(val countryCode: String) : InventoryError()
 }

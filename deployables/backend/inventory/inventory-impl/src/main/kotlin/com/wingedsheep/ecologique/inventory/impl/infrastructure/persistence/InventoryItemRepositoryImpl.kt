@@ -31,6 +31,10 @@ internal class InventoryItemRepositoryImpl(
         return jdbc.findByProductId(productId.value).map { it.toDomain() }
     }
 
+    override fun findByWarehouseId(warehouseId: WarehouseId): List<InventoryItem> {
+        return jdbc.findByWarehouseId(warehouseId.value).map { it.toDomain() }
+    }
+
     override fun findAll(): List<InventoryItem> {
         return jdbc.findAll().map { it.toDomain() }
     }
@@ -40,4 +44,5 @@ internal class InventoryItemRepositoryImpl(
 internal interface InventoryItemRepositoryJdbc : CrudRepository<InventoryItemEntity, Long> {
     fun findByProductIdAndWarehouseId(productId: UUID, warehouseId: UUID): InventoryItemEntity?
     fun findByProductId(productId: UUID): List<InventoryItemEntity>
+    fun findByWarehouseId(warehouseId: UUID): List<InventoryItemEntity>
 }

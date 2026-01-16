@@ -8,5 +8,6 @@ import com.wingedsheep.ecologique.inventory.api.WarehouseId
 internal data class Warehouse(
     val id: WarehouseId,
     val name: String,
-    val countryCode: String
+    val countryCode: String,
+    val address: Address? = null
 )

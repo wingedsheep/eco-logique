@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":payment:payment-impl"))
     implementation(project(":inventory:inventory-api"))
     implementation(project(":inventory:inventory-impl"))
+    implementation(project(":inventory:inventory-worldview"))
     implementation(project(":checkout:checkout-impl"))
 
     implementation(libs.spring.boot.starter.web)
