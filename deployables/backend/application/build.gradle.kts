@@ -22,6 +22,8 @@ dependencies {
     implementation(project(":cart:cart-impl"))
     implementation(project(":cart:cart-worldview"))
     implementation(project(":email:email-impl"))
+    implementation(project(":payment:payment-api"))
+    implementation(project(":payment:payment-impl"))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)

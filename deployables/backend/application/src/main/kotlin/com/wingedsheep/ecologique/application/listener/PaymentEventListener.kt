@@ -1,0 +1,46 @@
+package com.wingedsheep.ecologique.application.listener
+
+import com.wingedsheep.ecologique.orders.api.OrderId
+import com.wingedsheep.ecologique.orders.api.OrderService
+import com.wingedsheep.ecologique.orders.api.OrderStatus
+import com.wingedsheep.ecologique.payment.api.event.PaymentCompleted
+import com.wingedsheep.ecologique.payment.api.event.PaymentFailed
+import org.springframework.context.event.EventListener
+import org.springframework.stereotype.Component
+import java.util.UUID
+import java.util.logging.Logger
+
+/**
+ * Listens to payment events and updates order status accordingly.
+ *
+ * This is the application-level integration between the payment and orders modules.
+ * The payment module publishes events, and this listener coordinates the order updates.
+ */
+@Component
+class PaymentEventListener(
+    private val orderService: OrderService
+) {
+    private val logger = Logger.getLogger(PaymentEventListener::class.java.name)
+
+    @EventListener
+    fun onPaymentCompleted(event: PaymentCompleted) {
+        logger.info("Payment completed for order ${event.orderId}, updating status to PAID")
+
+        val orderId = OrderId(UUID.fromString(event.orderId))
+        orderService.updateStatus(orderId, OrderStatus.PAID).fold(
+            onSuccess = {
+                logger.info("Order ${event.orderId} status updated to PAID")
+            },
+            onFailure = { error ->
+                logger.warning("Failed to update order ${event.orderId} status: $error")
+            }
+        )
+    }
+
+    @EventListener
+    fun onPaymentFailed(event: PaymentFailed) {
+        logger.info("Payment failed for order ${event.orderId}: ${event.failureReason}")
+        // Order stays in PAYMENT_PENDING - customer can retry
+        // Could optionally send notification, log for analytics, etc.
+    }
+}
