@@ -30,33 +30,29 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
-val coverageExcludedProjects = setOf(":application")
-
 tasks.register<JacocoReport>("jacocoAggregatedReport") {
     group = "verification"
     description = "Generates aggregated code coverage report for module tests"
 
-    val includedProjects = subprojects.filter { it.path !in coverageExcludedProjects }
-
-    val testTasks = includedProjects.flatMap { subproject ->
-        subproject.tasks.withType<Test>()
-    }
-    dependsOn(testTasks)
-
-    val sourceSets = includedProjects.mapNotNull { subproject ->
-        subproject.extensions.findByType<SourceSetContainer>()?.findByName("main")
+    // Include all leaf modules with source sets, except application
+    val includedProjects = subprojects.filter { subproject ->
+        subproject.path != ":application" &&
+            subproject.extensions.findByType<SourceSetContainer>()?.findByName("main") != null
     }
 
-    sourceDirectories.setFrom(sourceSets.flatMap { it.allSource.srcDirs })
-    classDirectories.setFrom(sourceSets.map { it.output })
+    dependsOn(includedProjects.map { "${it.path}:jacocoTestReport" })
 
-    executionData.setFrom(
-        includedProjects.flatMap { subproject ->
-            fileTree(subproject.layout.buildDirectory) {
-                include("jacoco/*.exec")
-            }
-        }
-    )
+    sourceDirectories.setFrom(includedProjects.map {
+        it.extensions.getByType<SourceSetContainer>().getByName("main").allSource.srcDirs
+    }.flatten())
+
+    classDirectories.setFrom(includedProjects.map {
+        it.extensions.getByType<SourceSetContainer>().getByName("main").output.classesDirs
+    })
+
+    executionData.setFrom(includedProjects.map {
+        fileTree(it.layout.buildDirectory) { include("jacoco/*.exec") }
+    })
 
     reports {
         xml.required.set(true)
