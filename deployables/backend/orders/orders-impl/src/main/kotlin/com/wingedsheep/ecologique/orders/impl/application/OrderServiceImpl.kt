@@ -12,9 +12,7 @@ import com.wingedsheep.ecologique.orders.api.error.OrderError
 import com.wingedsheep.ecologique.orders.impl.domain.Order
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
-import com.wingedsheep.ecologique.orders.impl.domain.canTransitionTo
 import com.wingedsheep.ecologique.payment.api.PaymentId
-import com.wingedsheep.ecologique.products.api.ProductCategory
 import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import com.wingedsheep.ecologique.users.api.UserId
