@@ -82,6 +82,8 @@ class TotalsSnapshotTest {
         assertThatThrownBy {
             TotalsSnapshot(
                 subtotal = BigDecimal("-1.00"),
+                vatAmount = BigDecimal.ZERO,
+                vatRate = BigDecimal.ZERO,
                 grandTotal = BigDecimal("10.00"),
                 currency = Currency.EUR
             )
@@ -96,11 +98,48 @@ class TotalsSnapshotTest {
         assertThatThrownBy {
             TotalsSnapshot(
                 subtotal = BigDecimal("10.00"),
+                vatAmount = BigDecimal.ZERO,
+                vatRate = BigDecimal.ZERO,
                 grandTotal = BigDecimal("-1.00"),
                 currency = Currency.EUR
             )
         }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("Grand total must be non-negative")
+    }
+
+    @Test
+    fun `should set default VAT values when not provided`() {
+        // Given
+        val lines = listOf(
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 1", BigDecimal("25.00"), 2)
+        )
+
+        // When
+        val snapshot = TotalsSnapshot.fromOrderLines(lines, Currency.EUR)
+
+        // Then
+        assertThat(snapshot.vatAmount).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(snapshot.vatRate).isEqualByComparingTo(BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `should use provided VAT values`() {
+        // Given
+        val lines = listOf(
+            OrderLine.create(ProductId(UUID.randomUUID()), "Product 1", BigDecimal("25.00"), 2)
+        )
+
+        // When
+        val snapshot = TotalsSnapshot.fromOrderLines(
+            lines = lines,
+            currency = Currency.EUR,
+            vatAmount = BigDecimal("8.33"),
+            vatRate = BigDecimal("0.20")
+        )
+
+        // Then
+        assertThat(snapshot.vatAmount).isEqualByComparingTo(BigDecimal("8.33"))
+        assertThat(snapshot.vatRate).isEqualByComparingTo(BigDecimal("0.20"))
     }
 }

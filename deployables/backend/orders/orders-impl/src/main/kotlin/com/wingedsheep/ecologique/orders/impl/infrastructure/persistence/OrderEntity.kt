@@ -14,6 +14,8 @@ internal class OrderEntity(
     val userId: String,
     val status: String,
     val subtotal: BigDecimal,
+    val vatAmount: BigDecimal,
+    val vatRate: BigDecimal,
     val grandTotal: BigDecimal,
     val currency: String,
     val createdAt: Instant,

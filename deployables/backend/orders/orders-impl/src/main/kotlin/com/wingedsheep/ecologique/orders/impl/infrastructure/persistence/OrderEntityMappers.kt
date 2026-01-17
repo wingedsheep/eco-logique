@@ -17,6 +17,8 @@ internal fun OrderEntity.toOrder(lines: List<OrderLineEntity>): Order = Order(
     lines = lines.map { it.toOrderLine() },
     totals = TotalsSnapshot(
         subtotal = subtotal,
+        vatAmount = vatAmount,
+        vatRate = vatRate,
         grandTotal = grandTotal,
         currency = Currency.valueOf(currency)
     ),
@@ -37,6 +39,8 @@ internal fun Order.toEntity(): OrderEntity = OrderEntity(
     userId = userId,
     status = status.name,
     subtotal = totals.subtotal,
+    vatAmount = totals.vatAmount,
+    vatRate = totals.vatRate,
     grandTotal = totals.grandTotal,
     currency = totals.currency.name,
     createdAt = createdAt,

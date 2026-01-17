@@ -186,6 +186,8 @@ class OrderTest {
         lines = listOf(buildOrderLine()),
         totals = TotalsSnapshot(
             subtotal = BigDecimal("29.99"),
+            vatAmount = BigDecimal.ZERO,
+            vatRate = BigDecimal.ZERO,
             grandTotal = BigDecimal("29.99"),
             currency = Currency.EUR
         ),

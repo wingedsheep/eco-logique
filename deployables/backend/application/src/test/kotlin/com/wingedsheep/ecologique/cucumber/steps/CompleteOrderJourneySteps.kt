@@ -15,14 +15,20 @@ import com.wingedsheep.ecologique.payment.api.dto.CardBrand
 import com.wingedsheep.ecologique.products.api.ProductCategory
 import com.wingedsheep.ecologique.products.api.ProductId
 import com.wingedsheep.ecologique.products.api.dto.ProductCreateRequest
+import com.wingedsheep.ecologique.users.api.RegistrationService
+import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.dto.AddressDto
 import com.wingedsheep.ecologique.users.api.dto.UserCreateRequest
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.And
+import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.whenever
 import org.springframework.amqp.rabbit.core.RabbitTemplate
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -30,11 +36,56 @@ import java.util.UUID
 class CompleteOrderJourneySteps(
     private val context: ScenarioContext,
     private val api: TestApiClient,
-    private val rabbitTemplate: RabbitTemplate
+    private val rabbitTemplate: RabbitTemplate,
+    private val registrationService: RegistrationService,
+    private val jwtDecoder: JwtDecoder
 ) {
     private var productResponse: TestResponse? = null
     private var cartResponse: TestResponse? = null
     private var checkoutResponse: TestResponse? = null
+
+    // Track registered customers to avoid duplicate registration
+    private val registeredCustomers = mutableMapOf<String, String>()  // email -> userId
+
+    @Given("I register as a new customer with email {string}")
+    fun registerAsNewCustomer(email: String) {
+        val password = "TestPassword123!"
+        val userId = UUID.randomUUID().toString()
+
+        // Create the test user in the registration service
+        registrationService.createTestUser(
+            userId = UserId(UUID.fromString(userId)),
+            externalSubject = userId,
+            email = email,
+            password = password
+        )
+
+        // Set up authentication for this user
+        authenticateAsCustomer(userId)
+        registeredCustomers[email] = userId
+    }
+
+    @Given("I am logged in as customer {string}")
+    fun loginAsRegisteredCustomer(email: String) {
+        val userId = registeredCustomers[email]
+            ?: throw IllegalStateException("Customer '$email' not registered. Use 'I register as a new customer' first.")
+
+        authenticateAsCustomer(userId)
+    }
+
+    private fun authenticateAsCustomer(userId: String) {
+        val tokenValue = "test-token-$userId"
+        val jwt = Jwt.withTokenValue(tokenValue)
+            .header("alg", "none")
+            .claim("sub", userId)
+            .claim("realm_access", mapOf("roles" to listOf("ROLE_CUSTOMER")))
+            .build()
+
+        whenever(jwtDecoder.decode(tokenValue)).thenReturn(jwt)
+
+        context.authToken = tokenValue
+        context.currentUserId = userId
+    }
 
     @When("as admin I create a product with:")
     fun adminCreateProductWithDetails(dataTable: DataTable) {
@@ -251,6 +302,28 @@ class CompleteOrderJourneySteps(
             ?: throw IllegalStateException("No payment in context")
 
         assertThat(payment.status).isEqualTo(expectedStatus)
+    }
+
+    @Then("the order VAT should be {double} EUR at {double}% rate")
+    fun orderVatShouldBe(expectedVat: Double, expectedRate: Double) {
+        val order = context.getLatestOrder()
+            ?: throw IllegalStateException("No order in context")
+
+        val response = api.get("/api/v1/orders/${order.id}")
+        assertThat(response.statusCode).isEqualTo(200)
+
+        val vatAmount = response.getDouble("vatAmount")
+        val vatRate = response.getDouble("vatRate")
+
+        assertThat(vatAmount)
+            .withFailMessage("Expected VAT amount $expectedVat but was $vatAmount")
+            .isEqualTo(expectedVat)
+
+        // VAT rate is stored as decimal (0.20 for 20%), convert expected to match
+        val expectedRateDecimal = expectedRate / 100.0
+        assertThat(vatRate)
+            .withFailMessage("Expected VAT rate ${expectedRateDecimal} (${expectedRate}%) but was $vatRate")
+            .isEqualTo(expectedRateDecimal)
     }
 
     private fun performCheckout(token: String, last4: String, brand: CardBrand) {

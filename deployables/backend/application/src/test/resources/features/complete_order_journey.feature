@@ -46,9 +46,9 @@ Feature: Complete Order Journey - End to End
     Then the total available stock should be 50
 
     # =========================================
-    # STEP 5: Customer sets up profile with shipping address
+    # STEP 5: Customer registers and sets up profile
     # =========================================
-    Given I am authenticated as a customer
+    Given I register as a new customer with email "marie.dupont@example.com"
     When I set up my profile with a shipping address in "France"
 
     # =========================================
@@ -67,6 +67,7 @@ Feature: Complete Order Journey - End to End
     Then the checkout should succeed
     And an order should be created with status "PAID"
     And the order total should be 69.98 EUR
+    And the order VAT should be 11.66 EUR at 20% rate
     And my cart should be empty
 
     # =========================================
@@ -107,7 +108,7 @@ Feature: Complete Order Journey - End to End
     # =========================================
     # STEP 13: Customer verifies order status updated to SHIPPED
     # =========================================
-    Given I am authenticated as a customer
+    Given I am logged in as customer "marie.dupont@example.com"
     Then the order status should now be "SHIPPED"
 
     # =========================================

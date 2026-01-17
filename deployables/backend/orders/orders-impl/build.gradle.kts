@@ -19,6 +19,8 @@ dependencies {
     implementation(project(":users:users-api"))
     implementation(project(":common:common-money"))
     implementation(project(":common:common-result"))
+    implementation(project(":common:common-tax"))
+    implementation(project(":common:common-country"))
 
     implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.data.jdbc)

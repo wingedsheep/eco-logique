@@ -4,6 +4,7 @@ import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.payment.api.PaymentId
+import java.math.BigDecimal
 import java.time.Instant
 
 internal data class Order(
@@ -35,13 +36,15 @@ internal data class Order(
         fun create(
             userId: String,
             lines: List<OrderLine>,
-            currency: Currency
+            currency: Currency,
+            vatAmount: BigDecimal = BigDecimal.ZERO,
+            vatRate: BigDecimal = BigDecimal.ZERO
         ): Order = Order(
             id = OrderId.generate(),
             userId = userId,
             status = OrderStatus.CREATED,
             lines = lines,
-            totals = TotalsSnapshot.fromOrderLines(lines, currency),
+            totals = TotalsSnapshot.fromOrderLines(lines, currency, vatAmount, vatRate),
             createdAt = Instant.now()
         )
     }

@@ -14,6 +14,8 @@ data class OrderDto(
     val status: OrderStatus,
     val lines: List<OrderLineDto>,
     val subtotal: BigDecimal,
+    val vatAmount: BigDecimal,
+    val vatRate: BigDecimal,
     val grandTotal: BigDecimal,
     val currency: Currency,
     val createdAt: Instant,

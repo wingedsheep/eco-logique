@@ -17,6 +17,8 @@ fun buildWorldviewOrder(
     status: OrderStatus = OrderStatus.CREATED,
     lines: List<OrderLineDto> = listOf(buildWorldviewOrderLine()),
     subtotal: BigDecimal = BigDecimal("29.99"),
+    vatAmount: BigDecimal = BigDecimal.ZERO,
+    vatRate: BigDecimal = BigDecimal.ZERO,
     grandTotal: BigDecimal = BigDecimal("29.99"),
     currency: Currency = Currency.EUR,
     createdAt: Instant = Instant.now()
@@ -26,6 +28,8 @@ fun buildWorldviewOrder(
     status = status,
     lines = lines,
     subtotal = subtotal,
+    vatAmount = vatAmount,
+    vatRate = vatRate,
     grandTotal = grandTotal,
     currency = currency,
     createdAt = createdAt

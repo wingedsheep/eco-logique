@@ -28,6 +28,8 @@ object WorldviewOrder {
             )
         ),
         subtotal = BigDecimal("59.98"),
+        vatAmount = BigDecimal.ZERO,
+        vatRate = BigDecimal.ZERO,
         grandTotal = BigDecimal("59.98"),
         currency = Currency.EUR,
         createdAt = Instant.parse("2024-01-15T10:00:00Z")
@@ -54,6 +56,8 @@ object WorldviewOrder {
             )
         ),
         subtotal = BigDecimal("62.48"),
+        vatAmount = BigDecimal.ZERO,
+        vatRate = BigDecimal.ZERO,
         grandTotal = BigDecimal("62.48"),
         currency = Currency.EUR,
         createdAt = Instant.parse("2024-01-20T14:30:00Z")
@@ -73,6 +77,8 @@ object WorldviewOrder {
             )
         ),
         subtotal = BigDecimal("45.00"),
+        vatAmount = BigDecimal.ZERO,
+        vatRate = BigDecimal.ZERO,
         grandTotal = BigDecimal("45.00"),
         currency = Currency.EUR,
         createdAt = Instant.parse("2024-01-10T09:15:00Z")
@@ -99,6 +105,8 @@ object WorldviewOrder {
             )
         ),
         subtotal = BigDecimal("104.96"),
+        vatAmount = BigDecimal.ZERO,
+        vatRate = BigDecimal.ZERO,
         grandTotal = BigDecimal("104.96"),
         currency = Currency.EUR,
         createdAt = Instant.parse("2024-01-05T16:45:00Z")
