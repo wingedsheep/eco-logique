@@ -4,6 +4,7 @@ import com.wingedsheep.ecologique.common.result.Result
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.error.OrderError
+import com.wingedsheep.ecologique.payment.api.PaymentId
 
 interface OrderService {
     fun createOrder(userId: String, request: OrderCreateRequest): Result<OrderDto, OrderError>
@@ -16,4 +17,10 @@ interface OrderService {
     fun getOrderInternal(orderId: OrderId): Result<OrderDto, OrderError>
     fun findOrdersForUser(userId: String): Result<List<OrderDto>, OrderError>
     fun updateStatus(orderId: OrderId, newStatus: OrderStatus): Result<OrderDto, OrderError>
+
+    /**
+     * Marks an order as paid and associates it with a payment.
+     * For internal/system use only (e.g., payment event listeners).
+     */
+    fun markAsPaid(orderId: OrderId, paymentId: PaymentId): Result<OrderDto, OrderError>
 }

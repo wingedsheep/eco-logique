@@ -6,6 +6,7 @@ import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.impl.domain.Order
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.TotalsSnapshot
+import com.wingedsheep.ecologique.payment.api.PaymentId
 import com.wingedsheep.ecologique.products.api.ProductId
 import java.util.UUID
 
@@ -19,7 +20,8 @@ internal fun OrderEntity.toOrder(lines: List<OrderLineEntity>): Order = Order(
         grandTotal = grandTotal,
         currency = Currency.valueOf(currency)
     ),
-    createdAt = createdAt
+    createdAt = createdAt,
+    paymentId = paymentId?.let { PaymentId(it) }
 )
 
 internal fun OrderLineEntity.toOrderLine(): OrderLine = OrderLine(
@@ -37,7 +39,8 @@ internal fun Order.toEntity(): OrderEntity = OrderEntity(
     subtotal = totals.subtotal,
     grandTotal = totals.grandTotal,
     currency = totals.currency.name,
-    createdAt = createdAt
+    createdAt = createdAt,
+    paymentId = paymentId?.value
 )
 
 internal fun OrderLine.toEntity(orderId: UUID): OrderLineEntity = OrderLineEntity(

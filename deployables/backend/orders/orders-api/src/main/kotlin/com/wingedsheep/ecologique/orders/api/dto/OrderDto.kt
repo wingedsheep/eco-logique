@@ -3,6 +3,7 @@ package com.wingedsheep.ecologique.orders.api.dto
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderStatus
+import com.wingedsheep.ecologique.payment.api.PaymentId
 import com.wingedsheep.ecologique.products.api.ProductId
 import java.math.BigDecimal
 import java.time.Instant
@@ -15,7 +16,8 @@ data class OrderDto(
     val subtotal: BigDecimal,
     val grandTotal: BigDecimal,
     val currency: Currency,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val paymentId: PaymentId? = null
 )
 
 data class OrderLineDto(

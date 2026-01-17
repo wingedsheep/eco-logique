@@ -12,6 +12,7 @@ import com.wingedsheep.ecologique.orders.impl.domain.Order
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
 import com.wingedsheep.ecologique.orders.impl.domain.canTransitionTo
+import com.wingedsheep.ecologique.payment.api.PaymentId
 import com.wingedsheep.ecologique.products.api.ProductService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -105,6 +106,21 @@ internal class OrderServiceImpl(
             order.transitionTo(newStatus)
         } catch (e: IllegalArgumentException) {
             return Result.err(OrderError.InvalidStatus(order.status, newStatus))
+        }
+
+        val savedOrder = orderRepository.save(updatedOrder)
+        return Result.ok(savedOrder.toDto())
+    }
+
+    @Transactional
+    override fun markAsPaid(orderId: OrderId, paymentId: PaymentId): Result<OrderDto, OrderError> {
+        val order = orderRepository.findById(orderId)
+            ?: return Result.err(OrderError.NotFound(orderId))
+
+        val updatedOrder = try {
+            order.transitionTo(OrderStatus.PAID).withPaymentId(paymentId)
+        } catch (e: IllegalArgumentException) {
+            return Result.err(OrderError.InvalidStatus(order.status, OrderStatus.PAID))
         }
 
         val savedOrder = orderRepository.save(updatedOrder)

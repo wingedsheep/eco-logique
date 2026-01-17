@@ -1,7 +1,9 @@
 package com.wingedsheep.ecologique.orders.impl.cucumber
 
 import com.wingedsheep.ecologique.orders.impl.TestApplication
+import com.wingedsheep.ecologique.payment.api.PaymentService
 import com.wingedsheep.ecologique.products.api.ProductService
+import com.wingedsheep.ecologique.users.api.UserService
 import io.cucumber.spring.CucumberContextConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
@@ -22,6 +24,12 @@ class ModuleCucumberSpringConfiguration {
 
     @MockitoBean
     lateinit var productService: ProductService
+
+    @MockitoBean
+    lateinit var userService: UserService
+
+    @MockitoBean
+    lateinit var paymentService: PaymentService
 
     companion object {
         private val postgres = PostgreSQLContainer("postgres:14-alpine")

@@ -1,7 +1,9 @@
 package com.wingedsheep.ecologique.orders.impl.infrastructure.listener
 
+import com.wingedsheep.ecologique.common.result.Result
 import com.wingedsheep.ecologique.orders.api.OrderService
 import com.wingedsheep.ecologique.orders.api.OrderStatus
+import com.wingedsheep.ecologique.payment.api.PaymentService
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentCreated
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentDelivered
 import com.wingedsheep.ecologique.shipping.api.event.ShipmentReturned
@@ -15,7 +17,8 @@ import java.util.logging.Logger
  */
 @Component
 internal class ShipmentEventListener(
-    private val orderService: OrderService
+    private val orderService: OrderService,
+    private val paymentService: PaymentService
 ) {
     private val logger = Logger.getLogger(ShipmentEventListener::class.java.name)
 
@@ -57,15 +60,36 @@ internal class ShipmentEventListener(
 
     @EventListener
     fun onShipmentReturned(event: ShipmentReturned) {
-        logger.info("Shipment returned for order ${event.orderId.value}, updating order status to RETURNED")
+        logger.info("Shipment returned for order ${event.orderId.value}, updating order status to RETURNED and initiating refund")
 
-        orderService.updateStatus(event.orderId, OrderStatus.RETURNED).fold(
-            onSuccess = {
+        // Update order status to RETURNED
+        val orderResult = orderService.updateStatus(event.orderId, OrderStatus.RETURNED)
+        val order = when (orderResult) {
+            is Result.Ok -> {
                 logger.info("Order ${event.orderId.value} status updated to RETURNED")
-            },
-            onFailure = { error ->
-                logger.warning("Failed to update order ${event.orderId.value} status: $error")
+                orderResult.value
             }
-        )
+            is Result.Err -> {
+                logger.warning("Failed to update order ${event.orderId.value} status: ${orderResult.error}")
+                return
+            }
+        }
+
+        // Initiate refund if order has a payment
+        val paymentId = order.paymentId
+        if (paymentId == null) {
+            logger.warning("Order ${event.orderId.value} has no payment ID, cannot initiate refund")
+            return
+        }
+
+        val refundResult = paymentService.refundPayment(paymentId)
+        when (refundResult) {
+            is Result.Ok -> {
+                logger.info("Refund initiated for order ${event.orderId.value}, payment ${paymentId.value}")
+            }
+            is Result.Err -> {
+                logger.warning("Failed to initiate refund for order ${event.orderId.value}: ${refundResult.error}")
+            }
+        }
     }
 }

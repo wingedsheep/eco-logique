@@ -3,6 +3,7 @@ package com.wingedsheep.ecologique.orders.impl.domain
 import com.wingedsheep.ecologique.common.money.Currency
 import com.wingedsheep.ecologique.orders.api.OrderId
 import com.wingedsheep.ecologique.orders.api.OrderStatus
+import com.wingedsheep.ecologique.payment.api.PaymentId
 import java.time.Instant
 
 internal data class Order(
@@ -11,7 +12,8 @@ internal data class Order(
     val status: OrderStatus,
     val lines: List<OrderLine>,
     val totals: TotalsSnapshot,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val paymentId: PaymentId? = null
 ) {
     init {
         require(userId.isNotBlank()) { "User ID cannot be blank" }
@@ -24,6 +26,8 @@ internal data class Order(
         }
         return copy(status = newStatus)
     }
+
+    fun withPaymentId(paymentId: PaymentId): Order = copy(paymentId = paymentId)
 
     fun isOwnedBy(userId: String): Boolean = this.userId == userId
 

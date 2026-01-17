@@ -21,7 +21,7 @@ moduleDependencyValidation {
             "email" to emptySet(),
             "inventory" to setOf("products"),
             "payment" to emptySet(),
-            "shipping" to setOf("orders", "inventory", "payment", "users"),
+            "shipping" to setOf("orders", "inventory", "payment"),
         )
     )
 }

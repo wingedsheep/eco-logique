@@ -16,7 +16,8 @@ internal class OrderEntity(
     val subtotal: BigDecimal,
     val grandTotal: BigDecimal,
     val currency: String,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val paymentId: UUID? = null
 ) : Persistable<UUID> {
 
     @Transient

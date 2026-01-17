@@ -13,7 +13,8 @@ internal fun Order.toDto(): OrderDto = OrderDto(
     subtotal = totals.subtotal,
     grandTotal = totals.grandTotal,
     currency = totals.currency,
-    createdAt = createdAt
+    createdAt = createdAt,
+    paymentId = paymentId
 )
 
 internal fun OrderLine.toDto(): OrderLineDto = OrderLineDto(

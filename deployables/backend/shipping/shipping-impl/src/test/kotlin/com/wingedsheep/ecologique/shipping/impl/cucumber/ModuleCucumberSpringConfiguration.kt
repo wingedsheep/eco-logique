@@ -3,7 +3,6 @@ package com.wingedsheep.ecologique.shipping.impl.cucumber
 import com.wingedsheep.ecologique.inventory.api.WarehouseService
 import com.wingedsheep.ecologique.orders.api.OrderService
 import com.wingedsheep.ecologique.shipping.impl.TestApplication
-import com.wingedsheep.ecologique.users.api.UserService
 import io.cucumber.spring.CucumberContextConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -25,9 +24,6 @@ class ModuleCucumberSpringConfiguration {
 
     @MockitoBean
     lateinit var orderService: OrderService
-
-    @MockitoBean
-    lateinit var userService: UserService
 
     companion object {
         private val postgres = PostgreSQLContainer("postgres:14-alpine")

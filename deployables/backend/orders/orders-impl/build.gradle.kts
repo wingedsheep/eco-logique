@@ -16,6 +16,7 @@ dependencies {
     implementation(project(":inventory:inventory-api"))
     implementation(project(":payment:payment-api"))
     implementation(project(":shipping:shipping-api"))
+    implementation(project(":users:users-api"))
     implementation(project(":common:common-money"))
     implementation(project(":common:common-result"))
 
