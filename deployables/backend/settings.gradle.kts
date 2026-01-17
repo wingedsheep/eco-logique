@@ -21,6 +21,7 @@ include(":common:common-money")
 include(":common:common-country")
 include(":common:common-result")
 include(":common:common-tax")
+include(":common:common-outbox")
 
 // Application modules
 include(":application")
@@ -57,3 +58,4 @@ project(":common:common-money").projectDir = file("../../common/common-money")
 project(":common:common-country").projectDir = file("../../common/common-country")
 project(":common:common-result").projectDir = file("../../common/common-result")
 project(":common:common-tax").projectDir = file("../../common/common-tax")
+project(":common:common-outbox").projectDir = file("../../common/common-outbox")

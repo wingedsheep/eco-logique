@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":shipping:shipping-api"))
     implementation(project(":shipping:shipping-impl"))
     implementation(project(":shipping:shipping-worldview"))
+    implementation(project(":common:common-outbox"))
 
     implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.actuator)

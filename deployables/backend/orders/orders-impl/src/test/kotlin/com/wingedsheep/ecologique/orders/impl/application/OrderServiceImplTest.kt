@@ -7,7 +7,6 @@ import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.buildOrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.buildOrderLineCreateRequest
 import com.wingedsheep.ecologique.orders.api.error.OrderError
-import com.wingedsheep.ecologique.orders.api.event.OrderCreated
 import com.wingedsheep.ecologique.orders.impl.domain.Order
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
@@ -20,9 +19,9 @@ import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
 import com.wingedsheep.ecologique.users.api.error.UserError
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
@@ -47,10 +46,20 @@ class OrderServiceImplTest {
     private lateinit var userService: UserService
 
     @Mock
-    private lateinit var eventPublisher: ApplicationEventPublisher
+    private lateinit var applicationEventPublisher: ApplicationEventPublisher
 
-    @InjectMocks
     private lateinit var orderService: OrderServiceImpl
+
+    @BeforeEach
+    fun setUp() {
+        orderService = OrderServiceImpl(
+            orderRepository = orderRepository,
+            productService = productService,
+            userService = userService,
+            outboxEventPublisher = null,
+            applicationEventPublisher = applicationEventPublisher
+        )
+    }
 
     private val testProductUuid = UUID.randomUUID()
     private val testProductId = ProductId(testProductUuid)
@@ -80,9 +89,9 @@ class OrderServiceImplTest {
             },
             onFailure = { }
         )
-        val eventCaptor = argumentCaptor<Any>()
-        verify(eventPublisher).publishEvent(eventCaptor.capture())
-        assertThat(eventCaptor.firstValue).isInstanceOf(OrderCreated::class.java)
+        val eventCaptor = argumentCaptor<OrderCreatedOutboxEvent>()
+        verify(applicationEventPublisher).publishEvent(eventCaptor.capture())
+        assertThat(eventCaptor.firstValue).isInstanceOf(OrderCreatedOutboxEvent::class.java)
     }
 
     @Test

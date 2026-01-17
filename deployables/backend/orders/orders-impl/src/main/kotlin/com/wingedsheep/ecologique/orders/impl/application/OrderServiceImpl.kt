@@ -9,7 +9,6 @@ import com.wingedsheep.ecologique.orders.api.OrderStatus
 import com.wingedsheep.ecologique.orders.api.dto.OrderCreateRequest
 import com.wingedsheep.ecologique.orders.api.dto.OrderDto
 import com.wingedsheep.ecologique.orders.api.error.OrderError
-import com.wingedsheep.ecologique.orders.api.event.OrderCreated
 import com.wingedsheep.ecologique.orders.impl.domain.Order
 import com.wingedsheep.ecologique.orders.impl.domain.OrderLine
 import com.wingedsheep.ecologique.orders.impl.domain.OrderRepository
@@ -20,6 +19,7 @@ import com.wingedsheep.ecologique.products.api.ProductService
 import com.wingedsheep.ecologique.products.api.dto.ProductDto
 import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
+import com.wingedsheep.ecologique.common.outbox.OutboxEventPublisher
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -32,7 +32,8 @@ internal class OrderServiceImpl(
     private val orderRepository: OrderRepository,
     private val productService: ProductService,
     private val userService: UserService,
-    private val eventPublisher: ApplicationEventPublisher
+    private val outboxEventPublisher: OutboxEventPublisher?,
+    private val applicationEventPublisher: ApplicationEventPublisher
 ) : OrderService {
 
     @Transactional
@@ -78,15 +79,18 @@ internal class OrderServiceImpl(
 
         val savedOrder = orderRepository.save(order)
 
-        eventPublisher.publishEvent(
-            OrderCreated(
-                orderId = savedOrder.id,
-                userId = savedOrder.userId,
-                grandTotal = savedOrder.totals.grandTotal,
-                currency = savedOrder.totals.currency,
-                timestamp = Instant.now()
-            )
+        val event = OrderCreatedOutboxEvent(
+            orderId = savedOrder.id,
+            userId = savedOrder.userId,
+            grandTotal = savedOrder.totals.grandTotal,
+            currency = savedOrder.totals.currency,
+            timestamp = Instant.now()
         )
+        if (outboxEventPublisher != null) {
+            outboxEventPublisher.publishEvent(event)
+        } else {
+            applicationEventPublisher.publishEvent(event)
+        }
 
         return Result.ok(savedOrder.toDto())
     }

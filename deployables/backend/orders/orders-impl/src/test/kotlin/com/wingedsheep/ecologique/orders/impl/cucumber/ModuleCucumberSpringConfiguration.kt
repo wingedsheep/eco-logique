@@ -51,6 +51,7 @@ class ModuleCucumberSpringConfiguration {
             registry.add("spring.datasource.password") { postgres.password }
             registry.add("spring.flyway.locations") { arrayOf("classpath:db/migration/orders") }
             registry.add("spring.flyway.create-schemas") { "true" }
+            registry.add("outbox.enabled") { "false" }
         }
     }
 }

@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":common:common-result"))
     implementation(project(":common:common-tax"))
     implementation(project(":common:common-country"))
+    implementation(project(":common:common-outbox"))
 
     implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.data.jdbc)
