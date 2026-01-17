@@ -30,32 +30,51 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
-val coverageExcludedProjects = setOf(":application")
-
 tasks.register<JacocoReport>("jacocoAggregatedReport") {
     group = "verification"
     description = "Generates aggregated code coverage report for module tests"
 
-    val includedProjects = subprojects.filter { it.path !in coverageExcludedProjects }
+    val excludedProjectPaths = setOf(":application")
 
-    val testTasks = includedProjects.flatMap { subproject ->
-        subproject.tasks.withType<Test>()
-    }
-    dependsOn(testTasks)
+    // Depend on jacocoTestReport tasks from impl modules (they have JaCoCo enabled via kotlin-conventions)
+    dependsOn(
+        subprojects
+            .filter { it.path !in excludedProjectPaths && it.path.endsWith("-impl") }
+            .map { "${it.path}:jacocoTestReport" }
+    )
 
-    val sourceSets = includedProjects.mapNotNull { subproject ->
-        subproject.extensions.findByType<SourceSetContainer>()?.findByName("main")
-    }
-
-    sourceDirectories.setFrom(sourceSets.flatMap { it.allSource.srcDirs })
-    classDirectories.setFrom(sourceSets.map { it.output })
-
-    executionData.setFrom(
-        includedProjects.flatMap { subproject ->
-            fileTree(subproject.layout.buildDirectory) {
-                include("jacoco/*.exec")
-            }
+    // Source directories for all modules (excluding application)
+    val sourceFiles = subprojects
+        .filter { it.path !in excludedProjectPaths }
+        .mapNotNull { subproject ->
+            subproject.extensions.findByType<SourceSetContainer>()
+                ?.findByName("main")
+                ?.allSource
+                ?.srcDirs
         }
+        .flatten()
+    sourceDirectories.setFrom(sourceFiles)
+
+    // Compiled class files for all modules (excluding application)
+    val classFiles = subprojects
+        .filter { it.path !in excludedProjectPaths }
+        .mapNotNull { subproject ->
+            subproject.extensions.findByType<SourceSetContainer>()
+                ?.findByName("main")
+                ?.output
+                ?.classesDirs
+        }
+    classDirectories.setFrom(classFiles)
+
+    // Collect all JaCoCo execution data files (excluding application module)
+    executionData.setFrom(
+        subprojects
+            .filter { it.path !in excludedProjectPaths }
+            .map { subproject ->
+                fileTree(subproject.layout.buildDirectory) {
+                    include("jacoco/*.exec")
+                }
+            }
     )
 
     reports {
