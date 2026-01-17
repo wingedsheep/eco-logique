@@ -7,11 +7,11 @@ import com.wingedsheep.ecologique.cucumber.ScenarioContext.OrderRef
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.PaymentRef
 import com.wingedsheep.ecologique.cucumber.ScenarioContext.WarehouseRef
 import com.wingedsheep.ecologique.cucumber.TestApiClient
+import com.wingedsheep.ecologique.cucumber.TestResponse
 import com.wingedsheep.ecologique.inventory.api.dto.StockUpdateRequest
 import com.wingedsheep.ecologique.inventory.api.dto.WarehouseCreateRequest
 import com.wingedsheep.ecologique.payment.api.dto.CardBrand
 import com.wingedsheep.ecologique.products.api.ProductId
-import com.wingedsheep.ecologique.cucumber.TestResponse
 import io.cucumber.datatable.DataTable
 import io.cucumber.java.en.And
 import io.cucumber.java.en.Given
