@@ -1,3 +1,0 @@
-# Disable outbox for module-level tests since the outbox migrations aren't available
-outbox:
-  enabled: false

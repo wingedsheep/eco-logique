@@ -18,6 +18,7 @@ import com.wingedsheep.ecologique.products.api.error.ProductError
 import com.wingedsheep.ecologique.users.api.UserId
 import com.wingedsheep.ecologique.users.api.UserService
 import com.wingedsheep.ecologique.users.api.error.UserError
+import com.wingedsheep.ecologique.common.outbox.OutboxEventPublisher
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -28,7 +29,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.context.ApplicationEventPublisher
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -46,7 +46,7 @@ class OrderServiceImplTest {
     private lateinit var userService: UserService
 
     @Mock
-    private lateinit var applicationEventPublisher: ApplicationEventPublisher
+    private lateinit var outboxEventPublisher: OutboxEventPublisher
 
     private lateinit var orderService: OrderServiceImpl
 
@@ -56,8 +56,7 @@ class OrderServiceImplTest {
             orderRepository = orderRepository,
             productService = productService,
             userService = userService,
-            outboxEventPublisher = null,
-            applicationEventPublisher = applicationEventPublisher
+            outboxEventPublisher = outboxEventPublisher
         )
     }
 
@@ -90,7 +89,7 @@ class OrderServiceImplTest {
             onFailure = { }
         )
         val eventCaptor = argumentCaptor<OrderCreatedOutboxEvent>()
-        verify(applicationEventPublisher).publishEvent(eventCaptor.capture())
+        verify(outboxEventPublisher).publishEvent(eventCaptor.capture())
         assertThat(eventCaptor.firstValue).isInstanceOf(OrderCreatedOutboxEvent::class.java)
     }
 
